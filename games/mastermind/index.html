@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="aceh.css">
+
+    <script src="script.js"></script>
+    <script id="DragDropTouch" src="DragDropTouch.js"></script>
+
+    <title>Mastermind</title>
+</head>
+<body onload="configure()">
+    <div class="container">
+        <div class="alert-box" id="alert">MISSING COLORS!</div>
+
+        <div class="title-container">
+            <div class="subtitle-container">
+                <h1>MasterMind</h1>
+            </div>
+        </div>
+
+        <div class="main-game-container">
+            <div class="game-container">
+                <div class="soluzione">
+                    <div id='ans1' class="soluzione-div">?</div>
+                    <div id='ans2' class="soluzione-div">?</div>
+                    <div id='ans3' class="soluzione-div">?</div>
+                    <div id='ans4' class="soluzione-div">?</div>
+                </div>
+
+            <!--TABELLA CON RISULTATI-->
+
+            <div class="table-container">
+                <table id="table">
+                    <tbody>
+                        <tr class="row-content">
+
+                            <td><div class="color-item" id="first"></div></td>
+                            <td><div class="color-item" id="second"></div></td>
+                            <td><div class="color-item" id="third"></div></td>
+                            <td><div class="color-item" id="fourth"></div></td>
+
+                            <td class="result-container">
+                                <div class="result-box">
+                                    <div class="result-item"></div>
+                                    <div class="result-item"></div>
+                                    <div class="result-item"></div>
+                                    <div class="result-item"></div>
+                                </div>
+                            </td>
+
+
+                        </tr>
+
+                    </tbody>
+                </table>
+
+            </div>
+
+            <div class="color-container">
+                <div class="color-box" draggable="true" id="1"></div>
+                <div class="color-box" draggable="true" id="2"></div>
+                <div class="color-box" draggable="true" id="3"></div>
+                <div class="color-box" draggable="true" id="4"></div>
+                <div class="color-box" draggable="true" id="5"></div>
+                <div class="color-box" draggable="true" id="6"></div>
+
+            </div>
+
+            <div class="def-font" style='margin-top: 15px;'>
+            Chances: <span id='chances'>8</span>&nbsp;of 8
+            <input type="checkbox" id="cbEasy" name="easy" value="Easy Mode"  onclick='updateEasyMode(this);'>
+            <label for="easy"> Easy Mode</label><br>
+            </div>
+            <div class="button-container">
+                <button class="submit-button" id="submit">Check</button>
+            </div>
+
+        </div>
+
+    </div>
+
+<div class="title-container">
+    <h5>Originally written by <a href='https://github.com/TheStevenDev/Mastermind'>Steven Damore</a>; fixed by <a href='https://github.com/sdneon/Mastermind'>Neon</a>; Invented by <a href='https://en.wikipedia.org/wiki/Mastermind_(board_game)'>Mordecai<a> in 1970</h5>
+</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<title>Super Cluedo Challenge board game</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/cluedo.css">
+<link rel="stylesheet" href="css/dice.css">
+<link rel="stylesheet" href="css/deck.css">
+<link rel="stylesheet" href="css/tooltip.css">
+<script src="js/jquery.min.js"></script>
+<script src="js/winbox.bundle.min.js"></script>
+<script src="js/dice.js"></script>
+<script src="js/deck-generic.js"></script>
+<script src="js/shuffle.js"></script>
+<script src="js/board.js"></script>
+<script src='js/cluedo.min.js'></script>
+</head>
+<body>
+<h1>Super Cluedo Challenge board game <span data-tooltip-position='bottom' data-tooltip='Who smashed my birthday cake? 谁砸了我的生日蛋糕？'>妙探寻凶 超级版 (beta)</span></h1>
+<div id='divStatus'></div>
+<!--
+<div style='display:flex'>
+    <div class="dice-container"></div>
+    <div><button onclick="nextPlayer();">Next Player</button></div>
+</div>
+-->
+<table>
+<tr>
+    <td><div class='dice-container'></div></td>
+    <td style='vertical-align:middle;'>
+        <div id='divWho'></div>
+        <table><tr><td><div>
+            <button onclick='whereAmI();'>Find Me!</button>
+            <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'><button onclick='nextPlayer();'>Next Player</button></span>
+        </div></td></tr><tr><td>
+<!--
+        </td></tr><tr><td>
+        <div id='divButHidePlayer'><button onclick='hidePlayer();'>Hide Player</button></div>
+-->
+        </td></tr><tr><td>
+            <span data-tooltip='Give me 5 free Murder Cards' data-tooltip-position='bottom'><button onclick='takeMurderCard(who, 5);'>Gimme 5!</button></span>
+            <button onclick='gotoNotes();'>(goto Notes)</button>
+        </td></tr></table>
+    </td>
+    <td>
+        <table><tr id='card-holder-container'>
+            <td id='card-holder-container-0' style='vertical-align:middle;'></td>
+            <td id='card-holder-container-1' style='vertical-align:middle;'></td>
+            <td id='card-holder-container-2' style='vertical-align:middle;'></td>
+        </tr></table>
+    </td>
+</tr>
+<tr>
+    <td colspan='3'>
+        <table>
+            <tr><td><span data-tooltip-position='bottom' data-tooltip='Go after these clues to get a "Super Clue" card, which give clues in the Card Holders'><b>Active Clues:</b></span></td></tr>
+        </table>
+        <table class='cell' style='text-align: left;'>
+            <tr id='divActiveClues'>
+                <th class='no-active-clue'>
+                    (No Active Clues)
+                </th>
+            </tr>
+        </table>
+    </td>
+</tr>
+</table>
+<div id='divPlayingArea'></div>
+<!-- Detective Card (plain, hard)-->
+<h2><span id='spanWhose'></span> Detective Notepad<button onclick="toggleView('divDetectiveNotepad');"> (show/hide)</button>
+    &nbsp;<button onclick="goTop();">(back to top)</button>&nbsp;&nbsp;&nbsp;<button onclick="giveUp();">Give Up!</button><br></h2>
+<div id='divDetectiveNotepad'>
+Clue style:
+  <input id='radDetectiveSmartEasy' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);' checked>
+  <label for='radDetectiveSmartEasy'><span data-tooltip-position='left' data-tooltip='clues in 4 corners like card'>Smart Easy</span></label>
+  <input id='radDetectiveSmart' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
+  <label for='radDetectiveSmart'><span data-tooltip-position='left' data-tooltip='clues in a row: top left clue, bottom-right clue, top-right, bottom-left'>Smart</span></label>
+  <input id='radDetectiveHardwork' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
+  <label for='radDetectiveHardwork'><span data-tooltip-position='left' data-tooltip='clues in a row, without tallying to card corners at all'>Hard</span></label>
+  <button onclick="saveLastPlayerDetNotes(who);">Save Notes</button>
+<table>
+    <tr>
+        <td>
+            <table>
+            <tr id='detective-card-container-0'></tr>
+            <tr id='detective-card-container-1'></tr>
+            <tr id='detective-card-container-2'></tr>
+            <tr><td>
+            <b>ACCUSATION</b>
+            I accuse <select id='select0'><option value="Unknown">(Unknown)</option></select><br>
+            of committing the murder with the <select id='select1'><option value="Unknown">(Unknown)</option></select><br>
+            as the weapon in the <select id='select2'><option value="Unknown">(Unknown)</option></select>
+            <br><button onclick="accuse();">Accuse!</button>
+            </td></tr>
+            </table>
+        </td>
+        <td id='player-murder-cards-deck-container'>
+            <div id='deck-container3' class='player-murder-cards-deck'></div>
+        </td>
+    </tr>
+</table>
+</div>
+<hr>
+<br>Refresh page to restart, or click: <button onclick="newGameBoard();">New Game</button>
+<div>
+<b>Options</b>:<br>
+<input type="checkbox" id="option_unblock_entry" name="option_unblock_entry" value="option_unblock_entry"
+     checked onclick='setAvoidBlockingRoomEntry(this.checked);'>
+<label for="option_unblock_entry"> Don't block room entry (with weapon placements)</label><br>
+<input type="checkbox" id="option_hint_clue_num" name="option_hint_clue_num" value="option_hint_clue_num"
+     onclick='setShowClueNum(this.checked);'>
+<label for="option_hint_clue_num"> Reveal clue counters' numbers</label><br>
+<span data-tooltip-position='bottom' data-tooltip='Players will be added/removed live'><b>Players</b></span>:
+  <table><tr><td style='background:yellow'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_0" name="cb_player_0" value="0" onclick='updatePlayersSelection(0);'>
+    <label for='cb_player_0'><img src='images/token-yellow.png' alt='Player 1: Col Mustard' style='width: 100px;'></label>
+  </td><td style='background:red'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_1" name="cb_player_1" value="1" onclick='updatePlayersSelection(1);'>
+    <label for='cb_player_1'><img src='images/token-red.png' alt='Player 2: Ms Scarlett' style='width: 100px;'></label>
+  </td><td style='background:brown'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_2" name="cb_player_2" value="2" onclick='updatePlayersSelection(2);'>
+    <label for='cb_player_2'><img src='images/token-brown.png' alt='Player 3: Capt Brown' style='width: 100px;'></label>&nbsp;
+  </td><td style='background:white'>
+    <input type="checkbox" class='big_checkbox' checked id="cb_player_3" name="cb_player_3" value="3" onclick='updatePlayersSelection(3);'>
+    <label for='cb_player_3'><img src='images/token-white.png' alt='Player 4: Mrs White' style='width: 100px;'></label>&nbsp;
+  </td><td style='background:gray'>
+    <input type="checkbox" class='big_checkbox' checked id="cb_player_4" name="cb_player_4" value="4" onclick='updatePlayersSelection(4);'>
+    <label for='cb_player_4'><img src='images/token-gray.png' alt='Player 5: Mr Slate-Gray' style='width: 100px;'></label>&nbsp;
+  </td><td style='background:green'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_5" name="cb_player_5" value="5" onclick='updatePlayersSelection(5);'>
+    <label for='cb_player_5'><img src='images/token-green.png' alt='Player 6: Reverend Green' style='width: 100px;'></label>&nbsp;
+  </td><td style='background:purple'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_6" name="cb_player_6" value="6" onclick='updatePlayersSelection(6);'>
+    <label for='cb_player_6'><img src='images/token-purple.png' alt='Player 7: Professor Plum' style='width: 100px;'></label>&nbsp;
+  </td><td style='background:blue'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_7" name="cb_player_7" value="7" onclick='updatePlayersSelection(7);'>
+    <label for='cb_player_7'><img src='images/token-blue.png' alt='Player 8: Mrs Peacock' style='width: 100px;'></label>
+  </td><td style='background:pink'>
+    <input type="checkbox" class='big_checkbox' id="cb_player_8" name="cb_player_8" value="8" onclick='updatePlayersSelection(8);'>
+    <label for='cb_player_8'><img src='images/token-pink.png' alt='Player 9: Ms Peach' style='width: 100px;'></label>
+  </td></tr></table>
+<br>
+<button onclick="resetOptions();">Reset Options</button>
+</div>
+<br><br><hr><div id='divWinning'>
+<h2>Win by solving the mystery of Who, Where, What! <button id='buttShowRules' onclick="showRules();">Show Rules</button></h2></div>
+</body>
+</html>
