@@ -32,10 +32,9 @@
             <button onclick='whereAmI();'>Find Me!</button>
             <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'><button onclick='nextPlayer();'>Next Player</button></span>
         </div></td></tr><tr><td>
-<!--
-        </td></tr><tr><td>
-        <div id='divButHidePlayer'><button onclick='hidePlayer();'>Hide Player</button></div>
--->
+            <span data-tooltip='Show clue counters list' data-tooltip-position='bottom'>
+            <button onclick='showCluesList();'>Clues List</button>
+            </span>
         </td></tr><tr><td>
             <span data-tooltip='Give me 5 free Murder Cards' data-tooltip-position='bottom'><button onclick='takeMurderCard(who, 5);'>Gimme 5!</button></span>
             <button onclick='gotoNotes();'>(goto Notes)</button>

@@ -110,6 +110,7 @@ function cellClicked(y, x)
         $(`#cell_played${cellId}`)[0].textContent = '';
 
         removedClues[clueId] = true; //remember it for reset
+        updateClueAvail(clueId);
 
         const clue = CLUES[clueId];
         if (clue[1] === 'murderCardFromDeck')
@@ -410,18 +411,7 @@ function saveLastPlayerDetNotes(playerId)
 {
     playerId ??= lastPlayer;
     //save last player's data
-    if (playersData[playerId] === undefined)
-    {
-        playersData[playerId] = {
-            notepad: {
-                //checkboxes:
-                //p##: true/false
-                //q##: true/false
-                //combo:
-                //detFlap#_#: string
-            }
-        };
-    }
+    createPlayerData(playerId);
     let i, j, p;
     const notepad = playersData[playerId].notepad;
     for (i = 0; i < 3; ++i)
@@ -455,18 +445,7 @@ function saveLastPlayerDetNotes(playerId)
 function restoreCurPlayerDetNotes(suppress)
 {
     //update to our data
-    if (playersData[who] === undefined)
-    {
-        playersData[who] = {
-            notepad: {
-                //checkboxes:
-                //p##: true/false
-                //q##: true/false
-                //combo:
-                //detFlap#_#: string
-            }
-        };
-    }
+    createPlayerData(who);
     let i, j, p;
     const notepad = playersData[who].notepad;
     for (i = 0; i < 3; ++i)
@@ -1097,7 +1076,7 @@ function newGameBoard()
     lockAllFlaps();
 
     //5c. Place remaining cards in cardsDeck
-    for (let i = 0; i < CARD_NAMES.length; ++i)
+    for (i = 0; i < CARD_NAMES.length; ++i)
     {
         if ((i === answers[0]) || (i === answers[1]) || (i === answers[2]))
             continue; //exclude earlier 3 answer cards
@@ -1123,6 +1102,22 @@ function newGameBoard()
 
     //6. new game data
     playersData = [];
+    for (i = 0; i < PLAYERS.length; ++i)
+    {
+        playersData[i] = {
+            notepad: {
+                //checkboxes:
+                //p##: true/false
+                //q##: true/false
+                //combo:
+                //detFlap#_#: string
+            },
+            clues: {
+                cardHolders: [ [-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1] ],
+                cardsSeen: {}
+            }
+        };
+    }
     bumpMode = false;
     status = 'New game';
     showStatus(status);
@@ -1161,6 +1156,9 @@ function takeMurderCard(playerIndex, cnt)
         const card = cardsDeck.splice(0, 1)[0];
         playerCardDecks[playerIndex].push(card);
         --cnt;
+
+        createPlayerData(playerIndex);
+        playersData[playerIndex].clues.cardsSeen[card] = true;
 
         deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
             style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
@@ -1205,7 +1203,7 @@ function takeActionCard()
         appendStatus(`Action card: <h2>${card[0]}</h2>`);
         if (card[1] === 'look')
         {
-            unlockFlaps(-1, card[2], -1);
+            unlockFlaps(card[2], -1, -1);
         }
     }
 
@@ -1234,6 +1232,26 @@ function addActiveClue(div, clueObjId, clueObjName)
     div.append(`<td id='active-clue-${clueObjId}' class='cell ${className}' onclick='zoomToItem(${clueObjId});'></td>`);
 }
 
+function createPlayerData(i)
+{
+    if (playersData[i].notepad === undefined)
+    {
+        playersData[i].notepad = {};
+    }
+    if (playersData[i].clues === undefined)
+    {
+        playersData[i].clues = {};
+    }
+    if (playersData[i].clues.cardHolders === undefined)
+    {
+        playersData[i].clues.cardHolders = [ [-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1] ];
+    }
+    if (playersData[i].clues.cardsSeen === undefined)
+    {
+        playersData[i].clues.cardsSeen = {};
+    }
+}
+
 function restoreSavedGame()
 {
     const gameData = JSON.parse(localStorage.savedGame);
@@ -1245,6 +1263,8 @@ function restoreSavedGame()
     {
         $('td').removeClass(`cell_player_${i}`);
         $('td').removeClass(`cell_wpn_${WEAPONS[i]}`);
+
+        createPlayerData(i);
     }
     for (i = 0; i < ORNAMENTS.length; ++i)
     {
@@ -1316,6 +1336,9 @@ function restoreSavedGame()
         const itemId = placedWeapons[cellId];
         $(`#cell${cellId}`).addClass(`cell_wpn_${WEAPONS[itemId]} cell_occupied`);
     });
+    removedOrns = gameData.removedOrns;
+    removedClues = gameData.removedClues;
+    removedWeapons = gameData.removedWeapons;
 
     who = gameData.who;
 
@@ -1566,6 +1589,7 @@ function resetClueCounters()
             $(`#cell_played${cellId}`)[0].textContent = String(id);
         }
         placedClues[cellId] = id;
+        updateClueAvail(id, true);
         availSlots.splice(choice, 1);
     }
     removedClues = {};
@@ -1749,6 +1773,7 @@ function spareMurderCardsDeckOrder()
 let popupSuperClues,
     popupSpareMurderCards,
     popupPlayerMurderCards,
+    poupupCluesList,
     popupRules;
 function createSuperClueDeck()
 {
@@ -2039,6 +2064,9 @@ function clickedCardHolder(cardHolderId, flapId, permaShow)
     }
     if (!permaShow)
     {
+        createPlayerData(who);
+        playersData[who].clues.cardHolders[cardHolderId][flapId] = code;
+
         if (!ALLOW_PEEKING_ANYTIME)
         {
             const s = (numKeys > 0)? `${numKeys} more flap peek(s) available &#x1F600;`:
@@ -2560,8 +2588,52 @@ function showRules()
     }
 }
 
+const available = "<font color='green'>&#x2714;</font>",
+    gone = "<font color='red'>&#x2718;</font>";
+function updateClueAvail(clueId, inplay)
+{
+    if (poupupCluesList && (clueId > 0))
+    {
+        $(`#cc${clueId}`)[0].innerHTML = (inplay || !removedClues[clueId])? available: gone;
+    }
+}
+
+function showCluesList()
+{
+    if (!poupupCluesList)
+    {
+        let s = '<h1>Available Clues</h1>\n';
+        for (let i = 1; i < CLUES.length; ++i) //don't show dummy clue counter XD
+        {
+            s += `<span id='cc${i}' class='clue_counter_info'>${removedClues[i]? gone:available}</span> ${i}. ${CLUES[i][0]}<br>\n`;
+        }
+
+        poupupCluesList = new WinBox({
+            title: 'Rules',
+            x: '10px',
+            y: '100px',
+            width: '50%',
+            height: `${window.innerHeight - 200}px`,
+            html: s,
+            onclose: function() {
+                this.minimize();
+                return true;
+            }
+        });
+    }
+    else
+    {
+        $('.clue_counter_info').each((i, c) => {
+            c.innerHTML = removedClues[i+1]? gone: available;
+        });
+        poupupCluesList.restore();
+    }
+}
+
 $(document).ready(() => {
     const div = $('#divPlayingArea')[0];
+    AVOID_BLOCKING_ROOM_ENTRY = $('#option_unblock_entry')[0].checked;
+    ALLOW_PEEKING_ANYTIME = $('#option_allow_peeks')[0].checked;
 
     createDice();
     createDetectiveCard();
