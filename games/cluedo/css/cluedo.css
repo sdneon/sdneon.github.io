@@ -484,22 +484,22 @@ body {
 /* card holder */
 .card-holder-flap
 {
-	width:40px;
-	height:60px;
-	border: 4px solid black;
-	text-align: center;
-	font-weight: bold;
-	font-size: 1.8em;
+    width:40px;
+    height:60px;
+    border: 4px solid black;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.8em;
 }
 
 .card-holder-flap-black
 {
-	width:40px;
-	height:60px;
-	border: 4px solid white;
-	text-align: center;
-	font-weight: bold;
-	font-size: 1.8em;
+    width:40px;
+    height:60px;
+    border: 4px solid white;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.8em;
 }
 
 .card_0
@@ -693,15 +693,15 @@ body {
 
 .card_holder_space
 {
-	width:80px;
+    width:80px;
 }
 
 .card_holder_middle
 {
-	width:80px;
-	height:150px;
-	text-align: center;
-	font-size: 3em;
+    width:80px;
+    height:150px;
+    text-align: center;
+    font-size: 3em;
 }
 
 .player-murder-cards-deck
@@ -713,51 +713,52 @@ body {
 }
 .card_alone
 {
-	width: 200px;
-	height: 250px;
-	margin: 5;
+    width: 250px;
+    height: 300px;
+    margin: 5;
 }
 
 .detective-card-table
 {
-	border: 1px solid;
+    border: 1px solid;
+    border-collapse: collapse;
 }
 
 .detective-card-table-col1q
 {
-	width: 200px;
+    width: 200px;
 }
 
 .detective-card-table-clue
 {
-	text-align: center;
+    text-align: center;
 }
 
 .detective-card-table-clues-1 /* 2x2 */
 {
-	display: grid;
-	grid-template-columns: 40px 40px;
-	text-overflow: ellipsis;
+    display: grid;
+    grid-template-columns: 40px 40px;
+    text-overflow: ellipsis;
 }
 
 .detective-card-table-clues-2 /* 1,3,2,4 */
 {
-	display: grid;
-	grid-template-columns: 80px 80px 80px 80px;
+    display: grid;
+    grid-template-columns: 80px 80px 80px 80px;
 }
 
 .detective-card-table-clues-3 /* 1,2,3,4 */
 {
-	display: grid;
-	grid-template-columns: 80px 80px 40px 40px;
+    display: grid;
+    grid-template-columns: 80px 80px 40px 40px;
 }
 
 .pulsate {
-	animation-name: pulsate;
-	animation-duration: 5s;
-	animation-iteration-count: 10;
-	/*animation-iteration-count: infinite;*/
-	animation-timing-function: linear;
+    animation-name: pulsate;
+    animation-duration: 5s;
+    animation-iteration-count: 10;
+    /*animation-iteration-count: infinite;*/
+    animation-timing-function: linear;
 }
 
 @keyframes pulsate {
@@ -786,6 +787,11 @@ input {
 .big_checkbox {
   width: 40px;
   height: 40px;
+}
+
+.big-font
+{
+  font-size: 1.2em;
 }
 
 #divWho

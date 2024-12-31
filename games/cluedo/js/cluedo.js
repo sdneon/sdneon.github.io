@@ -568,12 +568,6 @@ function updateDetNotesClueStyle()
     if ($('#radDetectiveSmartEasy')[0].checked)
     {
         i = 1;
-        /*
-        //use shorter text
-        $('.detective-card-table-clue').each((j, c) => {
-            c.textContent = c.textContent.substring(0, 1);
-        });
-        */
         $('.detective-card-table-clues').each((j, c) => {
             const cc = $(c),
                 clues = cc.attr('clues-data-min'),
@@ -584,30 +578,16 @@ function updateDetNotesClueStyle()
                 children[k].textContent = clues[k];
                 const s = styles[k],
                     child = $(children[k]);
-                if (s === '')
-                {
-                    child.css('background', '');
-                    child.css('color', '');
-                }
-                else
-                {
-                    s.split(';').forEach((style) => {
-                        style = style.split(':');
-                        child.css(style[0], style[1]);
-                    });
-                }
+                s.split(';').forEach((style) => {
+                    style = style.split(':');
+                    child.css(style[0], style[1]);
+                });
             }
         });
     }
     else //use full text
     {
         if ($('#radDetectiveSmart')[0].checked) i = 2;
-        //also length text if needed
-        /*
-        $('.detective-card-table-clue').each((j, c) => {
-            c.textContent = ELEMENT_MAP3[c.textContent[0]];
-        });
-        */
         $('.detective-card-table-clues').each((j, c) => {
             const cc = $(c),
                 clues = cc.attr('clues-data').split(','),
@@ -618,18 +598,10 @@ function updateDetNotesClueStyle()
                 children[k].textContent = clues[k];
                 const s = styles[k],
                     child = $(children[k]);
-                if (s === '')
-                {
-                    child.css('background', '');
-                    child.css('color', '');
-                }
-                else
-                {
-                    s.split(';').forEach((style) => {
-                        style = style.split(':');
-                        child.css(style[0], style[1]);
-                    });
-                }
+                s.split(';').forEach((style) => {
+                    style = style.split(':');
+                    child.css(style[0], style[1]);
+                });
             }
         });
     }
@@ -1718,6 +1690,10 @@ function createSuperClueDeck()
                 //deckSuperClues.shuffle(true);
                 deckSuperClues.shuffle(superCardsDeckOrder());
                 deckSuperClues.smear();
+            },
+            onclose: function() {
+                this.minimize();
+                return true;
             }
         });
     }
@@ -1801,6 +1777,10 @@ function createSuperClueDeck()
                 //deckSpareMurderCards.shuffle(true);
                 deckSpareMurderCards.shuffle(spareMurderCardsDeckOrder());
                 deckSpareMurderCards.smear();
+            },
+            onclose: function() {
+                this.minimize();
+                return true;
             }
         });
     }
@@ -2226,18 +2206,21 @@ function createDetectiveCard()
                 else
                     colourLeft = false;
             }
-            let style1 = '', style2 = '', style3 = '', style4 = ''; //each columns
+            const defStyle = 'background:white;color:black';
+            let style1 = defStyle, style2 = defStyle, style3 = defStyle, style4 = defStyle; //each columns
             if (colourLeft)
             {
-                style1 = `background:${ELEMENT_COLOURS[code1]}; color:${ELEMENT_TEXT_COLOURS[code1]}`;
-                style2 = `background:${ELEMENT_COLOURS[code2]}; color:${ELEMENT_TEXT_COLOURS[code2]}`;
+                //must Not have space in between, as css(' color', ...) fails >.<"
+                style1 = `background:${ELEMENT_COLOURS[code1]};color:${ELEMENT_TEXT_COLOURS[code1]}`;
+                style2 = `background:${ELEMENT_COLOURS[code2]};color:${ELEMENT_TEXT_COLOURS[code2]}`;
             }
             else
             {
-                style3 = `background:${ELEMENT_COLOURS[code3]}; color:${ELEMENT_TEXT_COLOURS[code3]}`;
-                style4 = `background:${ELEMENT_COLOURS[code4]}; color:${ELEMENT_TEXT_COLOURS[code4]}`;
+                style3 = `background:${ELEMENT_COLOURS[code3]};color:${ELEMENT_TEXT_COLOURS[code3]}`;
+                style4 = `background:${ELEMENT_COLOURS[code4]};color:${ELEMENT_TEXT_COLOURS[code4]}`;
             }
-            s += `<tr><td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p0${i}${j}" id="p0${i}${j}"></td>
+            s += `<tr style='border: 3px solid black'>
+                <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p0${i}${j}" id="p0${i}${j}"></td>
                 <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p1${i}${j}" id="p1${i}${j}"></td>
                 <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p2${i}${j}" id="p2${i}${j}"></td>
                 <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p3${i}${j}" id="p3${i}${j}"></td>
@@ -2423,8 +2406,8 @@ function showRules()
             width: '70%',
             height: `${window.innerHeight - 200}px`,
             html: RULES,
-            onclose: () => {
-                popupRules.minimize();
+            onclose: function() {
+                this.minimize();
                 return true;
             }
         });
