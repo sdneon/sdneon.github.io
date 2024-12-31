@@ -217,39 +217,39 @@ const CLUES = [
     //1
     ['Collect 1 of the spare Murder Cards', 'murderCardFromDeck', 1],
     ['There is a Clue on the Dagger', 'clue', 0, 'Dagger'],
-    ['Look under ANY 1 flap of the BLACK Murder Card Holder', 'look', 'black', 1, 'any'],
+    ['Look under ANY 1 flap of the BLACK Murder Card Holder', 'look', 1, 2, -1],
     ['Collect 1 of the spare Murder Cards', 'murderCardFromDeck', 1],
     ['There is a Clue on the Bird Table', 'clue', 9, 'BirdTable'],
     //6
-    ['Look under the Bottom Left flap of the GREEN Murder Card Holder', 'look', 'green', 1, 'BL'],
+    ['Look under the Bottom Left flap of the GREEN Murder Card Holder', 'look', 1, 1, 3],
     ['Take a Murder Card from each player', 'murderCardFromPlayer', 1, 'everyone'],
     ['There is a Clue on the Revolver', 'clue', 1, 'Revolver'],
     ['There is a Clue on the Spanner', 'clue', 2, 'Spanner'],
     ['Take a Murder Card from the player of your choice', 'murderCardFromPlayer', 1, 'anyone'],
     //11
-    ['Look under the Bottom Right flap of the BEIGE Murder Card Holder', 'look', 'beige', 1, 'BR'],
-    ['Look under ANY 1 flap of the GREEN Murder Card Holder', 'look', 'green', 1, 'any'],
+    ['Look under the Bottom Right flap of the BEIGE Murder Card Holder', 'look', 1, 0, 1],
+    ['Look under ANY 1 flap of the GREEN Murder Card Holder', 'look', 1, 1, -1],
     ['There is a Clue on the Poison', 'clue', 3, 'Poison'],
     ['There is a Clue on the Sun Dial', 'clue', 11, 'SunDial'],
-    ['Look under the Top Right flap of the BEIGE Murder Card Holder', 'look', 'beige', 1, 'TR'],
+    ['Look under the Top Right flap of the BEIGE Murder Card Holder', 'look', 1, 0, 2],
     //16
     ['Collect 1 of the spare Murder Cards', 'murderCardFromDeck', 1],
     ['There is a Clue on the Blunderbuss', 'clue', 4, 'Blunderbuss'],
-    ['Look under the Top Left flap of the BLACK Murder Card Holder', 'look', 'black', 1, 'TL'],
+    ['Look under the Top Left flap of the BLACK Murder Card Holder', 'look', 1, 2, 0],
     ['Take a Murder Card from the player of your choice', 'murderCardFromPlayer', 1, 'anyone'],
     ['There is a Clue on the Rope', 'clue', 5, 'Rope'],
     //21
     ['There is a Clue on the Urn', 'clue', 12, 'Urn'],
-    ['Look under the Top Right flap of the GREEN Murder Card Holder', 'look', 'green', 1, 'TR'],
+    ['Look under the Top Right flap of the GREEN Murder Card Holder', 'look', 1, 1, 2],
     ['Take a Murder Card from each player', 'murderCardFromPlayer', 1, 'everyone'],
     ['There is a Clue on the Axe', 'clue', 6, 'Axe'],
     ['There is a Clue on the Candlestick', 'clue', 7, 'Candlestick'],
     //26
-    ['Look under ANY 1 flap of the BEIGE Murder Card Holder', 'look', 'beige', 1, 'any'],
+    ['Look under ANY 1 flap of the BEIGE Murder Card Holder', 'look', 1, 0, -1],
     ['Collect 1 of the spare Murder Cards', 'murderCardFromDeck', 1],
     ['There is a Clue on the Lead Piping', 'clue', 8, 'LeadPiping'],
     ['There is a Clue on the Orb', 'clue', 10, 'Orb'],
-    ['Look under the Bottom Right flap of the BLACK Murder Card Holder', 'look', 'black', 1, 'BR']
+    ['Look under the Bottom Right flap of the BLACK Murder Card Holder', 'look', 1, 2, 1]
 ];
 
 const CARD_HOLDERS = {
@@ -328,7 +328,7 @@ const CARD_NAMES = [
     'Library', 'Lounge', 'Kitchen',
     'Billiard Rm', 'Dining Rm', 'Ballroom'
 ];
-const CARD_CODES = [
+const CARD_CODES = [ //order of clues (1B each): TL, BR, TR, BL
     //people
     0x206080C, 0x104080A, 0x102070A,
     0x305070B, 0xC070105, 0xC090205,
@@ -360,6 +360,14 @@ const ELEMENT_MAP3 = {
     R: 'Red', G: 'Green', B: 'Blue', P: 'Purple', W: 'White',
     Y: 'Yellow', 0: '0', 1: '1', 2: '2', 4: '4', 5: '5', 7: '7'
 };
+const CARD_HOLDER_FLAP = [
+    'Top Left', 'Bottom Right', 'Top Right', 'Bottom Left'
+];
+const CARD_HOLDER_COLOUR = [
+    '<span style="color:#7d7d33"><b>Beige</b></span>',
+    '<span style="color:darkgreen"><b>Green</b></span>',
+    '<b>Black</b>'
+];
 
 const ACTION_CARDS = {
     "Look in 1 of the four corners of <i>any</i> card holder": [7, 'look', 1], //number of this card type, action, count for action

@@ -1,6 +1,8 @@
 let NUM_PLAYERS = 2,
     //Specify whether to avoid placing weapons at room entrances and blocking entry/exit; Recommended: true for easier game
     AVOID_BLOCKING_ROOM_ENTRY = true,
+    //Specify whether to allowing peeking at card holder flaps anytime, or enforce locks!
+    ALLOW_PEEKING_ANYTIME = false,
     //do NOT reveal clue#!! //DEBUG only, or for super easy mode X)
     SHOW_CLUE_NUM = false;
 const PCS = ['big', 'medium', 'small'],
@@ -147,6 +149,7 @@ function cellClicked(y, x)
         }
         else if (clue[1] === 'look')
         {
+            unlockFlaps(clue[2], clue[3], clue[4]);
             showStatus(`<h2>&#x1F970; ${clue[0]}</h2>`);
         }
         else if (clue[1] === 'falseAlarm')
@@ -644,6 +647,14 @@ function setAvoidBlockingRoomEntry(choice)
     }
 }
 
+function setAllowPeeks(choice)
+{
+    if (ALLOW_PEEKING_ANYTIME !== choice)
+    {
+        ALLOW_PEEKING_ANYTIME = choice;
+    }
+}
+
 function resetOptions()
 {
     const DEF_PLAYERS = [false, false, false, true, true, false, false, false, false];
@@ -655,6 +666,8 @@ function resetOptions()
 
     AVOID_BLOCKING_ROOM_ENTRY = true;
     $('#option_unblock_entry')[0].checked = true;
+    ALLOW_PEEKING_ANYTIME = false;
+    $('#option_allow_peeks')[0].checked = false;
     SHOW_CLUE_NUM = false;
     $('#option_hint_clue_num')[0].checked = false;
     ignoredPlayers = {};
@@ -696,6 +709,10 @@ let clueSpots = {}, //to include ornamentSpots, after placing ornaments
 
 let answers = [],
     cardHolders = [],
+    //these 2 will Not be in saved game data; use it or lose it!
+    cardHoldersLocks = [], //false: locked, true: open/unlocked
+    numKeys = 0, //number of keys to unlock card holder flaps
+    numPeeks = 0,
     cardsDeck = [],
     actionCardsDeck = [], //i.e. Super Clue cards
     playerCardDecks = []; //i.e. Murder cards
@@ -789,6 +806,53 @@ function updatePlayersSelection(playerId)
         }
     }
 }
+
+function lockAllFlaps()
+{
+    numKeys = 0;
+    numPeeks = 0;
+    for (let i = 0; i < 3; ++i)
+    {
+        cardHoldersLocks[i] = [ false, false, false, false ];
+    }
+}
+
+function unlockAllFlaps()
+{
+    for (let i = 0; i < 3; ++i)
+    {
+        cardHoldersLocks[i] = [ true, true, true, true ];
+    }
+}
+
+/*
+    Inputs:
+      > num of flaps.
+      > card holder ID:
+        0: beige, 1: green, 2: black, -1: any
+        if is any, the unlockAllFlaps
+      > flapId:
+        0: TL, 1: BR, 2: TR, 3: BL, or -1: 'any' i.e. all flaps
+*/
+function unlockFlaps(numFlaps, cardHolderId, flapId)
+{
+    numPeeks = -numFlaps;
+    numKeys += numFlaps;
+    if (cardHolderId === -1)
+    {
+        unlockAllFlaps();
+        return;
+    }
+    if (flapId < 0)
+    {
+        //unlock all flaps of a specific card holder
+        cardHoldersLocks[cardHolderId] = [true, true, true, true];
+        return;
+    }
+    //else unlock 1 specific flap
+    cardHoldersLocks[cardHolderId][flapId] = true;
+}
+
 //create game board
 function newGameBoard()
 {
@@ -1030,6 +1094,7 @@ function newGameBoard()
     cardHolders = [...answers];
     shuffle(cardHolders);
     //console.log(CARD_NAMES[cardHolders[0]], CARD_NAMES[cardHolders[1]], CARD_NAMES[cardHolders[2]]);
+    lockAllFlaps();
 
     //5c. Place remaining cards in cardsDeck
     for (let i = 0; i < CARD_NAMES.length; ++i)
@@ -1138,6 +1203,10 @@ function takeActionCard()
     else
     {
         appendStatus(`Action card: <h2>${card[0]}</h2>`);
+        if (card[1] === 'look')
+        {
+            unlockFlaps(-1, card[2], -1);
+        }
     }
 
     return card;
@@ -1247,7 +1316,6 @@ function restoreSavedGame()
         const itemId = placedWeapons[cellId];
         $(`#cell${cellId}`).addClass(`cell_wpn_${WEAPONS[itemId]} cell_occupied`);
     });
-    setShowClueNum(SHOW_CLUE_NUM);
 
     who = gameData.who;
 
@@ -1277,6 +1345,14 @@ function restoreSavedGame()
             style='background-image: url(images/card-${CARD_IMAGES[cardId]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
     });
 
+    AVOID_BLOCKING_ROOM_ENTRY = gameData.AVOID_BLOCKING_ROOM_ENTRY;
+    $('#option_unblock_entry')[0].checked = AVOID_BLOCKING_ROOM_ENTRY;
+    ALLOW_PEEKING_ANYTIME = gameData.ALLOW_PEEKING_ANYTIME;
+    $('#option_allow_peeks')[0].checked = ALLOW_PEEKING_ANYTIME;
+    SHOW_CLUE_NUM = gameData.SHOW_CLUE_NUM;
+    $('#option_hint_clue_num')[0].checked = SHOW_CLUE_NUM;
+    setShowClueNum(SHOW_CLUE_NUM);
+
     //showWhoseTurn(true);
     nextPlayer(false, true);
     showStatus('Game restored');
@@ -1298,7 +1374,10 @@ function saveGame()
         activeClues,
         who,
         playerCardDecks,
-        playersData
+        playersData,
+        AVOID_BLOCKING_ROOM_ENTRY,
+        ALLOW_PEEKING_ANYTIME,
+        SHOW_CLUE_NUM
     };
     localStorage.savedGame = JSON.stringify(gameData);
 }
@@ -1310,6 +1389,7 @@ function nextPlayer(freshStart, dontSave)
         saveLastPlayerDetNotes(who);
         saveGame();
     }
+    lockAllFlaps();
     lastPlayer = who;
     showStatus('', undefined, true);
     do
@@ -1859,9 +1939,9 @@ holder#:
 flap:
   0: TL, 1: BR, 2: TR, 3: BL
 */
-function clickedCardHolder(holder, flap, permaShow)
+function clickedCardHolder(cardHolderId, flapId, permaShow)
 {
-    const flapElem = $(`#cardHolder${holder}_${flap}`);
+    const flapElem = $(`#cardHolder${cardHolderId}_${flapId}`);
 
     function closeFlap()
     {
@@ -1875,13 +1955,30 @@ function clickedCardHolder(holder, flap, permaShow)
         closeFlap();
         return;
     }
-    const cardId = cardHolders[holder],
-        cardCode = CARD_CODES[cardId];
 
-    //console.log('Clicked flap:', holder, flap, 'card:', CARD_NAMES[cardId], cardCode);
+    if (!permaShow && !ALLOW_PEEKING_ANYTIME)
+    {
+        //check if any keys available
+        if (numKeys <= 0)
+        {
+            appendStatus('Are you trying to cheat? - No unlocks available! &#x1F9D0;');
+            return;
+        }
+        //check if flap is unlocked
+        if (!cardHoldersLocks[cardHolderId][flapId])
+        {
+            appendStatus(`${CARD_HOLDER_FLAP[flapId]} flap of ${CARD_HOLDER_COLOUR[cardHolderId]} is locked. Are you peeking at the right holder and/or flap? &#x1F914;`);
+            return;
+        }
+        --numKeys;
+    }
+
+    const cardId = cardHolders[cardHolderId],
+        cardCode = CARD_CODES[cardId];
+    //console.log('Clicked flap:', cardHolderId, flap, 'card:', CARD_NAMES[cardId], cardCode);
 
     let code = 0;
-    switch (flap)
+    switch (flapId)
     {
         case 0:
             code = (cardCode >> 24) & 0xff;
@@ -1911,9 +2008,23 @@ function clickedCardHolder(holder, flap, permaShow)
     }
     if (!permaShow)
     {
+        if (!ALLOW_PEEKING_ANYTIME)
+        {
+            const s = (numKeys > 0)? `${numKeys} more flap peek(s) available &#x1F600;`:
+                'No more peeks allowed &#x1F648;';
+            appendStatus(`You've peeked at ${CARD_HOLDER_FLAP[flapId]} flap of ${CARD_HOLDER_COLOUR[cardHolderId]}. ${s}`);
+        }
+        else if (++numPeeks >= 3)
+        {
+            appendStatus('&#x1F925;');
+        }
         setTimeout(() => {
             closeFlap();
         }, 3000);
+    }
+    else
+    {
+        numPeeks = 0;
     }
 }
 
