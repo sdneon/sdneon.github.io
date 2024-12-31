@@ -1231,7 +1231,7 @@ function addActiveClue(div, clueObjId, clueObjName)
         }
         className = `cell_orn_${clueObjName}`;
     }
-    div.append(`<td id='active-clue-${clueObjId}' class='cell ${className}'></td>`);
+    div.append(`<td id='active-clue-${clueObjId}' class='cell ${className}' onclick='zoomToItem(${clueObjId});'></td>`);
 }
 
 function restoreSavedGame()
@@ -1407,6 +1407,37 @@ function whereAmI(playerId)
     playerId ??= who;
     const cellId = playerPositions[playerId],
         cell = $(`#cell_played${cellId}`);
+    cell.addClass('pulsate');
+    cell[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    setTimeout(() => {
+        cell.removeClass('pulsate');
+    }, 5000);
+}
+
+function zoomToItem(clueObjId)
+{
+    $('td').removeClass('pulsate');
+    let cellId;
+    function findIn(list, clueObjId)
+    {
+        Object.keys(list).forEach((id) => {
+            if (list[id] === clueObjId)
+            {
+                cellId = id;
+            }
+        });
+    }
+    if (clueObjId < WEAPONS.length)
+    {
+        findIn(placedWeapons, clueObjId);
+    }
+    else
+    {
+        findIn(placedOrns, clueObjId - 9);
+    }
+    if (cellId === undefined) return;
+
+    const cell = $(`#cell${cellId}`);
     cell.addClass('pulsate');
     cell[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
     setTimeout(() => {
