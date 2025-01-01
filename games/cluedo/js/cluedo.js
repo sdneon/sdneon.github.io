@@ -38,6 +38,10 @@ function compareNumbersBig1st(a, b) {
   return b -a;
 }
 
+function compareCardTypes(a, b) {
+  return a[0] - b[0];
+}
+
 //@retval player ID if its token has been clicked
 function playerTokenClicked(cellId)
 {
@@ -150,8 +154,8 @@ function cellClicked(y, x)
         }
         else if (clue[1] === 'look')
         {
-            unlockFlaps(clue[2], clue[3], clue[4]);
             showStatus(`<h2>&#x1F970; ${clue[0]}</h2>`);
+            unlockFlaps(clue[2], clue[3], clue[4]);
         }
         else if (clue[1] === 'falseAlarm')
         {
@@ -410,6 +414,8 @@ function showWhoseTurn(freshStart)
 function saveLastPlayerDetNotes(playerId)
 {
     playerId ??= lastPlayer;
+    if (playerId < 0) return;
+
     //save last player's data
     createPlayerData(playerId);
     let i, j, p;
@@ -691,6 +697,8 @@ let answers = [],
     //these 2 will Not be in saved game data; use it or lose it!
     cardHoldersLocks = [], //false: locked, true: open/unlocked
     numKeys = 0, //number of keys to unlock card holder flaps
+    unlockedCardHolderId = -1, //and these 2 flags for AI use
+    unlockedFlapId = -1,
     numPeeks = 0,
     cardsDeck = [],
     actionCardsDeck = [], //i.e. Super Clue cards
@@ -817,6 +825,8 @@ function unlockFlaps(numFlaps, cardHolderId, flapId)
 {
     numPeeks = -numFlaps;
     numKeys += numFlaps;
+    unlockedCardHolderId = cardHolderId; //and these 2 flags for AI use
+    unlockedFlapId = flapId;
     if (cardHolderId === -1)
     {
         unlockAllFlaps();
@@ -941,7 +951,7 @@ function newGameBoard()
         Object.keys(LABELS).forEach((cellId) => {
             const cell = $(`#cell_played${cellId}`);
             cell[0].textContent = LABELS[cellId];
-            cell.css('font-size', '2em');
+            cell.css('font-size', '1.8em');
             cell.css('color', '#000c');
             cell.css('text-shadow', '1px 1px 2px white');
         });
@@ -1164,6 +1174,7 @@ function takeMurderCard(playerIndex, cnt)
             style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
         deckSpareMurderCards.removeCard(card);
     }
+    //think();
 }
 
 function returnMurderCards()
@@ -1230,6 +1241,434 @@ function addActiveClue(div, clueObjId, clueObjName)
         className = `cell_orn_${clueObjName}`;
     }
     div.append(`<td id='active-clue-${clueObjId}' class='cell ${className}' onclick='zoomToItem(${clueObjId});'></td>`);
+}
+
+//retval: type of card => 0: person, 1: weapon, 2: room
+function cardType(cardId)
+{
+    return (cardId / 9) | 0;
+}
+
+const CARD_TYPES = ['person', 'weapon', 'room'];
+const CARD_TYPES_MAP = {
+    '-1': 'unknown/any',
+    0: 'person',
+    1: 'weapon',
+    2: 'room'};
+function cardTypeName(cardId)
+{
+    return CARD_TYPES[cardType(cardId)];
+}
+
+const FLAP_MASK = [
+    0xff000000, 0xff0000, 0xff00, 0xff
+];
+/*
+Inputs:
+    flaps: [TL flap code, BR code, TR code, BL code],
+    cardsSeen: { id of card seen: true },
+    exclCardTypes: [...card types to exclude]
+retval: [
+    cardId if identified uniquely (-1: if no unique found; cardId o.w. within [0, 27]),
+    [array of possibilities o.w.],
+    [array of flaps to look at],
+    typeOfCard //If single card type identified, 0: person, 1: weapon, 2: room; o.w. -1: unknown/any
+]
+where poss: [cardId, typeOfCard]
+*/
+function identify(flaps, cardsSeen, exclCardTypes)
+{
+    cardsSeen ??= {};
+    exclCardTypes ??= [];
+
+    let i, code, cardId;
+    const unseenFlaps = []; //recommended to check out next
+    //1. If all flaps seen
+    if ((flaps[0] !== -1) && (flaps[1] !== -1) && (flaps[2] !== -1) && (flaps[3] !== -1))
+    {
+        code = ((flaps[0] & 0xff) << 24)
+            | ((flaps[1] & 0xff) << 16)
+            | ((flaps[2] & 0xff) << 8)
+            | (flaps[3] & 0xff);
+        cardId = CARD_CODES.indexOf(code);
+        return [cardId, [], [], cardType(cardId)];
+    }
+    //2. Else tally and find possibilities
+    code = 0;
+    let mask = 0;
+    for (i = 0, j = 24; i < 4; ++i, j -=8)
+    {
+        if (flaps[i] !== -1)
+        {
+            code |= ((flaps[i] & 0xff) << j);
+            mask |= 0xff << j;
+        }
+        else
+        {
+            unseenFlaps.push(i);
+        }
+    }
+    const poss = [];
+    let typeOfCard = -1;
+    for (i = 0; i < CARD_CODES.length; ++i)
+    {
+        if ( ((CARD_CODES[i] & mask) === code)
+            && !cardsSeen[i] )
+        {
+            const type = cardType(i);
+            if (exclCardTypes.indexOf(type) >= 0)
+            {
+                continue; //skip this excluded card type,
+                          //cos this card type has probably been uniquely identified in other card holder
+            }
+            poss.push([i, type]);
+            if (poss.length === 1)
+            {
+                typeOfCard = type;
+            }
+            else if (typeOfCard !== type)
+            {
+                typeOfCard = -1; //found different card type, so nullify typeOfCard
+            }
+        }
+    }
+    if (poss.length === 1)
+    {
+        cardId = poss[0][0];
+        return [cardId, [], [], typeOfCard];
+    }
+    //3. else better AI will further narrow down remaining unseen flaps to 'essential' unseen flaps
+    //for each flap, tally the codes for all poss
+    //  if same code, discard 'useless, same-same (code)' flap;
+    //  else retain as useful flap.
+    //       furthermore if codes are *all different*, mark it *essential and identifies uniquely*
+    //                   else mark as merely *useful, but not code-breaking*.
+
+    //iterate possible card, put a flap's code in a Set/{},
+    // count if #unique_clues === #cards => *essential*
+    //       else #unique_clues === 1 => totally useless, discard
+    //       else => *merely useful*
+    const cnt = unseenFlaps.length,
+        numPossCards = poss.length;
+    for (i = cnt - 1; i >= 0; --i)
+    {
+        const codes = new Set(),
+            flapId = unseenFlaps[i],
+            mask = FLAP_MASK[flapId];
+        poss.forEach((cardIdAndType) => {
+            const cardId = cardIdAndType[0],
+                code = CARD_CODES[cardId];
+            codes.add(code & mask);
+        });
+        const numDiff = codes.size;
+        if (numDiff === numPossCards)
+        {
+            //retain; mark as essential
+        }
+        else if (numDiff === 1)
+        {
+            //discard flap useless, totally same info
+            unseenFlaps.splice(i, 1);
+        }
+        else
+        {
+            //retain; mark as merely useful... by +10
+            unseenFlaps[i] += 10;
+        }
+    }
+
+    return [-1, poss, unseenFlaps, typeOfCard];
+}
+
+/*
+[for explaining]
+Input: as per identify() but strings accepted and auto-converted to indices for identify()
+retval: [...identify's raw result, translated result]
+    i.e. [-1, poss, unseenFlaps, typeOfCard, [card_identified, poss_cardnames, unseen_flap_names, type_of_card]]
+
+Usage e.g.'s:
+    Mystery ans: Poison, Ballroom, Rev Green
+    identifyThis([-1, -1, -1, 'P']) //plum (5B2), pipe (5B0), billiard (7B2)
+    identifyThis(['G', 'Y', -1, -1], ['Poison']) //capt (1,7), library (1,5)
+    or identifyThis(['G', 'Y', -1, -1], {'Poison':true})
+    identifyThis(['R', 'P', -1, -1]) //scarlett (1,4), blunderbuss (2,4), hall (0,4)
+*/
+function identifyThis(codes, cardsSeen, exclCardTypes)
+{
+    cardsSeen ??= {};
+    exclCardTypes ??= [];
+
+    //1. 'encode' clues to indices
+    codes.forEach((c, i) => {
+        if ('string' === typeof c)
+        {
+            codes[i] = ELEMENT_MAP.indexOf(c);
+        }
+    });
+    if (cardsSeen.length !== undefined)
+    {
+        const m = {};
+        cardsSeen.forEach((c, i) => {
+            if ('string' === typeof c)
+            {
+                m[CARD_NAMES.indexOf(c)] = true;
+            }
+        });
+        cardsSeen = m;
+    }
+    else
+    {
+        Object.keys(cardsSeen).forEach((c) => {
+            if (c.length > 3)
+            {
+                delete cardsSeen[c];
+                cardsSeen[CARD_NAMES.indexOf(c)] = true;
+            }
+        });
+    }
+    exclCardTypes.forEach((c, i) => {
+        if ('string' === typeof c)
+        {
+            exclCardTypes[i] = CARD_TYPES.indexOf(c);
+        }
+    });
+    const result = identify(codes, cardsSeen, exclCardTypes),
+        resultRaw = JSON.parse(JSON.stringify(result));
+    //2. 'decode' result to readable strings
+    //2b. unique card?
+    let i = result[0];
+    if (i >= 0)
+    {
+        result[0] = CARD_NAMES[i];
+    }
+
+    //2b. possible cards
+    i = result[1];
+    i.forEach((data, j) => {
+        i[j][0] = CARD_NAMES[data[0]];
+        i[j][1] = CARD_TYPES[data[1]];
+    });
+
+    //2c. flaps (remaining) to look at
+    i = result[2];
+    i.forEach((flapId, j) => {
+        let essential = false;
+        if (flapId < 10)
+        {
+            essential = true;
+        }
+        else
+        {
+            flapId -= 10;
+        }
+        i[j] = CARD_HOLDER_FLAP[flapId];
+        if (essential)
+        {
+            i[j] += '*';
+        }
+    });
+
+    //2d. type of card if uniquely identified
+    result[3] = CARD_TYPES_MAP[result[3]];
+
+    console.log(result);
+    resultRaw[4] = result;
+    return resultRaw;
+}
+
+const H1 = 0, H2 = 1, H3 = 2, //card holder indices for readability
+    CID = 0, POSS = 1, FLAP = 2, TYPE = 3,
+    VEB = 4; //verbose/interpreted
+
+function all3CardsKnown(results, showSuggestions, actOnSuggestions)
+{
+    if ((results[H1][0] >= 0)
+        && (results[H2][0] >= 0)
+        && (results[H3][0] >= 0))
+    {
+        if (showSuggestions)
+        {
+            const ans = [
+                //typeOfCard        cardId          cardName
+                [results[H1][TYPE], results[H1][0], results[H1][VEB][0]],
+                [results[H2][TYPE], results[H2][0], results[H2][VEB][0]],
+                [results[H3][TYPE], results[H3][0], results[H3][VEB][0]]];
+            ans.sort(compareCardTypes);
+            showStatus(`I know! - <span class='spanGuess' style='visibility:hidden'><b><font color='${PLAYER_COLORS[ans[0][1]]}'>${ans[0][2]}</font></b></span> used the <span class='spanGuess' style='visibility:hidden'><b>${ans[1][2]}</b></span> in the <span class='spanGuess' style='visibility:hidden'><b>${ans[2][2]}</b></span> to smash the birthday cake!
+                <button id='buttRevealGuess' onclick='$(".spanGuess").css("visibility", ""); $("#buttRevealGuess").remove();'>(click here to reveal accusation)</button>
+                <br>What!? I thought it was a murder??
+                <br> Not at all~ it's just a strawberry jam splatter.`);
+        }
+        if (actOnSuggestions)
+        {
+        }
+        return true;
+    }
+    return false;
+}
+
+function identifyAgain(results, clues)
+{
+    const card1Type = results[H1][TYPE],
+        card2Type = results[H2][TYPE],
+        card3Type = results[H3][TYPE],
+        types = [card1Type, card2Type, card3Type],
+        newResults = [];
+    if ((card1Type >= 0)
+        || (card2Type >= 0)
+        || (card3Type >= 0))
+    {
+        for (i = 0; i < 3; ++i)
+        {
+            const exclTypes = [...types];
+            exclTypes[i] = -1;
+            newResults[i] = identifyThis(
+                clues.cardHolders[i],
+                clues.cardsSeen,
+                exclTypes);
+        }
+        console.log('new analysis');
+        return newResults;
+    }
+    return results;
+}
+
+function think(showSuggestions, actOnSuggestions)
+{
+    let i, results = [];
+    const { clues } = playersData[who];
+    //1. Check flaps data to see if can uniquely identify a card in a card holder.
+    for (i = 0; i < 3; ++i)
+    {
+        results[i] = identifyThis(
+            clues.cardHolders[i],
+            clues.cardsSeen);
+        //console.log(results);
+/*
+        results[i] = identify(
+            clues.cardHolders[i],
+            clues.cardsSeen);
+*/
+    }
+    clues.lastResults = results;
+    console.log('1st analysis', results);
+    //2. Trivial case of all 3 solved
+    if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
+        return;
+
+    //3a. Check if any of the 3 typeOfCard's are known. If yes, further narrow down the answer
+    let results2 = identifyAgain(results, clues);
+    if (results2 !== results)
+    {
+        results = results2;
+        clues.lastResults = results;
+        console.log('2nd analysis', results);
+
+        //3b. Re-check: Trivial case of all 3 solved
+        if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
+            return;
+
+        //4a. Repeat #3, one last time
+        results2 = identifyAgain(results, clues);
+        if (results2 !== results)
+        {
+            results = results2;
+            clues.lastResults = results;
+            console.log('3rd analysis', results);
+
+            //4b. Re-check: Trivial case of all 3 solved
+            if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
+                return;
+        }
+    }
+
+    //No complete solution yet
+    console.log('No complete solution yet');
+
+    //5. Check if 1 or 2 cards known? Recommend 1-2 flaps to look if numKeys > 0?
+    const solvedHolders = [];
+    let numCardsKnown = 0;
+    for (i = 0; i < 3; ++i)
+    {
+        if (results[i][0] >= 0)
+        {
+            ++numCardsKnown;
+            solvedHolders.push(i);
+        }
+    }
+
+    const self = `<font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font>`;
+    let s = (numCardsKnown > 0)? `${self} knows ${numCardsKnown} out of the 3 WWW &#x1F600;<br>`:
+        `${self} don't know any of the WWW &#x1F605; Find more clues, look at more flaps!<br>`;
+    showStatus(s);
+
+    if (numCardsKnown <= 0) return;
+
+    //6. Collect recommended flaps to peek
+    const flapsBest = [],
+        flapsGood = [],
+        unseenHolders = [];
+    for (i = 0; i < 3; ++i)
+    {
+        if (results[i][0] >= 0) continue; //known, so no need to look at any more flaps for this card holder
+
+        const unseenFlaps = results[i][VEB][FLAP];
+        if (unseenFlaps.length >= 4)
+        {
+            //never seen any flap in this card holder!
+            unseenHolders.push(i);
+            continue;
+        }
+        unseenFlaps.forEach((flapName) => {
+            if (flapName.endsWith('*'))
+            {
+                flapsBest.push([i, flapName]);
+            }
+            else
+            {
+                flapsGood.push([i, flapName]);
+            }
+        });
+    }
+
+    //const verbose = results[1]; //"translated"/interpreted
+    if (showSuggestions)
+    {
+        //showStatus(`It is too early to tell... try me again later.`);
+        s = '&#x1F601; You already know the ones in these card holder(s):<ul>\n';
+        solvedHolders.forEach((cardHolderId) => {
+            s += `<li>${CARD_HOLDER_COLOUR[cardHolderId]}</li>\n`;
+        });
+        s += '</ul>';
+        if (unseenHolders.length > 0)
+        {
+            s += '&#x1F606; Try looking in these card holder(s) at least once:<ul>\n';
+            unseenHolders.forEach((cardHolderId) => {
+                s += `<li>${CARD_HOLDER_COLOUR[cardHolderId]}</li>\n`;
+            });
+            s += '</ul>';
+        }
+        if (flapsBest.length > 0)
+        {
+            s += "The <span data-tooltip-position='top' data-tooltip='just need 1 flap per card holder to identify the card!'><b>BEST</b></span> flaps to look at is/are:<ul>\n";
+            flapsBest.forEach((info) => {
+                s += `<li>${CARD_HOLDER_COLOUR[info[0]]}'s <b>${info[1]}</b> flap.</li>\n`
+            });
+            s += '</ul>';
+        }
+        else if (flapsGood.length > 0)
+        {
+            s += 'Look in several of these remaining flaps:<ul>\n';
+            flapsGood.forEach((info) => {
+                s += `<li>${CARD_HOLDER_COLOUR[info[0]]}'s <b>${info[1]}</b> flap.</li>\n`
+            });
+            s += '</ul>';
+        }
+        showStatus(s);
+    }
+    if (actOnSuggestions)
+    {
+    }
 }
 
 function createPlayerData(i)
@@ -1412,6 +1851,7 @@ function nextPlayer(freshStart, dontSave)
         saveLastPlayerDetNotes(who);
         saveGame();
     }
+    hideAllFlaps();
     lockAllFlaps();
     lastPlayer = who;
     showStatus('', undefined, true);
@@ -1649,10 +2089,10 @@ function resetClueCounters()
 
 function accuse()
 {
-    let who = $('#select0')[0].value,
+    let culprit = $('#select0')[0].value,
         what = $('#select1')[0].value,
         where = $('#select2')[0].value;
-    if (who === 'Unknown')
+    if (culprit === 'Unknown')
     {
         showStatus('You cannot accuse No one!!');
         return;
@@ -1667,12 +2107,12 @@ function accuse()
         showStatus('You cannot accuse without knowing where!!');
         return;
     }
-    showStatus(`You accuse ${who} of using ${what} in the ${where}...`);
-    who = CARD_NAMES.indexOf(who);
+    showStatus(`<b><font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font></b> accuse <b><font color='${PLAYER_COLORS[CARD_NAMES.indexOf(culprit)]}'>${culprit}</font></b> of using <b>${what}</b> in the <b>${where}</b>...`);
+    culprit = CARD_NAMES.indexOf(culprit);
     what = CARD_NAMES.indexOf(what);
     where = CARD_NAMES.indexOf(where);
 
-    const guess = [who, what, where], //.sort(),
+    const guess = [culprit, what, where], //.sort(),
         ans = [...answers].sort(compareNumbers);
 
     let solved = true;
@@ -1685,7 +2125,7 @@ function accuse()
         }
     }
 
-    //console.log('Accuse', who, what, where, solved);
+    //console.log('Accuse', culprit, what, where, solved);
 
     if (solved)
     {
@@ -2066,6 +2506,7 @@ function clickedCardHolder(cardHolderId, flapId, permaShow)
     {
         createPlayerData(who);
         playersData[who].clues.cardHolders[cardHolderId][flapId] = code;
+        //think();
 
         if (!ALLOW_PEEKING_ANYTIME)
         {
@@ -2075,7 +2516,7 @@ function clickedCardHolder(cardHolderId, flapId, permaShow)
         }
         else if (++numPeeks >= 3)
         {
-            appendStatus('&#x1F925;');
+            showStatus('&#x1F925;');
         }
         setTimeout(() => {
             closeFlap();

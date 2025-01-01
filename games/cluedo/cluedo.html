@@ -29,15 +29,22 @@
     <td style='vertical-align:middle;'>
         <div id='divWho'></div>
         <table><tr><td><div>
-            <button onclick='whereAmI();'>Find Me!</button>
-            <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'><button onclick='nextPlayer();'>Next Player</button></span>
+            <span data-tooltip-position='right' data-tooltip='Scroll to your player token'>
+                <button onclick='whereAmI();'>Find Me!</button></span>
+            <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'>
+                <button onclick='nextPlayer();'>Next Player</button></span>
         </div></td></tr><tr><td>
-            <span data-tooltip='Show clue counters list' data-tooltip-position='bottom'>
-            <button onclick='showCluesList();'>Clues List</button>
-            </span>
+            <span data-tooltip='Show clue counters list' data-tooltip-position='right'>
+                <button onclick='showCluesList();'>Clues List</button></span>
+            <span data-tooltip='Jump to Detective Notes at bottom of page' data-tooltip-position='right'>
+                <button onclick='gotoNotes();'>(goto Notes)</button></span
         </td></tr><tr><td>
-            <span data-tooltip='Give me 5 free Murder Cards' data-tooltip-position='bottom'><button onclick='takeMurderCard(who, 5);'>Gimme 5!</button></span>
-            <button onclick='gotoNotes();'>(goto Notes)</button>
+            <span data-tooltip-position='bottom' data-tooltip="Ask Watson for help in analyzing cuurent player's clues &#x1F619;">
+                <button id='buttAI1' onclick="think(true, false);">Analyze</button></span>
+            <span data-tooltip-position='bottom' data-tooltip='Let Watson analyze and act on available clues - open flaps or solve.'>
+                <button id='buttAI2' onclick="think(true, true);">Act</button></span>
+            <span data-tooltip='Give me 5 free Murder Cards' data-tooltip-position='bottom'>
+                <button onclick='takeMurderCard(who, 5);'>Gimme 5!</button></span>
         </td></tr></table>
     </td>
     <td>
