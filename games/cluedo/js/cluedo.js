@@ -1600,9 +1600,9 @@ function think(showSuggestions, actOnSuggestions)
     const self = `<font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font>`;
     let s = (numCardsKnown > 0)? `${self} knows ${numCardsKnown} out of the 3 WWW &#x1F600;<br>`:
         `${self} don't know any of the WWW &#x1F605; Find more clues, look at more flaps!<br>`;
-    showStatus(s);
+    //showStatus(s);
 
-    if (numCardsKnown <= 0) return;
+    //if (numCardsKnown <= 0) return;
 
     //6. Collect recommended flaps to peek
     const flapsBest = [],
@@ -1635,11 +1635,14 @@ function think(showSuggestions, actOnSuggestions)
     if (showSuggestions)
     {
         //showStatus(`It is too early to tell... try me again later.`);
-        s = '&#x1F601; You already know the ones in these card holder(s):<ul>\n';
-        solvedHolders.forEach((cardHolderId) => {
-            s += `<li>${CARD_HOLDER_COLOUR[cardHolderId]}</li>\n`;
-        });
-        s += '</ul>';
+        if (solvedHolders.length > 0)
+        {
+            s += '&#x1F601; You already know the ones in these card holder(s):<ul>\n';
+            solvedHolders.forEach((cardHolderId) => {
+                s += `<li>${CARD_HOLDER_COLOUR[cardHolderId]}</li>\n`;
+            });
+            s += '</ul>';
+        }
         if (unseenHolders.length > 0)
         {
             s += '&#x1F606; Try looking in these card holder(s) at least once:<ul>\n';
@@ -1656,9 +1659,9 @@ function think(showSuggestions, actOnSuggestions)
             });
             s += '</ul>';
         }
-        else if (flapsGood.length > 0)
+        if (flapsGood.length > 0)
         {
-            s += 'Look in several of these remaining flaps:<ul>\n';
+            s += 'A combination of some of these other flaps may also help:<ul>\n';
             flapsGood.forEach((info) => {
                 s += `<li>${CARD_HOLDER_COLOUR[info[0]]}'s <b>${info[1]}</b> flap.</li>\n`
             });
