@@ -12,7 +12,7 @@
 <script src="js/deck-generic.js"></script>
 <script src="js/shuffle.js"></script>
 <script src="js/board.js"></script>
-<script src='js/cluedo.min.js'></script>
+<script src='js/cluedo.js'></script>
 </head>
 <body>
 <h1>Super Cluedo Challenge board game <span data-tooltip-position='bottom' data-tooltip='Who smashed my birthday cake? 谁砸了我的生日蛋糕？'>妙探寻凶 超级版 (beta)</span></h1>
@@ -25,26 +25,80 @@
 -->
 <table>
 <tr>
-    <td><div class='dice-container'></div></td>
+    <td>
+        <span data-tooltip='Move the number of spaces on each dice, or total of both dice. If you get doubles, you may re-roll instead.' data-tooltip-position='right'>
+            <div class='dice-container'></div></span>
+    </td>
     <td style='vertical-align:middle;'>
-        <div id='divWho'></div>
+
         <table><tr><td><div>
-            <span data-tooltip-position='right' data-tooltip='Scroll to your player token'>
-                <button onclick='whereAmI();'>Find Me!</button></span>
-            <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'>
-                <button onclick='nextPlayer();'>Next Player</button></span>
+            <table style=''>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td>&nbsp;</td><td rowspan='2'><div id='divWho'></div></td><td colspan='4'>&nbsp;</td>
+                </tr>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td style='border:solid 0 #000; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
+                    <td style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px; border-right-width:2px;' colspan='5'>
+                        <span data-tooltip-position='right' data-tooltip='Scroll to current player token'>
+                            <button onclick='whereAmI();'>Find Me!</button></span>
+                        <span data-tooltip='Jump to Detective Notes at bottom of page' data-tooltip-position='right'>
+                            <button onclick='gotoNotes();'>(goto Notes)</button></span>
+                        <span data-tooltip='Cheat!: Give 5 free Murder Cards' data-tooltip-position='bottom'>
+                            <button onclick='takeMurderCard(who, 5);' class='button_final'>Gimme 5!</button></span>
+                    </td>
+                </tr>
+            </table>
         </div></td></tr><tr><td>
-            <span data-tooltip='Show clue counters list' data-tooltip-position='right'>
-                <button onclick='showCluesList();'>Clues List</button></span>
-            <span data-tooltip='Jump to Detective Notes at bottom of page' data-tooltip-position='right'>
-                <button onclick='gotoNotes();'>(goto Notes)</button></span
+            <table style=''>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td>&nbsp;</td><td colspan='3' rowspan='2'>Others</td><td colspan='2'>&nbsp;</td>
+                </tr>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td style='border:solid 0 #000; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
+                    <td style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px; border-right-width:2px;' colspan='5'>
+                        <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'>
+                            <button onclick='nextPlayer();' class='button_final'>Next Player</button></span>
+                        <span data-tooltip='Show clue counters list' data-tooltip-position='right'>
+                            <button onclick='showCluesList();'>Clues List</button></span>
+                    </td>
+                </tr>
+            </table>
         </td></tr><tr><td>
-            <span data-tooltip-position='bottom' data-tooltip="Ask Watson for help in analyzing current player's clues &#x1F619;">
-                <button id='buttAI1' onclick="think(true, false);" class='button_ai'>Analyze</button></span>
-            <span data-tooltip-position='bottom' data-tooltip='Let Watson analyze and act on available clues - open flaps or solve.'>
-                <button id='buttAI2' onclick="think(true, true);" class='button_ai'>Act</button></span>
-            <span data-tooltip='Cheat!: Give me 5 free Murder Cards' data-tooltip-position='bottom'>
-                <button onclick='takeMurderCard(who, 5);'>Gimme 5!</button></span>
+            <table style=''>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td>&nbsp;</td>
+                    <td rowspan='2' colspan='2'>AI Assist</td>
+                    <td rowspan='2' colspan='2'>|</td>
+                    <td rowspan='2' colspan='2'>AI Play</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td style='border:solid 0 #00f; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
+                    <td style='border:solid 0 #00f; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td style='border:solid 0 #00f; border-left-width:2px; border-bottom-width:2px;' colspan='4'>
+                        <span data-tooltip-position='bottom' data-tooltip="Ask Watson for help in analyzing current player's clues &#x1F619;">
+                            <button id='buttAI1' onclick="think(true, false, true);" class='button_ai'>Analyze</button></span>
+                    </td>
+                    <td style='border:solid 0 #00f; border-bottom-width:2px; border-right-width:2px;' colspan='4'>
+                        <span data-tooltip-position='bottom' data-tooltip='Auto-analyze (while annoucing analysis) and act on available clues - open flaps or solve.'>
+                            <button id='buttAI2' onclick="think(true, true, true);" class='button_ai'>Act</button></span>
+                        <span data-tooltip-position='bottom' data-tooltip='Auto-analyze secretly and act on available clues - open flaps or solve. [Use this to treat current player as a computer player]'>
+                            <button id='buttAI2' onclick="think(true, true, false);" class='button_ai'>Act Secretly</button></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='8'></td>
+                </tr>
+            </table>
+       </td><td>
         </td></tr></table>
     </td>
     <td>
@@ -58,12 +112,12 @@
 <tr>
     <td colspan='3'>
         <table>
-            <tr><td><span data-tooltip-position='bottom' data-tooltip='Go after these clues to get a "Super Clue" card, which give clues in the Card Holders'><b>Active Clues:</b></span></td></tr>
+            <tr><td><span data-tooltip-position='bottom' data-tooltip='Go after these clues to get a "Super Clue" card, which give clues in the Card Holders'><b>Active Super Clues:</b></span></td></tr>
         </table>
         <table class='cell' style='text-align: left;'>
             <tr id='divActiveClues'>
                 <th class='no-active-clue'>
-                    (No Active Clues)
+                    (No Active Super Clues)
                 </th>
             </tr>
         </table>

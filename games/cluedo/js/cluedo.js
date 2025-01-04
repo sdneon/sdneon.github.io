@@ -1551,7 +1551,8 @@ const FLAPS = JSON.stringify([
 */
 const FLAPS = '[[[0,"Top Left",0],[0,"Bottom Right",1],[0,"Top Right",2],[0,"Bottom Left",3]],[[1,"Top Left",0],[1,"Bottom Right",1],[1,"Top Right",2],[1,"Bottom Left",3]],[[2,"Top Left",0],[2,"Bottom Right",1],[2,"Top Right",2],[2,"Bottom Left",3]]]';
 
-function think(showSuggestions, actOnSuggestions)
+//talkAloud: whether to publicly announce analysis
+function think(showSuggestions, actOnSuggestions, talkAloud)
 {
     let i, results = [];
     const { clues } = playersData[who],
@@ -1583,7 +1584,7 @@ function think(showSuggestions, actOnSuggestions)
     clues.lastResults = results;
     console.log('1st analysis', results);
     //2. Trivial case of all 3 solved
-    if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
+    if (all3CardsKnown(results, showSuggestions, actOnSuggestions, ))
         return;
 
     //3a. Check if any of the 3 typeOfCard's are known. If yes, further narrow down the answer
@@ -1698,8 +1699,10 @@ function think(showSuggestions, actOnSuggestions)
             });
             s += '</ul>';
         }
-        //showStatus(s);
-        appendStatus(s);
+        if (talkAloud)
+        {
+            appendStatus(s);
+        }
     }
     if (actOnSuggestions)
     {
@@ -2094,9 +2097,9 @@ function checkNoMoreActiveClue() //and add back 'no active clue' note
     if (div.children().length <= 0)
     {
         div.append(`<th class='no-active-clue' colspan='31'>
-                    (No Active Clues)
+                    (No Active Super Clues)
                 </th>`);
-        appendStatus('No more active clues &#x1f641;');
+        appendStatus('No more active Super clues &#x1f641;');
     }
 }
 
