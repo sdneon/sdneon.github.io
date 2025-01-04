@@ -824,7 +824,8 @@ function unlockAllFlaps()
 function unlockFlaps(numFlaps, cardHolderId, flapId)
 {
     numPeeks = -numFlaps;
-    numKeys += numFlaps;
+    //numKeys += numFlaps; //<- enable this to allow accumulate of (unused) flaps/unlock-keys
+    numKeys = numFlaps; //no longer let it accumulate! as earlier keys could be for specific flaps
     unlockedCardHolderId = cardHolderId; //and these 2 flags for AI use
     unlockedFlapId = flapId;
     if (cardHolderId === -1)
@@ -1460,6 +1461,7 @@ function identifyThis(codes, cardsSeen, exclCardTypes)
         else
         {
             flapId -= 10;
+            resultRaw[2][j] = flapId; //revert to adjusted value of flapId with [0,3]
         }
         i[j] = CARD_HOLDER_FLAP[flapId];
         if (essential)
@@ -1486,21 +1488,25 @@ function all3CardsKnown(results, showSuggestions, actOnSuggestions)
         && (results[H2][0] >= 0)
         && (results[H3][0] >= 0))
     {
+        const ans = [
+            //typeOfCard        cardId          cardName
+            [results[H1][TYPE], results[H1][0], results[H1][VEB][0]],
+            [results[H2][TYPE], results[H2][0], results[H2][VEB][0]],
+            [results[H3][TYPE], results[H3][0], results[H3][VEB][0]]];
+        ans.sort(compareCardTypes);
         if (showSuggestions)
         {
-            const ans = [
-                //typeOfCard        cardId          cardName
-                [results[H1][TYPE], results[H1][0], results[H1][VEB][0]],
-                [results[H2][TYPE], results[H2][0], results[H2][VEB][0]],
-                [results[H3][TYPE], results[H3][0], results[H3][VEB][0]]];
-            ans.sort(compareCardTypes);
-            showStatus(`I know! - <span class='spanGuess' style='visibility:hidden'><b><font color='${PLAYER_COLORS[ans[0][1]]}'>${ans[0][2]}</font></b></span> used the <span class='spanGuess' style='visibility:hidden'><b>${ans[1][2]}</b></span> in the <span class='spanGuess' style='visibility:hidden'><b>${ans[2][2]}</b></span> to smash the birthday cake!
+            appendStatus(`I know! - <span class='spanGuess' style='visibility:hidden'><b><font color='${PLAYER_COLORS[ans[0][1]]}'>${ans[0][2]}</font></b></span> used the <span class='spanGuess' style='visibility:hidden'><b>${ans[1][2]}</b></span> in the <span class='spanGuess' style='visibility:hidden'><b>${ans[2][2]}</b></span> to smash the birthday cake!
                 <button id='buttRevealGuess' onclick='$(".spanGuess").css("visibility", ""); $("#buttRevealGuess").remove();'>(click here to reveal accusation)</button>
                 <br>What!? I thought it was a murder??
                 <br> Not at all~ it's just a strawberry jam splatter.`);
         }
         if (actOnSuggestions)
         {
+            $('#select0')[0].value = ans[0][2];
+            $('#select1')[0].value = ans[1][2],
+            $('#select2')[0].value = ans[2][2];
+            $('#buttAccuse')[0].click();
         }
         return true;
     }
@@ -1533,10 +1539,34 @@ function identifyAgain(results, clues)
     return results;
 }
 
+/*
+const FLAPS = JSON.stringify([
+    [ [0, CARD_HOLDER_FLAP[0], 0], [0, CARD_HOLDER_FLAP[1], 1],
+      [0, CARD_HOLDER_FLAP[2], 2], [0, CARD_HOLDER_FLAP[3], 3] ],
+    [ [1, CARD_HOLDER_FLAP[0], 0], [1, CARD_HOLDER_FLAP[1], 1],
+      [1, CARD_HOLDER_FLAP[2], 2], [1, CARD_HOLDER_FLAP[3], 3] ],
+    [ [2, CARD_HOLDER_FLAP[0], 0], [2, CARD_HOLDER_FLAP[1], 1],
+      [2, CARD_HOLDER_FLAP[2], 2], [2, CARD_HOLDER_FLAP[3], 3] ]
+]);
+*/
+const FLAPS = '[[[0,"Top Left",0],[0,"Bottom Right",1],[0,"Top Right",2],[0,"Bottom Left",3]],[[1,"Top Left",0],[1,"Bottom Right",1],[1,"Top Right",2],[1,"Bottom Left",3]],[[2,"Top Left",0],[2,"Bottom Right",1],[2,"Top Right",2],[2,"Bottom Left",3]]]';
+
 function think(showSuggestions, actOnSuggestions)
 {
     let i, results = [];
-    const { clues } = playersData[who];
+    const { clues } = playersData[who],
+        cards = playerCardDecks[who];
+
+    //update Murder Cards seen into Detective Notes
+    if (actOnSuggestions)
+    {
+        cards.forEach((cardId) => {
+            const typeId = (cardId / 9) | 0,
+                cardSubId = cardId % 9;
+            $(`#p1${typeId}${cardSubId}`)[0].checked = true;
+        });
+    }
+
     //1. Check flaps data to see if can uniquely identify a card in a card holder.
     for (i = 0; i < 3; ++i)
     {
@@ -1619,14 +1649,15 @@ function think(showSuggestions, actOnSuggestions)
             unseenHolders.push(i);
             continue;
         }
-        unseenFlaps.forEach((flapName) => {
+        unseenFlaps.forEach((flapName, j) => {
             if (flapName.endsWith('*'))
             {
-                flapsBest.push([i, flapName]);
+                //cardHolderId, flapName. flapId
+                flapsBest.push([i, flapName, results[i][FLAP][j]]);
             }
             else
             {
-                flapsGood.push([i, flapName]);
+                flapsGood.push([i, flapName, results[i][FLAP][j]]);
             }
         });
     }
@@ -1667,10 +1698,115 @@ function think(showSuggestions, actOnSuggestions)
             });
             s += '</ul>';
         }
-        showStatus(s);
+        //showStatus(s);
+        appendStatus(s);
     }
     if (actOnSuggestions)
     {
+        function tryTheseFlaps(flaps)
+        {
+            if (flaps.length > 0)
+            {
+                choice = flaps[0];
+                cardHolderId = choice[0];
+                if ((unlockedCardHolderId !== -1) && (unlockedCardHolderId !== cardHolderId))
+                    return false; //cannot view desired card holder which is Not unlocked
+
+                flapId = choice[2];
+                if ((unlockedFlapId !== -1) && (unlockedFlapId !== flapId))
+                    return false; //cannot view desired flap which is Not unlocked
+
+                //open the flap (by clicking it)
+                appendStatus(`${self} is going to look at ${choice[1]} flap of the ${CARD_HOLDER_COLOUR[cardHolderId]} card holder.`);
+                $(`#cardHolder${cardHolderId}_${flapId}`)[0].click();
+
+                //update to Detective Notes
+                const key = `${cardHolderId}_${flapId}`,
+                    selId = `#select_${key}`,
+                    cardId = cardHolders[cardHolderId],
+                    cardCode = CARD_CODES[cardId],
+                    code = ELEMENT_MAP2[(cardCode >> (24 - (flapId * 8))) & 0xff];
+                $(selId)[0].value = code;
+                changeCellColour(`#detFlap${key}`, selId);
+
+                flaps.splice(0, 1);
+                return true;
+            }
+            return false;
+        }
+
+        let choice, cardHolderId, flapId,
+            numFlapsSeen = 0;
+        if (numKeys > 0)
+        {
+            shuffle(flapsBest);
+            if (tryTheseFlaps(flapsBest))
+            {
+                ++numFlapsSeen;
+            }
+            else
+            {
+                shuffle(flapsGood);
+                if (tryTheseFlaps(flapsGood))
+                {
+                    ++numFlapsSeen;
+                }
+                else if (unseenHolders.length > 0)
+                {
+                    //try looking at flaps in any unseen card holder
+                    const allFlaps = JSON.parse(FLAPS);
+                    shuffle(unseenHolders);
+                    cardHolderId = unseenHolders[0];
+                    if (tryTheseFlaps(allFlaps[cardHolderId]))
+                    {
+                        ++numFlapsSeen;
+                    }
+                    else if (unseenHolders.length > 1)
+                    {
+                        cardHolderId = unseenHolders[1];
+                        if (tryTheseFlaps(allFlaps[cardHolderId]))
+                        {
+                            ++numFlapsSeen;
+                        }
+                        else if (unseenHolders.length > 2)
+                        {
+                            cardHolderId = unseenHolders[2];
+                            if (tryTheseFlaps(allFlaps[cardHolderId]))
+                            {
+                                ++numFlapsSeen;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        s = '';
+        if (numKeys > 0)
+        {
+            s = `Skipped looking at ${numKeys} flap(s).<br>`;
+        }
+        let s2 = [],
+            numCards = cards.length;
+        if (numFlapsSeen > 0)
+        {
+            s2.push(`${numFlapsSeen} new flap${(numFlapsSeen > 1)? 's':''}`);
+        }
+        if (numCards > 0)
+        {
+            s2.push(`${numCards} Murder Card${(numCards > 1)? 's':''}`);
+        }
+        if (s2.length > 0)
+        {
+            s2 = ` (${s2.join(' & ')})`;
+        }
+        appendStatus(`${s}${self} has finished studying their clues${s2}.<br>`);
+        if (numFlapsSeen)
+        {
+            //iterate on new info!
+            setTimeout(() => {
+                think(showSuggestions, actOnSuggestions);
+            }, 100);
+        }
     }
 }
 
@@ -2110,7 +2246,7 @@ function accuse()
         showStatus('You cannot accuse without knowing where!!');
         return;
     }
-    showStatus(`<b><font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font></b> accuse <b><font color='${PLAYER_COLORS[CARD_NAMES.indexOf(culprit)]}'>${culprit}</font></b> of using <b>${what}</b> in the <b>${where}</b>...`);
+    appendStatus(`<b><font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font></b> accuses <b><font color='${PLAYER_COLORS[CARD_NAMES.indexOf(culprit)]}'>${culprit}</font></b> of using <b>${what}</b> in the <b>${where}</b>...`);
     culprit = CARD_NAMES.indexOf(culprit);
     what = CARD_NAMES.indexOf(what);
     where = CARD_NAMES.indexOf(where);
@@ -2469,7 +2605,10 @@ function clickedCardHolder(cardHolderId, flapId, permaShow)
             appendStatus(`${CARD_HOLDER_FLAP[flapId]} flap of ${CARD_HOLDER_COLOUR[cardHolderId]} is locked. Are you peeking at the right holder and/or flap? &#x1F914;`);
             return;
         }
-        --numKeys;
+    }
+    if (--numKeys < 0)
+    {
+        numKeys = 0;
     }
 
     const cardId = cardHolders[cardHolderId],

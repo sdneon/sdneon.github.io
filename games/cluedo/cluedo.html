@@ -39,11 +39,11 @@
             <span data-tooltip='Jump to Detective Notes at bottom of page' data-tooltip-position='right'>
                 <button onclick='gotoNotes();'>(goto Notes)</button></span
         </td></tr><tr><td>
-            <span data-tooltip-position='bottom' data-tooltip="Ask Watson for help in analyzing cuurent player's clues &#x1F619;">
-                <button id='buttAI1' onclick="think(true, false);">Analyze</button></span>
+            <span data-tooltip-position='bottom' data-tooltip="Ask Watson for help in analyzing current player's clues &#x1F619;">
+                <button id='buttAI1' onclick="think(true, false);" class='button_ai'>Analyze</button></span>
             <span data-tooltip-position='bottom' data-tooltip='Let Watson analyze and act on available clues - open flaps or solve.'>
-                <button id='buttAI2' onclick="think(true, true);">Act</button></span>
-            <span data-tooltip='Give me 5 free Murder Cards' data-tooltip-position='bottom'>
+                <button id='buttAI2' onclick="think(true, true);" class='button_ai'>Act</button></span>
+            <span data-tooltip='Cheat!: Give me 5 free Murder Cards' data-tooltip-position='bottom'>
                 <button onclick='takeMurderCard(who, 5);'>Gimme 5!</button></span>
         </td></tr></table>
     </td>
@@ -73,7 +73,7 @@
 <div id='divPlayingArea'></div>
 <!-- Detective Card (plain, hard)-->
 <h2><span id='spanWhose'></span> Detective Notepad<button onclick="toggleView('divDetectiveNotepad');"> (show/hide)</button>
-    &nbsp;<button onclick="goTop();">(back to top)</button>&nbsp;&nbsp;&nbsp;<button onclick="giveUp();">Give Up!</button><br></h2>
+    &nbsp;<button onclick="goTop();">(back to top)</button>&nbsp;&nbsp;&nbsp;<button onclick="giveUp();" class='button_final'>Give Up!</button><br></h2>
 <div id='divDetectiveNotepad'>
 Clue style:
   <input id='radDetectiveSmartEasy' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);' checked>
@@ -95,7 +95,7 @@ Clue style:
             I accuse <select class='big-font' id='select0'><option value="Unknown">(Unknown)</option></select><br>
             of committing the murder with the <select class='big-font' id='select1'><option value="Unknown">(Unknown)</option></select><br>
             as the weapon in the <select class='big-font' id='select2'><option value="Unknown">(Unknown)</option></select>
-            <br><button onclick="accuse();">Accuse!</button>
+            <br><button id='buttAccuse' onclick="accuse();" class='button_final'>Accuse!</button>
             </td></tr>
             </table>
         </td>
@@ -106,7 +106,7 @@ Clue style:
 </table>
 </div>
 <hr>
-<br>Refresh page to restart, or click: <button onclick="newGameBoard();">New Game</button>
+<br>Refresh page to restart, or click: <button onclick="newGameBoard();" class='button_final'>New Game</button>
 <div>
 <b>Options</b>:<br>
 <input type="checkbox" id="option_unblock_entry" name="option_unblock_entry" value="option_unblock_entry"
@@ -149,7 +149,7 @@ Clue style:
     <label for='cb_player_8'><img src='images/token-pink.png' alt='Player 9: Ms Peach' style='width: 100px;'></label>
   </td></tr></table>
 <br>
-<button onclick="resetOptions();">Reset Options</button>
+<button onclick="resetOptions();" class='button_final'>Reset Options</button>
 </div>
 <br><br><hr><div id='divWinning'>
 <h2>Win by solving the mystery of Who, Where, What! <button id='buttShowRules' onclick="showRules();">Show Rules</button></h2></div>

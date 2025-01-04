@@ -835,3 +835,11 @@ button:hover, button:active {
     transform: translateY(5px);
 }
 
+.button_ai
+{
+	background: lightblue;
+}
+.button_final
+{
+	background: pink;
+}
