@@ -347,6 +347,19 @@ function cellClicked(y, x)
     movePlayerThere(who, cellId);
 }
 
+/*
+//need to regularly update position when status "printout" (at the top) shifts things!
+function updateRoomLabelPositions()
+{
+    Object.keys(LABELS_WHOLE).forEach((cellId, i) => {
+        const cell = $(`#cell_played${cellId}`),
+            pos = $(cell).offset(),
+            room = $(`roomLabel${i}`);
+        room.css('top', `${pos.top}px`);
+        room.css('left', `${pos.left}px`);
+    });
+}
+*/
 function showStatus(s, colour, silent)
 {
     const div = $('#divStatus')[0];
@@ -358,6 +371,7 @@ function showStatus(s, colour, silent)
     {
         div.innerHTML = `<font color="${colour}"><b>${s}</b></font>`;
     }
+    //updateRoomLabelPositions();
     if (!silent)
         div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
@@ -373,6 +387,7 @@ function appendStatus(s, colour)
     {
         div.innerHTML += '<br>' + `<font color="${colour}"><b>${s}</b></font>`;
     }
+    //updateRoomLabelPositions();
     div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
@@ -1139,6 +1154,17 @@ function newGameBoard()
     $('#divActiveClues')[0].innerHTML = '';
     checkNoMoreActiveClue();
 
+    /*
+    //Try new room label overlays
+    Object.keys(LABELS_WHOLE).forEach((cellId, i) => {
+        const cell = $(`#cell_played${cellId}`),
+            pos = $(cell).offset();
+        $('body').append(`<div id='roomLabel${i}'
+            style='position:absolute; top:${pos.top}px; left:${pos.left}px; z-index:0; font-size:2em; font-weight: bold; color:#000c; text-shadow:1px 1px 2px white;  pointer-events: none;'>
+            ${LABELS_WHOLE[cellId]}</div>`);
+    });
+    */
+
     //7. begin~
     who = -1;
     nextPlayer(true); //fresh start, no need to restore UI
@@ -1574,15 +1600,8 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
         results[i] = identifyThis(
             clues.cardHolders[i],
             clues.cardsSeen);
-        //console.log(results);
-/*
-        results[i] = identify(
-            clues.cardHolders[i],
-            clues.cardsSeen);
-*/
     }
     clues.lastResults = results;
-    console.log('1st analysis', results);
     //2. Trivial case of all 3 solved
     if (all3CardsKnown(results, showSuggestions, actOnSuggestions, ))
         return;
@@ -1593,7 +1612,6 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
     {
         results = results2;
         clues.lastResults = results;
-        console.log('2nd analysis', results);
 
         //3b. Re-check: Trivial case of all 3 solved
         if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
@@ -1605,7 +1623,6 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
         {
             results = results2;
             clues.lastResults = results;
-            console.log('3rd analysis', results);
 
             //4b. Re-check: Trivial case of all 3 solved
             if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
@@ -1614,7 +1631,6 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
     }
 
     //No complete solution yet
-    console.log('No complete solution yet');
 
     //5. Check if 1 or 2 cards known? Recommend 1-2 flaps to look if numKeys > 0?
     const solvedHolders = [];
@@ -1631,9 +1647,6 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
     const self = `<font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font>`;
     let s = (numCardsKnown > 0)? `${self} knows ${numCardsKnown} out of the 3 WWW &#x1F600;<br>`:
         `${self} don't know any of the WWW &#x1F605; Find more clues, look at more flaps!<br>`;
-    //showStatus(s);
-
-    //if (numCardsKnown <= 0) return;
 
     //6. Collect recommended flaps to peek
     const flapsBest = [],
@@ -1663,10 +1676,8 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
         });
     }
 
-    //const verbose = results[1]; //"translated"/interpreted
     if (showSuggestions)
     {
-        //showStatus(`It is too early to tell... try me again later.`);
         if (solvedHolders.length > 0)
         {
             s += '&#x1F601; You already know the ones in these card holder(s):<ul>\n';
@@ -1708,19 +1719,30 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
     {
         function tryTheseFlaps(flaps)
         {
-            if (flaps.length > 0)
+            const numFlaps = flaps.length;
+            if (numFlaps <= 0)
             {
-                choice = flaps[0];
-                cardHolderId = choice[0];
+                return false;
+            }
+            shuffle(flaps);
+            for (let i = 0; i < numFlaps; ++i)
+            {
+                const choice = flaps[i],
+                    cardHolderId = choice[0];
                 if ((unlockedCardHolderId !== -1) && (unlockedCardHolderId !== cardHolderId))
-                    return false; //cannot view desired card holder which is Not unlocked
+                    continue; //cannot view desired card holder which is Not unlocked
 
-                flapId = choice[2];
+                const flapId = choice[2];
                 if ((unlockedFlapId !== -1) && (unlockedFlapId !== flapId))
-                    return false; //cannot view desired flap which is Not unlocked
+                    continue; //cannot view desired flap which is Not unlocked
 
                 //open the flap (by clicking it)
-                appendStatus(`${self} is going to look at ${choice[1]} flap of the ${CARD_HOLDER_COLOUR[cardHolderId]} card holder.`);
+                let flapName = choice[1];
+                if (flapName.endsWith('*'))
+                {
+                    flapName = flapName.substring(0, flapName.length - 1); //do Not let opponents know if this is an essential flap!
+                }
+                appendStatus(`${self} is going to look at <b>${flapName} flap</b> of the ${CARD_HOLDER_COLOUR[cardHolderId]} card holder.`);
                 $(`#cardHolder${cardHolderId}_${flapId}`)[0].click();
 
                 //update to Detective Notes
@@ -1742,14 +1764,12 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
             numFlapsSeen = 0;
         if (numKeys > 0)
         {
-            shuffle(flapsBest);
             if (tryTheseFlaps(flapsBest))
             {
                 ++numFlapsSeen;
             }
             else
             {
-                shuffle(flapsGood);
                 if (tryTheseFlaps(flapsGood))
                 {
                     ++numFlapsSeen;
@@ -1803,7 +1823,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
             s2 = ` (${s2.join(' & ')})`;
         }
         appendStatus(`${s}${self} has finished studying their clues${s2}.<br>`);
-        if (numFlapsSeen)
+        if (numFlapsSeen > 0)
         {
             //iterate on new info!
             setTimeout(() => {
@@ -2056,6 +2076,15 @@ function gotoNotes()
     div.css('display', '');
     div[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
+
+function gotoHolderInNotes(cardHolderId)
+{
+    const div = $('#divDetectiveNotepad'),
+        focus = $(`#detFlap${cardHolderId}_3`)[0];
+    div.css('display', '');
+    focus.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+}
+
 
 function goTop()
 {
@@ -2715,7 +2744,7 @@ function hideAllFlaps() //hide
             flapElem[0].textContent = '?';
         }
         const e = $(`#cardHolder${h}_M`);
-        e[0].textContent = solveThis[h];
+        e[0].innerHTML = solveThis[h];
         for (let i = 0; i < CARD_NAMES.length; ++i)
         {
             e.removeClass(`card_${i}`);
@@ -2736,7 +2765,14 @@ function onChangeDetNoteCardHolder(holderId)
     img.src = `images/card-${CARD_IMAGES[cardId]}.png`;
 }
 
-const solveThis = ['Solve', 'this', 'mystery'];
+const solveThis = [
+    `<span data-tooltip='Jump to Beige card holder in Detective Notes' data-tooltip-position='left'>
+        <button onclick='gotoHolderInNotes(0);' style='background:#dedea9'>(goto Notes)</button></span>`,
+    `<span data-tooltip='Jump to Green card holder in Detective Notes' data-tooltip-position='left'>
+        <button onclick='gotoHolderInNotes(1);' style='background:#008d00; color:white'>(goto Notes)</button></span>`,
+    `<span data-tooltip='Jump to Black card holder in Detective Notes' data-tooltip-position='left'>
+        <button onclick='gotoHolderInNotes(2);' style='background:#555; color:white'>(goto Notes)</button></span>`
+];
 const bgColors = ['#d0d09e', 'darkgreen', 'black'],
     fontColor = ['black', 'black', 'white'];
 function createCardHolders()
