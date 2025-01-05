@@ -564,6 +564,11 @@ body {
     font-size: 1.8em;
 }
 
+.flap_being_viewed /*secretly*/
+{
+    background: #e75480;
+}
+
 .card_0
 {
     background-image: url(../images/card-player-yellow.png);
@@ -773,11 +778,19 @@ body {
   flex-wrap: wrap;
   max-width: 60%;
 }
+
 .card_alone
 {
     width: 250px;
     height: 300px;
     margin: 5;
+    margin: 10px;
+}
+
+.bg_gold
+{
+   background: radial-gradient(ellipse farthest-corner at right bottom, #FEDB37 0%, #FDB931 8%, #9f7928 30%, #8A6E2F 40%, transparent 80%),
+                radial-gradient(ellipse farthest-corner at left top, #FFFFFF 0%, #FFFFAC 8%, #D1B464 25%, #5d4a1f 62.5%, #5d4a1f 100%);
 }
 
 .detective-card-table

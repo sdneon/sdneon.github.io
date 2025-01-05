@@ -42,6 +42,12 @@ function compareCardTypes(a, b) {
   return a[0] - b[0];
 }
 
+function playerString(playerId)
+{
+    playerId ??= who;
+    return `<font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font>`;
+}
+
 //@retval player ID if its token has been clicked
 function playerTokenClicked(cellId)
 {
@@ -121,7 +127,10 @@ function cellClicked(y, x)
         {
             const cnt = clue[2];
             showStatus(`Take ${cnt} murder card${(cnt>=1)?'s':''} from deck`);
-            takeMurderCard(who, cnt);
+            const numCardsTaken = takeMurderCard(who, cnt);
+            appendStatus(`${playerString()} got ${numCardsTaken} Murder cards
+                <span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
+                    <button onclick='gotoNotes();' style='background:#dedea9'>(goto Notes)</button></span>`);
         }
         else if (clue[1] === 'clue')
         {
@@ -378,9 +387,7 @@ function appendStatus(s, colour)
 
 function showWhoseTurn(freshStart)
 {
-    const c = PLAYER_COLORS[who],
-        s = `<font color="${c}"><b>${PLAYERS[who]}'s</b></font>`;
-    //showStatus(`<font color="${c}"><b>${PLAYERS[who]}'s</b></font> turn...`, undefined, true);
+    const s = playerString();
     $('#divWho')[0].innerHTML = `${s} turn...`;
     $('#spanWhose')[0].innerHTML = s;
 
@@ -781,7 +788,7 @@ function updatePlayersSelection(playerId)
 
             playerPositions[playerId] = cellId;
             $(`#cell_played${cellId}`).addClass(`cell_player_${playerId}`);
-            showStatus(`<font color='${PLAYER_COLORS[playerId]}'><b>${PLAYERS[playerId]}</b></font> has joined the game.`);
+            showStatus(`${playerString(playerId)} has joined the game.`);
             whereAmI(playerId);
         }
         else //removed
@@ -789,7 +796,7 @@ function updatePlayersSelection(playerId)
             const cellId = playerPositions[playerId];
             $(`#cell_played${cellId}`).removeClass(`cell_player_${playerId}`);
             $(`#cell${cellId}`).removeClass('cell_occupied');
-            showStatus(`<font color='${PLAYER_COLORS[playerId]}'><b>${PLAYERS[playerId]}</b></font> has left the game.`, undefined, true);
+            showStatus(`${playerString(playerId)} has left the game.`, undefined, true);
         }
     }
 }
@@ -1160,20 +1167,24 @@ function enableLastCardDragAndFlip(deck)
 
 function takeMurderCard(playerIndex, cnt)
 {
+    let numCardsTaken = 0;
     while ((cnt > 0) && (cardsDeck.length >= 1))
     {
         const card = cardsDeck.splice(0, 1)[0];
         playerCardDecks[playerIndex].push(card);
         --cnt;
+        ++numCardsTaken;
 
         createPlayerData(playerIndex);
         playersData[playerIndex].clues.cardsSeen[card] = true;
 
-        deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-            style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
+        deckPlayerMurderCards.append(`<div class='bg_gold'>
+            <div id='player${who}_mur${card}' class='card_alone'
+                style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
         deckSpareMurderCards.removeCard(card);
     }
     //think();
+    return numCardsTaken;
 }
 
 function returnMurderCards()
@@ -1206,7 +1217,10 @@ function takeActionCard()
     {
         const cnt = card[2];
         appendStatus(`Action card: <h2>Take ${cnt} murder cards from deck</h2>`);
-        takeMurderCard(who, cnt);
+        const numCardsTaken = takeMurderCard(who, cnt);
+        appendStatus(`${playerString()} got ${numCardsTaken} Murder cards
+            <span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
+                <button onclick='gotoNotes();' style='background:#dedea9'>(goto Notes)</button></span>`);
     }
     else
     {
@@ -1616,7 +1630,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
         }
     }
 
-    const self = `<font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font>`;
+    const self = playerString();
     let s = (numCardsKnown > 0)? `${self} knows ${numCardsKnown} out of the 3 WWW &#x1F600;<br>`:
         `${self} don't know any of the WWW &#x1F605; Find more clues, look at more flaps!<br>`;
 
@@ -1715,7 +1729,8 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
                     flapName = flapName.substring(0, flapName.length - 1); //do Not let opponents know if this is an essential flap!
                 }
                 appendStatus(`${self} is going to look at <b>${flapName} flap</b> of the ${CARD_HOLDER_COLOUR[cardHolderId]} card holder.`);
-                $(`#cardHolder${cardHolderId}_${flapId}`)[0].click();
+                //$(`#cardHolder${cardHolderId}_${flapId}`)[0].click();
+                clickedCardHolder(cardHolderId, flapId, false, !talkAloud);
 
                 //update to Detective Notes
                 const key = `${cardHolderId}_${flapId}`,
@@ -1988,6 +2003,7 @@ function nextPlayer(freshStart, dontSave)
     hideAllFlaps();
     lockAllFlaps();
     lastPlayer = who;
+    $('div').removeClass('bg_gold'); //unhighlight previously new murder cards in Detective's possession
     showStatus('', undefined, true);
     do
     {
@@ -2577,8 +2593,13 @@ holder#:
   0: beige, 1: green, 2: black
 flap:
   0: TL, 1: BR, 2: TR, 3: BL
+permaShow:
+  true: leave flap open permanently
+quiet:
+  true: for AI use to Not show what's under the flap, i.e. peek secretly
+
 */
-function clickedCardHolder(cardHolderId, flapId, permaShow)
+function clickedCardHolder(cardHolderId, flapId, permaShow, quiet)
 {
     const flapElem = $(`#cardHolder${cardHolderId}_${flapId}`);
 
@@ -2587,7 +2608,7 @@ function clickedCardHolder(cardHolderId, flapId, permaShow)
         flapElem.css('background', '');
         flapElem.css('color', '');
         flapElem[0].textContent = '?';
-        flapElem.removeClass('flap_open');
+        flapElem.removeClass('flap_open flap_being_viewed');
     }
     if (flapElem.hasClass('flap_open'))
     {
@@ -2636,17 +2657,25 @@ function clickedCardHolder(cardHolderId, flapId, permaShow)
             code = cardCode & 0xff;
             break;
     }
-    flapElem.addClass('flap_open');
-    if (code < ELEMENT_COLOURS.length)
+    if (!quiet)
     {
-        flapElem.css('background', ELEMENT_COLOURS[code]);
-        flapElem[0].textContent = '';
+        flapElem.addClass('flap_open');
+        if (code < ELEMENT_COLOURS.length)
+        {
+            flapElem.css('background', ELEMENT_COLOURS[code]);
+            flapElem[0].innerHTML = '';
+        }
+        else
+        {
+            flapElem.css('background', 'white');
+            flapElem.css('color', 'black');
+            flapElem[0].innerHTML = ELEMENT_MAP[code];
+        }
     }
     else
     {
-        flapElem.css('background', 'white');
-        flapElem.css('color', 'black');
-        flapElem[0].textContent = ELEMENT_MAP[code];
+        flapElem.addClass('flap_being_viewed');
+        flapElem[0].innerHTML = '&#x1F441;';
     }
     if (!permaShow)
     {
@@ -2713,7 +2742,7 @@ function hideAllFlaps() //hide
             const flapElem = $(`#cardHolder${h}_${f}`);
             flapElem.css('background', '');
             flapElem.css('color', '');
-            flapElem[0].textContent = '?';
+            flapElem[0].innerHTML = '?';
         }
         const e = $(`#cardHolder${h}_M`);
         e[0].innerHTML = solveThis[h];
