@@ -45,7 +45,7 @@ function compareCardTypes(a, b) {
 function playerString(playerId)
 {
     playerId ??= who;
-    return `<font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font>`;
+    return `<font color='${PLAYER_COLORS[playerId]}'>${PLAYERS[playerId]}</font>`;
 }
 
 //@retval player ID if its token has been clicked
@@ -931,18 +931,17 @@ function newGameBoard()
                     styleClass2 += ' cell_clue_spot';
                     clueSpots[`${y}_${x}`] = 0;
                 }
-
                 s += `<td id='cell${y}_${x}_container' class='${styleClass}' onclick='cellClicked(${y}, ${x});'>
-                <table class='cell ${styleClass2}'><tr><td id='cell${y}_${x}' class='cell ${occupied}'>
                     <div class='cell_container2'>
                         <div id="roomLabel${y}_${x}" class='cell_room_label${styleClass3}'></div>
                         <div style="z-index: 1;">
-                            <table class='cell'><tr><td id='cell_played${y}_${x}' class='cell ${styleClassPlayed}'>
-                                ${content}
+                            <table class='cell ${styleClass2}'><tr><td id='cell${y}_${x}' class='cell ${occupied}'>
+                                <table class='cell'><tr><td id='cell_played${y}_${x}' class='cell ${styleClassPlayed}'>
+                                    ${content}
+                                </td></tr></table>
                             </td></tr></table>
                         </div>
                     </div>
-                </td></tr></table>
                 </td>`;
             }
             s += `</tr>`;
@@ -2266,7 +2265,8 @@ function accuse()
         showStatus('You cannot accuse without knowing where!!');
         return;
     }
-    appendStatus(`<b><font color='${PLAYER_COLORS[who]}'>${PLAYERS[who]}</font></b> accuses <b><font color='${PLAYER_COLORS[CARD_NAMES.indexOf(culprit)]}'>${culprit}</font></b> of using <b>${what}</b> in the <b>${where}</b>...`);
+    appendStatus(`${playerString()} accuses <span class='spanGuess' style='visibility:hidden'><b>${playerString(CARD_NAMES.indexOf(culprit))}</b></span> of using <span class='spanGuess' style='visibility:hidden'><b>${what}</b></span> in the <span class='spanGuess' style='visibility:hidden'><b>${where}</b></span>...
+        <button id='buttRevealGuess' onclick='$(".spanGuess").css("visibility", ""); $("#buttRevealGuess").remove();'>(click here to reveal accusation)</button>`);
     culprit = CARD_NAMES.indexOf(culprit);
     what = CARD_NAMES.indexOf(what);
     where = CARD_NAMES.indexOf(where);
@@ -2288,8 +2288,9 @@ function accuse()
 
     if (solved)
     {
-        appendStatus(`Congratulations! You are Right! &#x1F601;<br>${htmlGiveUpButt}`);
-        showAllFlaps(true);
+        appendStatus(`Congratulations! You are Right! &#x1F601;
+            <br><button onclick="showAllFlaps(true);">Show Answer</button>
+            <br>${htmlGiveUpButt}`);
         returnMurderCards();
     }
     else
@@ -2300,7 +2301,8 @@ function accuse()
     }
 }
 
-const htmlGiveUpButt = `<button id='buttHideAns' onclick="hideAllFlaps(); $('#buttHideAns').remove();">Hide Answer</button>`;
+//const htmlGiveUpButt = `<button id='buttHideAns' onclick="hideAllFlaps(); $('#buttHideAns').remove();">Hide Answer</button>`;
+const htmlGiveUpButt = `<button id='buttHideAns' onclick="hideAllFlaps();">Hide Answer</button>`;
 function giveUp()
 {
     showStatus(`You've given up!? &#128517;<br>${htmlGiveUpButt}`);
