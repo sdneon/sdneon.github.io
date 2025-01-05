@@ -35,8 +35,8 @@ const BOARD = [ //2 ch's per grid square
     'x p KrKcKrKsp BcBrBrBrBrBrCrCcCrCrCsp 7 ',
     '4 p DsDrDrDcp BrBRBrBcBRBrp IcIrIrIcp x ',
     'x p DcDrDrDrp p p p p p p p IRIrIrIRp g ',
-    'x p DRDrDrDrp p x x x x p pcIsIrIrIrp x ',
-    'g p DrDrDrDRp p x x x x p p p p p p p x ',
+    'x p DRDrDrDrp p X X X X p pcIsIrIrIrp x ',
+    'g p DrDrDrDRp p X X X X p p p p p p p x ',
     'x p DrDrDcDrp p s s s s p p LrLRLrLrp x ',
     'x p DrDrDRDrpcp s s s s pcp LcLrLrLcp 2 ',
     'x p p p p p p p s s s s p p LrLrLrLrp x ',
@@ -271,47 +271,18 @@ const WEAPONS = [
 
 const CLUE_OBJECTS = [...WEAPONS, ...ORNAMENTS];
 
-const LABELS_UNUSED = { //for rooms, etc.
+const LABELS = { //for rooms, etc.
     '3_3': 'Kitchen',
     '3_9': 'Ballroom',
-    '3_14': 'Conservatory',
-    '6_15': 'Billiard Room',
-    '7_3': 'Dining Room',
-    '10_15': 'Library',
+    '3_13': 'Conservatory',
+    '6_14': 'Billiard&nbsp;Room',
+    '7_2': 'Dining&nbsp;Room',
+    '11_15': 'Library',
     '15_4': 'Lounge',
     '15_10': 'Hall',
-    '15_15': 'Study',
-    '7_9': 'Super Cluedo',
-    '8_9': 'Challenge'
-};
-
-//need to break up to avoid click being absorbed by left cell!
-const LABELS = { //for rooms, etc.
-    '3_3': 'Kitc',
-    '3_4': 'hen',
-    '3_9': 'Ballr',
-    '3_10': 'oom',
-    '3_13': 'Co',
-    '3_14': 'nse',
-    '3_15': 'rva',
-    '3_16': 'tory',
-    '6_15': 'Bill',
-    '6_16': 'iard',
-    '7_15': 'Ro',
-    '7_16': 'om',
-    '7_3': 'Din',
-    '7_4': 'ing',
-    '8_3': 'Ro',
-    '8_4': 'om',
-    '10_15': 'Libr',
-    '10_16': 'ary',
-    '15_4': 'Lou',
-    '15_5': 'nge',
-    '15_10': 'Hall',
-    '15_15': 'Stu',
-    '15_16': 'dy',
-    '7_9': 'Super Cluedo',
-    '8_9': 'Challenge'
+    '15_14': 'Study',
+    '7_8': 'Super&nbsp;Cluedo',
+    '8_8': 'Challenge&nbsp;&#x1F920;'
 };
 
 const CARD_NAMES = [

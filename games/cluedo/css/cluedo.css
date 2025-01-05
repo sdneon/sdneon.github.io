@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap');
 
 html,
 body {
@@ -16,6 +16,22 @@ body {
     min-width: 80px;
     height: 80px;
     width: 80px;
+}
+
+.cell_container2 {
+    position:relative; width: 100%; height: 100%;
+}
+
+.cell_room_label
+{
+    position: absolute;
+    top: 0px; left: 0px;
+    z-index: 0;
+    font-size:2em; font-weight: bold;
+    color:#000c;
+    text-shadow:1px 1px 2px white;
+    pointer-events: none;
+    /*max-width: 80px; width: 100%; height: 100%;*/
 }
 
 .cell {
@@ -171,6 +187,11 @@ body {
     background: darkgreen;
 }
 
+.cell_title
+{
+    color: white;
+}
+
 .cell_clue_spot
 {
     background-image: url(../images/clue-spot-200px.png);
@@ -204,6 +225,8 @@ body {
     background-image: url(../images/clue-available.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_clue_counter_dummy
@@ -211,6 +234,8 @@ body {
     background-image: url(../images/clue-dummy.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_orn_BirdTable
@@ -218,6 +243,8 @@ body {
     background-image: url(../images/orn-bird-table.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_orn_Orb
@@ -225,6 +252,8 @@ body {
     background-image: url(../images/orn-orb.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_orn_SunDial
@@ -232,6 +261,8 @@ body {
     background-image: url(../images/orn-sun-dial.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_orn_Urn
@@ -239,6 +270,8 @@ body {
     background-image: url(../images/orn-urn.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Dagger
@@ -246,6 +279,8 @@ body {
     background-image: url(../images/wpn-dagger.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Revolver
@@ -253,6 +288,8 @@ body {
     background-image: url(../images/wpn-revolver.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Spanner
@@ -260,6 +297,8 @@ body {
     background-image: url(../images/wpn-spanner.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Poison
@@ -267,6 +306,8 @@ body {
     background-image: url(../images/wpn-poison.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Blunderbuss
@@ -274,6 +315,8 @@ body {
     background-image: url(../images/wpn-blunderbuss.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Rope
@@ -281,6 +324,8 @@ body {
     background-image: url(../images/wpn-rope.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Axe
@@ -288,6 +333,8 @@ body {
     background-image: url(../images/wpn-axe.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_Candlestick
@@ -295,6 +342,8 @@ body {
     background-image: url(../images/wpn-candlestick.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_wpn_LeadPiping
@@ -302,6 +351,8 @@ body {
     background-image: url(../images/wpn-leadpiping.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 3;
 }
 
 .cell_roomK
@@ -372,6 +423,8 @@ body {
     background-image: url(../images/token-yellow.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_1
@@ -379,6 +432,8 @@ body {
     background-image: url(../images/token-red.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_2
@@ -386,6 +441,8 @@ body {
     background-image: url(../images/token-brown.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_3
@@ -393,6 +450,8 @@ body {
     background-image: url(../images/token-white.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_4
@@ -400,6 +459,8 @@ body {
     background-image: url(../images/token-gray.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_5
@@ -407,6 +468,8 @@ body {
     background-image: url(../images/token-green.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_6
@@ -414,6 +477,8 @@ body {
     background-image: url(../images/token-purple.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_7
@@ -421,6 +486,8 @@ body {
     background-image: url(../images/token-blue.png);
     background-repeat: no-repeat;
     background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_8
@@ -428,13 +495,8 @@ body {
     background-image: url(../images/token-pink.png);
     background-repeat: no-repeat;
     background-size: 100%;
-}
-
-.cell_player_9
-{
-    background-image: url(../images/token-yellow.png);
-    background-repeat: no-repeat;
-    background-size: 100%;
+    position: relative;
+    z-index: 4;
 }
 
 .cell_player_starter_0
@@ -837,9 +899,9 @@ button:hover, button:active {
 
 .button_ai
 {
-	background: lightblue;
+    background: lightblue;
 }
 .button_final
 {
-	background: pink;
+    background: pink;
 }

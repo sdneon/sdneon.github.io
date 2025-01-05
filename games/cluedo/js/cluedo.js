@@ -347,19 +347,6 @@ function cellClicked(y, x)
     movePlayerThere(who, cellId);
 }
 
-/*
-//need to regularly update position when status "printout" (at the top) shifts things!
-function updateRoomLabelPositions()
-{
-    Object.keys(LABELS_WHOLE).forEach((cellId, i) => {
-        const cell = $(`#cell_played${cellId}`),
-            pos = $(cell).offset(),
-            room = $(`roomLabel${i}`);
-        room.css('top', `${pos.top}px`);
-        room.css('left', `${pos.left}px`);
-    });
-}
-*/
 function showStatus(s, colour, silent)
 {
     const div = $('#divStatus')[0];
@@ -371,7 +358,6 @@ function showStatus(s, colour, silent)
     {
         div.innerHTML = `<font color="${colour}"><b>${s}</b></font>`;
     }
-    //updateRoomLabelPositions();
     if (!silent)
         div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
@@ -387,7 +373,6 @@ function appendStatus(s, colour)
     {
         div.innerHTML += '<br>' + `<font color="${colour}"><b>${s}</b></font>`;
     }
-    //updateRoomLabelPositions();
     div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
@@ -882,12 +867,14 @@ function newGameBoard()
                 let cell = row.substring(xx, xx + 2);
                 let styleClass = 'cell_container table_grid',
                     styleClass2 = '',
+                    styleClass3 = '', //for room label
                     occupied = '',
                     styleClassPlayed = '',
                     content = '';
-                if (cell[0] === 'x')
+                if ((cell[0] === 'x') || (cell[0] === 'X'))
                 {
                     styleClass += ' cell_grass';
+                    if (cell[0] === 'X') styleClass3 += ' cell_title';
                     invalidSpots[`${y}_${x}`] = 0;
                 }
                 else if ((cell[0] >= '0') && (cell[0] <= '8'))
@@ -937,26 +924,19 @@ function newGameBoard()
                     styleClass2 += ' cell_clue_spot';
                     clueSpots[`${y}_${x}`] = 0;
                 }
-                /*
-                else if (cell[1] === 'r')
-                {
-                    weaponSpots[`${y}_${x}`] = 0;
-                }
-                */
+
                 s += `<td id='cell${y}_${x}_container' class='${styleClass}' onclick='cellClicked(${y}, ${x});'>
-                <table class='cell ${styleClass2}'><tr><td td id='cell${y}_${x}' class='cell ${occupied}'>
-                    <table class='cell'><tr><td td id='cell_played${y}_${x}' class='cell ${styleClassPlayed}'>
-                    ${content}
-                    </td></tr></table>
+                <table class='cell ${styleClass2}'><tr><td id='cell${y}_${x}' class='cell ${occupied}'>
+                    <div class='cell_container2'>
+                        <div id="roomLabel${y}_${x}" class='cell_room_label${styleClass3}'></div>
+                        <div style="z-index: 1;">
+                            <table class='cell'><tr><td id='cell_played${y}_${x}' class='cell ${styleClassPlayed}'>
+                                ${content}
+                            </td></tr></table>
+                        </div>
+                    </div>
                 </td></tr></table>
                 </td>`;
-                /*
-                s += `<td id='cell${y}_${x}_container' class='${styleClass}' onclick='cellClicked(${y}, ${x});'>
-                <div class='cell ${styleClass2}' id='cell${y}_${x}'>
-                ${content}
-                </div>
-                </td>`;
-                */
             }
             s += `</tr>`;
         }
@@ -965,11 +945,14 @@ function newGameBoard()
 
         //2. Label rooms
         Object.keys(LABELS).forEach((cellId) => {
-            const cell = $(`#cell_played${cellId}`);
-            cell[0].textContent = LABELS[cellId];
-            cell.css('font-size', '1.8em');
-            cell.css('color', '#000c');
-            cell.css('text-shadow', '1px 1px 2px white');
+            const cell = $(`#roomLabel${cellId}`);
+            cell[0].innerHTML = LABELS[cellId];
+        });
+
+        PLAYERS.forEach((name, i) => {
+            const cell = $(`.cell_player_starter_${i} .cell_container2 div`);
+            cell[0].innerHTML = `${name}&#127808;`;
+            cell.css('font-size', '0.8em');
         });
 
         //3. Add room's walls and windows
@@ -1153,17 +1136,6 @@ function newGameBoard()
 
     $('#divActiveClues')[0].innerHTML = '';
     checkNoMoreActiveClue();
-
-    /*
-    //Try new room label overlays
-    Object.keys(LABELS_WHOLE).forEach((cellId, i) => {
-        const cell = $(`#cell_played${cellId}`),
-            pos = $(cell).offset();
-        $('body').append(`<div id='roomLabel${i}'
-            style='position:absolute; top:${pos.top}px; left:${pos.left}px; z-index:0; font-size:2em; font-weight: bold; color:#000c; text-shadow:1px 1px 2px white;  pointer-events: none;'>
-            ${LABELS_WHOLE[cellId]}</div>`);
-    });
-    */
 
     //7. begin~
     who = -1;
