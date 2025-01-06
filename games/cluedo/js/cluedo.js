@@ -670,6 +670,7 @@ let cachedGameBoard = false,
     cacheCardHolders = false,
     cacheClueSpots,
     cacheWeaponSlots,
+    cacheBadWeaponSlots,
     cacheOrnamentSlots,
     cacheInvalidSlots,
     cacheStairSlots,
@@ -871,72 +872,74 @@ function newGameBoard()
             s += `<tr id='row${y}'>`;
             for (let x = 0, xx = 0; x < numCols; ++x, xx +=2)
             {
-                let cell = row.substring(xx, xx + 2);
+                const cellId = `${y}_${x}`,
+                    cell = row.substring(xx, xx + 2),
+                    cellType = cell[0];
                 let styleClass = 'cell_container table_grid',
                     styleClass2 = '',
                     styleClass3 = '', //for room label
                     occupied = '',
                     styleClassPlayed = '',
                     content = '';
-                if ((cell[0] === 'x') || (cell[0] === 'X'))
+                if ((cellType === 'x') || (cellType === 'X'))
                 {
                     styleClass += ' cell_grass';
-                    if (cell[0] === 'X') styleClass3 += ' cell_title';
-                    invalidSpots[`${y}_${x}`] = 0;
+                    if (cellType === 'X') styleClass3 += ' cell_title';
+                    invalidSpots[cellId] = 0;
                 }
-                else if ((cell[0] >= '0') && (cell[0] <= '8'))
+                else if ((cellType >= '0') && (cellType <= '8'))
                 {
-                    playerPositions[cell[0]] = `${y}_${x}`;
-                    styleClass += ` cell_player_starter_${cell[0]}`;
+                    playerPositions[cellType] = cellId;
+                    styleClass += ` cell_player_starter_${cellType}`;
                     occupied = 'cell_occupied';
-                    styleClassPlayed += ` cell_player_${cell[0]}`;
-                    //content = PLAYERS[parseInt(cell[0], 10)];
+                    styleClassPlayed += ` cell_player_${cellType}`;
+                    //content = PLAYERS[parseInt(cellType, 10)];
                 }
-                else if ((cell[0] >= 'A') && (cell[0] <= 'Z'))
+                else if ((cellType >= 'A') && (cellType <= 'Z'))
                 {
-                    allRoomSlots[`${y}_${x}`] = cell[0];
-                    styleClass += ` cell_room${cell[0]}`; //background colour & image
+                    allRoomSlots[cellId] = cellType;
+                    styleClass += ` cell_room${cellType}`; //background colour & image
                     if (cell[1] === 's')
                     {
                         styleClass2 += ' cell_stair_spot';
-                        stairSpots[`${y}_${x}`] = 0;
+                        stairSpots[cellId] = 0;
                     }
                     else //if (cell[1] === 'r') //or 'c' or 'R'
                     {
-                        if (!weaponSpots[cell[0]])
+                        if (!weaponSpots[cellType])
                         {
-                            weaponSpots[cell[0]] = {};
+                            weaponSpots[cellType] = {};
                         }
-                        //weaponSpots[`${y}_${x}`] = 0;
-                        weaponSpots[cell[0]][`${y}_${x}`] = 0;
-                        if (cell[1] === 'R')
+                        weaponSpots[cellType][cellId] = 0;
+                        const cellInfo = cell[1];
+                        if ((cellInfo === 'R') || (cellInfo === 'C'))
                         {
-                            badWeaponSpots[`${y}_${x}`] = 0;
+                            badWeaponSpots[cellId] = 0;
                         }
                     }
                 }
-                else if (cell[0] === 'g')
+                else if (cellType === 'g')
                 {
                     styleClass2 += ' cell_clue_spot';
-                    ornamentSpots[`${y}_${x}`] = 0;
+                    ornamentSpots[cellId] = 0;
                 }
-                else if (cell[0] === 's')
+                else if (cellType === 's')
                 {
                     styleClass2 += ' cell_stair';
-                    stairSpots[`${y}_${x}`] = 0;
+                    stairSpots[cellId] = 0;
                 }
 
-                if (cell[1] === 'c')
+                if ((cell[1] === 'c') || (cell[1] === 'C'))
                 {
                     styleClass2 += ' cell_clue_spot';
-                    clueSpots[`${y}_${x}`] = 0;
+                    clueSpots[cellId] = 0;
                 }
-                s += `<td id='cell${y}_${x}_container' class='${styleClass}' onclick='cellClicked(${y}, ${x});'>
+                s += `<td id='cell${cellId}_container' class='${styleClass}' onclick='cellClicked(${y}, ${x});'>
                     <div class='cell_container2'>
-                        <div id="roomLabel${y}_${x}" class='cell_room_label${styleClass3}'></div>
+                        <div id="roomLabel${cellId}" class='cell_room_label${styleClass3}'></div>
                         <div style="z-index: 1;">
-                            <table class='cell ${styleClass2}'><tr><td id='cell${y}_${x}' class='cell ${occupied}'>
-                                <table class='cell'><tr><td id='cell_played${y}_${x}' class='cell ${styleClassPlayed}'>
+                            <table class='cell ${styleClass2}'><tr><td id='cell${cellId}' class='cell ${occupied}'>
+                                <table class='cell'><tr><td id='cell_played${cellId}' class='cell ${styleClassPlayed}'>
                                     ${content}
                                 </td></tr></table>
                             </td></tr></table>
@@ -979,6 +982,7 @@ function newGameBoard()
         cachedGameBoard = div[0].innerHTML;
         cacheClueSpots = Object.assign({}, clueSpots);
         cacheWeaponSlots = JSON.stringify(weaponSpots); //Object.assign({}, weaponSpots);
+        cacheBadWeaponSlots = Object.assign({}, badWeaponSpots);
         cacheOrnamentSlots = Object.assign({}, ornamentSpots);
         cacheInvalidSlots = Object.assign({}, invalidSpots);
         cacheStairSlots = Object.assign({}, stairSpots);
@@ -990,6 +994,7 @@ function newGameBoard()
         div[0].innerHTML = cachedGameBoard;
         clueSpots = Object.assign({}, cacheClueSpots);
         weaponSpots = JSON.parse(cacheWeaponSlots); //Object.assign({}, cacheWeaponSlots);
+        badWeaponSpots = Object.assign({}, cacheBadWeaponSlots);
         ornamentSpots = Object.assign({}, cacheOrnamentSlots);
         invalidSpots = Object.assign({}, cacheInvalidSlots);
         stairSpots = Object.assign({}, cacheStairSlots);
@@ -2288,14 +2293,14 @@ function accuse()
 
     if (solved)
     {
-        appendStatus(`Congratulations! You are Right! &#x1F601;
+        appendStatus(`<h2>Congratulations! You are Right! &#x1F601;</h2>
             <br><button onclick="showAllFlaps(true);">Show Answer</button>
             <br>${htmlGiveUpButt}`);
         returnMurderCards();
     }
     else
     {
-        appendStatus(`Yikes! You are Wrong! &#x1F62C;
+        appendStatus(`<h3>Yikes! You are Wrong! &#x1F62C;</h3>
             <br><button onclick="showAllFlaps(true);">Show Answer</button>
             <br>${htmlGiveUpButt}`);
     }
