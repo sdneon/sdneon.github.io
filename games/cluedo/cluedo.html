@@ -26,7 +26,7 @@
 <table>
 <tr>
     <td>
-        <span data-tooltip='Move the number of spaces on each dice, or total of both dice. If you get doubles, you may re-roll instead.' data-tooltip-position='right'>
+        <span data-tooltip='Move the number of spaces on each dice, or total of both dice. If you get doubles, you may re-roll instead.' data-tooltip-position='bottom'>
             <div class='dice-container'></div></span>
     </td>
     <td style='vertical-align:middle;'>
@@ -113,12 +113,22 @@
     <td colspan='3'>
         <table>
             <tr><td><span data-tooltip-position='bottom' data-tooltip='Go after these clues to get a "Super Clue" card, which give clues in the Card Holders'><b>Active Super Clues:</b></span></td></tr>
-        </table>
+            <tr>
+                <td>
         <table class='cell' style='text-align: left;'>
             <tr id='divActiveClues'>
                 <th class='no-active-clue'>
                     (No Active Super Clues)
                 </th>
+                        </tr>
+                    </table>
+                </td>
+                <td>
+                    <span data-tooltip-position='bottom' data-tooltip='Copy/share game link with a friend to "join" the same game'>
+                        <button onclick='copyGameLink();'>Copy Game Link</button></span>
+                    <span data-tooltip-position='bottom' data-tooltip='Copy/share game code with a friend to "join" the same game'>
+                        <button onclick='copyGameCode();'>Copy Game Code: <span id='spanGameCode'></span></button></span>
+                </td>
             </tr>
         </table>
     </td>

@@ -23,6 +23,7 @@ let who = 0, //current player
     lastPlayer = 0,
     bumpMode = false,
     bumpingWho = 0,
+    remotePlay = false,
     status = 'New game';
 
 function randInt(max)
@@ -40,6 +41,63 @@ function compareNumbersBig1st(a, b) {
 
 function compareCardTypes(a, b) {
   return a[0] - b[0];
+}
+
+//convert to hex and pad to 6 characters if needed (by prepending '0')
+function toHex6Chars(v)
+{
+    let s = v.toString(16);
+    if (s.length <= 5)
+        s = '0' + s;
+    return s;
+}
+//encode mystery (card holder values) for link sharing for remote play
+function encodeMystery()
+{
+    const now = Date.now() & 0xffffff;
+    let code = 0,
+        shift = 0;
+    for (let i = 0; i < cardHolders.length; ++i, shift += 8)
+    {
+        code |= cardHolders[i] << shift;
+    }
+    //console.log(`now: 0x${now.toString()}, raw code: ${code.toString(16)}`);
+    code ^= now;
+    code = `${toHex6Chars(now)}${toHex6Chars(code)}`;
+    //console.log(`masked code: 0x${code.toString(16)}`);
+    return code;
+}
+
+function decodeMystery(code)
+{
+    const now = parseInt(code.substring(0, 6), 16);
+    code = parseInt(code.substring(6), 16);
+    code ^= now;
+    const cards = [];
+    for (let i = 0, shift = 0; i < 3; ++i, shift += 8)
+    {
+        cards[i] |= (code >> shift) & 0xff;
+    }
+    //console.log('decoded code:', cards);
+    return cards;
+}
+
+function updateGameCode()
+{
+    remotePlay = false;
+    $('#spanGameCode')[0].textContent = encodeMystery();
+}
+
+function copyGameLink()
+{
+    const link = `https://sdneon.github.io/games/cluedo/cluedo.html?mys=${encodeMystery()}`;
+    navigator.clipboard.writeText(link);
+}
+
+function copyGameCode()
+{
+    const code = encodeMystery();
+    navigator.clipboard.writeText(code);
 }
 
 function playerString(playerId)
@@ -851,6 +909,20 @@ function unlockFlaps(numFlaps, cardHolderId, flapId)
     cardHoldersLocks[cardHolderId][flapId] = true;
 }
 
+function joinGame(code)
+{
+    const cards = decodeMystery(code);
+    answers = [...cards];
+    cardHolders = [...cards];
+    ALLOW_PEEKING_ANYTIME = true;
+    $('#option_allow_peeks')[0].checked = true;
+    remotePlay = true;
+    showStatus(`Joined game #${code}.<br>
+        Note that only the card holders are <i>synchronized</i> to the remote game,
+        so use the Detective Notes and card holders only.<br>
+        Begin!`);
+}
+
 //create game board
 function newGameBoard()
 {
@@ -1094,6 +1166,7 @@ function newGameBoard()
     shuffle(cardHolders);
     //console.log(CARD_NAMES[cardHolders[0]], CARD_NAMES[cardHolders[1]], CARD_NAMES[cardHolders[2]]);
     lockAllFlaps();
+    updateGameCode();
 
     //5c. Place remaining cards in cardsDeck
     for (i = 0; i < CARD_NAMES.length; ++i)
@@ -1159,7 +1232,17 @@ function newGameBoard()
             <button onclick="restoreSavedGame();">Yes</button>
             <button onclick="showStatus('Begin!');">No</button>`);
     }
- }
+    if (window.location.search.length > 0)
+    {
+        const code = new URL(window.location).searchParams.get('mys');
+        if (code !== null)
+        {
+            appendStatus(`Would you like to "join" game #${code}?
+                <button onclick="joinGame('${code}');">Yes</button>
+                <button onclick="showStatus('Begin!');">No</button>`);
+        }
+    }
+}
 
 function enableLastCardDragAndFlip(deck)
 {
@@ -1187,7 +1270,6 @@ function takeMurderCard(playerIndex, cnt)
                 style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
         deckSpareMurderCards.removeCard(card);
     }
-    //think();
     return numCardsTaken;
 }
 
@@ -1571,17 +1653,50 @@ const FLAPS = '[[[0,"Top Left",0],[0,"Bottom Right",1],[0,"Top Right",2],[0,"Bot
 function think(showSuggestions, actOnSuggestions, talkAloud)
 {
     let i, results = [];
-    const { clues } = playersData[who],
+    let { clues } = playersData[who],
         cards = playerCardDecks[who];
 
-    //update Murder Cards seen into Detective Notes
-    if (actOnSuggestions)
+    if (!remotePlay)
     {
-        cards.forEach((cardId) => {
-            const typeId = (cardId / 9) | 0,
-                cardSubId = cardId % 9;
-            $(`#p1${typeId}${cardSubId}`)[0].checked = true;
-        });
+        //update Murder Cards seen into Detective Notes
+        if (actOnSuggestions)
+        {
+            cards.forEach((cardId) => {
+                const typeId = (cardId / 9) | 0,
+                    cardSubId = cardId % 9;
+                $(`#p1${typeId}${cardSubId}`)[0].checked = true;
+            });
+        }
+    }
+    else
+    {
+        //in remote play
+        //so grab data from UI instead or remembered truth
+        cards = [];
+        clues = {
+            cardHolders: [ [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0] ],
+            cardsSeen: []
+        };
+
+        let j;
+        for (i = 0; i < 3; ++i)
+        {
+            //a. Grab seen cards
+            for (j = 0; j < 9; ++j)
+            {
+                const seen = $(`#p1${i}${j}`)[0].checked;
+                if (seen)
+                {
+                    cards.push(j + (i * 9));
+                }
+            }
+            //b. Grab seen flaps
+            for (j = 0; j < 4; ++j)
+            {
+                const value = ELEMENT_MAP2.indexOf($(`#select_${i}_${j}`)[0].value);
+                clues.cardHolders[i][j] = value;
+            }
+        }
     }
 
     //1. Check flaps data to see if can uniquely identify a card in a card holder.
@@ -1593,7 +1708,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
     }
     clues.lastResults = results;
     //2. Trivial case of all 3 solved
-    if (all3CardsKnown(results, showSuggestions, actOnSuggestions, ))
+    if (all3CardsKnown(results, showSuggestions, actOnSuggestions))
         return;
 
     //3a. Check if any of the 3 typeOfCard's are known. If yes, further narrow down the answer
@@ -1869,6 +1984,7 @@ function restoreSavedGame()
 
     answers = gameData.answers;
     cardHolders = gameData.cardHolders;
+    updateGameCode();
 
     //playerPositions, ignoredPlayers
     playerPositions = gameData.playerPositions;
@@ -2688,7 +2804,6 @@ function clickedCardHolder(cardHolderId, flapId, permaShow, quiet)
     {
         createPlayerData(who);
         playersData[who].clues.cardHolders[cardHolderId][flapId] = code;
-        //think();
 
         if (!ALLOW_PEEKING_ANYTIME)
         {
@@ -3084,25 +3199,6 @@ function createDetectiveCard()
     }
     updateDetNotesClueStyle();
 }
-
-/*
-function findOutOfView()
-{
-    jQuery.expr.filters.offscreen = function(el) {
-      var rect = el.getBoundingClientRect();
-/*
-      return (
-               (rect.x + rect.width) < 0
-                 || (rect.y + rect.height) < 0
-                 || (rect.x > window.innerWidth || rect.y > window.innerHeight)
-             );
-*
-        return (rect.y > window.innerHeight);
-    };
-    const r = $(':offscreen');
-    console.log(r.length, r);
-}
-*/
 
 const RULES = `
 <div id='divRules'>
