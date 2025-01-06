@@ -120,16 +120,25 @@ function playerTokenClicked(cellId)
     return -1;
 }
 
+function diceString()
+{
+    return `<span data-tooltip='${diceOne.val}+${diceTwo.val}=${diceOne.val+diceTwo.val}' data-tooltip-position='top'>&nbsp;&nbsp;&nbsp;</span>`;
+}
+
 function movePlayerThere(who, cellId)
 {
     const lastPos = playerPositions[who]; //cell ID
     if (lastPos !== undefined)
     {
-        $(`#cell_played${lastPos}`).removeClass(`cell_player_${who}`);
+        const cell = $(`#cell_played${lastPos}`);
+        cell.removeClass(`cell_player_${who}`);
+        cell[0].innerHTML = '';
         $(`#cell${lastPos}`).removeClass('cell_occupied');
     }
     playerPositions[who] = cellId;
-    $(`#cell_played${cellId}`).addClass(`cell_player_${who}`);
+    const cell = $(`#cell_played${cellId}`);
+    cell.addClass(`cell_player_${who}`);
+    cell[0].innerHTML = diceString();
     $(`#cell${cellId}`).addClass('cell_occupied');
 }
 
@@ -175,7 +184,7 @@ function cellClicked(y, x)
         delete placedClues[cellId];
         const cell = $(`#cell${cellId}`);
         cell.removeClass('cell_clue_counter cell_clue_counter_dummy cell_occupied');
-        $(`#cell_played${cellId}`)[0].textContent = '';
+        $(`#cell_played${cellId}`)[0].innerHTML = '';
 
         removedClues[clueId] = true; //remember it for reset
         updateClueAvail(clueId);
@@ -678,13 +687,13 @@ function setShowClueNum(show)
     if (SHOW_CLUE_NUM)
     {
         Object.keys(placedClues).forEach((cellId) => {
-            $(`#cell_played${cellId}`)[0].textContent = String(placedClues[cellId]);
+            $(`#cell_played${cellId}`)[0].innerHTML = String(placedClues[cellId]);
         });
     }
     else
     {
         Object.keys(placedClues).forEach((cellId) => {
-            $(`#cell_played${cellId}`)[0].textContent = '';
+            $(`#cell_played${cellId}`)[0].innerHTML = '';
         });
     }
 }
@@ -1115,7 +1124,7 @@ function newGameBoard()
         className = 'cell_clue_counter cell_occupied';
         if (SHOW_CLUE_NUM)
         {
-            $(`#cell_played${cellId}`)[0].textContent = String(i);
+            $(`#cell_played${cellId}`)[0].innerHTML = String(i);
         }
         placedClues[cellId] = i; //base0 with false alarm clue #0
         availSlots.splice(choice, 1);
@@ -1151,7 +1160,6 @@ function newGameBoard()
             cellId = placesInRoom[placeChoice],
             cell = $(`#cell${cellId}`);
         cell.addClass(`cell_wpn_${WEAPONS[wpnId]} cell_occupied cell_has_weapon`);
-        //$(`#cell_played${cellId}`[0].textContent = WEAPONS[wpnId];
         placedWeapons[cellId] = wpnId;
         availWeapons.splice(choice, 1);
         delete room[cellId];
@@ -1850,7 +1858,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
                 appendStatus(`${self} is going to look at <b>${flapName} flap</b> of the ${CARD_HOLDER_COLOUR[cardHolderId]} card holder.`);
                 //$(`#cardHolder${cardHolderId}_${flapId}`)[0].click();
                 clickedCardHolder(cardHolderId, flapId, false, !talkAloud);
-
+/*
                 //update to Detective Notes
                 const key = `${cardHolderId}_${flapId}`,
                     selId = `#select_${key}`,
@@ -1859,7 +1867,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
                     code = ELEMENT_MAP2[(cardCode >> (24 - (flapId * 8))) & 0xff];
                 $(selId)[0].value = code;
                 changeCellColour(`#detFlap${key}`, selId);
-
+*/
                 flaps.splice(0, 1);
                 return true;
             }
@@ -1928,6 +1936,14 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
         {
             s2 = ` (${s2.join(' & ')})`;
         }
+        for (i = 0; i < 3; ++i)
+        {
+            if (results[i][0] >= 0) //cardId
+            {
+                $(`#detNoteCardHolder${i}`)[0].value = results[i][VEB][0];
+                onChangeDetNoteCardHolder(i);
+            }
+        }
         appendStatus(`${s}${self} has finished studying their clues${s2}.<br>`);
         if (numFlapsSeen > 0)
         {
@@ -1979,7 +1995,7 @@ function restoreSavedGame()
     }
     let cellIds = [...Object.keys(clueSpots), ...Object.keys(ornamentSpots)];
     cellIds.forEach((cellId) => {
-        $(`#cell_played${cellId}`)[0].textContent = '';
+        $(`#cell_played${cellId}`)[0].innerHTML = '';
     });
 
     answers = gameData.answers;
@@ -2122,6 +2138,7 @@ function nextPlayer(freshStart, dontSave)
     }
     hideAllFlaps();
     lockAllFlaps();
+    if (who >= 0) $(`#cell_played${playerPositions[who]}`)[0].innerHTML = '';
     lastPlayer = who;
     $('div').removeClass('bg_gold'); //unhighlight previously new murder cards in Detective's possession
     showStatus('', undefined, true);
@@ -2305,7 +2322,7 @@ function resetClueCounters()
         cell.addClass(className);
         if (SHOW_CLUE_NUM)
         {
-            $(`#cell_played${cellId}`)[0].textContent = String(id);
+            $(`#cell_played${cellId}`)[0].innerHTML = String(id);
         }
         placedClues[cellId] = id;
         updateClueAvail(id, true);
@@ -2455,10 +2472,8 @@ function onDiceRolled(diceId, val)
         msg += '6+6: Resetting all clue counters, etc.';
         resetClueCounters();
     }
-    //if (msg.length > 0)
-    {
-        showStatus(msg);
-    }
+    $(`#cell_played${playerPositions[who]}`)[0].innerHTML = diceString();
+    showStatus(msg);
 }
 
 function createDice()
@@ -2533,8 +2548,10 @@ function createSuperClueDeck()
                 </td>
             </tr>
             <tr><td>
-                <button onclick='spreadSuperClue();'>&#x1F441;</button>
-                <button onclick='resetSuperClueDeck();'>&#x1F648;</button>
+                <span data-tooltip='Reveal all cards' data-tooltip-position='right'>
+                    <button onclick='spreadSuperClue();'>&#x1F441;</button></span>
+                <span data-tooltip='Hide/Put back all cards' data-tooltip-position='right'>
+                    <button onclick='resetSuperClueDeck();'>&#x1F648;</button></span>
             </td></tr><tr><td>
             </td></tr>
         </table>
@@ -2543,9 +2560,6 @@ function createSuperClueDeck()
                 const $container = document.getElementById('deck-container');
                 deckSuperClues.mount($container);
 
-                //deckSuperClues.intro();
-                //deckSuperClues.shuffle(true); //fake shuffle 2x for visual effect
-                //deckSuperClues.shuffle(true);
                 deckSuperClues.shuffle(superCardsDeckOrder());
                 deckSuperClues.smear();
             },
@@ -2594,12 +2608,14 @@ function createSuperClueDeck()
                 </td>
                 <td>
                     <button onclick='shuffleSpareMurderCards();'>shuffle</button>
-                <button onclick='fanSpareMurderCards();'>fan</button>
+                    <button onclick='fanSpareMurderCards();'>fan</button>
                 </td>
             </tr>
             <tr><td>
-                <button onclick='spreadSpareMurderCards();'>&#x1F441;</button>
-                <button onclick='resetSpareMurderCards();'>&#x1F648;</button>
+                <span data-tooltip='Reveal all cards' data-tooltip-position='right'>
+                    <button onclick='spreadSpareMurderCards();'>&#x1F441;</button></span>
+                <span data-tooltip='Hide/Put back all cards' data-tooltip-position='right'>
+                    <button onclick='resetSpareMurderCards();'>&#x1F648;</button></span>
             </td></tr>
         </table>
 </div>`,
@@ -2804,6 +2820,12 @@ function clickedCardHolder(cardHolderId, flapId, permaShow, quiet)
     {
         createPlayerData(who);
         playersData[who].clues.cardHolders[cardHolderId][flapId] = code;
+
+        //update to Detective Notes
+        const key = `${cardHolderId}_${flapId}`,
+            selId = `#select_${key}`;
+        $(selId)[0].value = ELEMENT_MAP2[code];
+        changeCellColour(`#detFlap${key}`, selId);
 
         if (!ALLOW_PEEKING_ANYTIME)
         {
@@ -3078,9 +3100,9 @@ function createDetectiveCard()
             <tr>
                 <td><span data-tooltip-position='top' data-tooltip='maybe this?'>&#10004;</span></td>
                 <td><span data-tooltip-position='top' data-tooltip='I have this card'>&#x270B;</span></td>
-                <td style='background:#d0d09e'><span data-tooltip-position='top' data-tooltip='maybe in Beige card holder'>Be</span></td>
-                <td style='background:green;color:white;'><span data-tooltip-position='top' data-tooltip='maybe in Green card holder'>G</span></td>
-                <td style='background:black; color:white'><span data-tooltip-position='top' data-tooltip='maybe in Black card holder'>Bk</span></td>
+                <td style='background:#d0d09e; border-left: 2px solid black;'><span data-tooltip-position='top' data-tooltip='maybe in Beige card holder'>Be</span></td>
+                <td style='background:green; color:white;'><span data-tooltip-position='top' data-tooltip='maybe in Green card holder'>G</span></td>
+                <td style='background:black; color:white; border-right: 2px solid black;'><span data-tooltip-position='top' data-tooltip='maybe in Black card holder'>Bk</span></td>
                 <td colspan='3'>
                     Most likely: <select id='detNoteSheet${i}'>
                         <option value="Unknown">(Unknown)</option>
@@ -3134,12 +3156,15 @@ function createDetectiveCard()
                 style3 = `background:${ELEMENT_COLOURS[code3]};color:${ELEMENT_TEXT_COLOURS[code3]}`;
                 style4 = `background:${ELEMENT_COLOURS[code4]};color:${ELEMENT_TEXT_COLOURS[code4]}`;
             }
+            const styleTemp = CARD_STYLES[n].substring(1),
+                styleBorderLeft = "'border-left: 2px solid black;" + styleTemp,
+                styleBorderRight = "'border-right: 2px solid black;" + styleTemp;
             s += `<tr style='border: 3px solid black'>
                 <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p0${i}${j}" id="p0${i}${j}"></td>
                 <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p1${i}${j}" id="p1${i}${j}"></td>
-                <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p2${i}${j}" id="p2${i}${j}"></td>
+                <td class="detective-card-table-col1p" style=${styleBorderLeft}><input type="checkbox" name="p2${i}${j}" id="p2${i}${j}"></td>
                 <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p3${i}${j}" id="p3${i}${j}"></td>
-                <td class="detective-card-table-col1p" style=${CARD_STYLES[n]}><input type="checkbox" name="p4${i}${j}" id="p4${i}${j}"></td>
+                <td class="detective-card-table-col1p" style=${styleBorderRight}><input type="checkbox" name="p4${i}${j}" id="p4${i}${j}"></td>
                 <td class="detective-card-table-col1q" style=${CARD_STYLES[n]}><input type="checkbox" name="p5${i}${j}" id="p5${i}${j}">
                 <label for="q${i}${j}">${name}</label><br>
                 <td class='detective-card-table-clues detective-card-table-clues-1'
