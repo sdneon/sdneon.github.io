@@ -44,42 +44,75 @@ function compareCardTypes(a, b) {
 }
 
 //convert to hex and pad to 6 characters if needed (by prepending '0')
-function toHex6Chars(v)
+function toHexChars(v, numChs)
 {
     let s = v.toString(16);
-    if (s.length <= 5)
+    if (s.length < numChs)
         s = '0' + s;
     return s;
 }
+
+/*
+    Encode (up to 8) Murder cards (IDs) for remote play.
+*/
+function encodeCards(cards)
+{
+    /*
+    Each card has value [0, 26] needs min 5 bits, so use 1B for each.
+    Use a simple mask since we just don't want player to read the card ID off.
+    => mask: 0xAA i.e. 10101010b
+    Encoded output: [masked card IDs, 2 hex digit each for total of 2 to 16 hex digits]
+    */
+    const cnt = cards.length;
+    let code = '';
+    for (let i = 0; i < cnt; ++i)
+    {
+        code += toHexChars(cards[i] ^ 0xAA, 2);
+    }
+
+    console.log(`masked cards code: 0x${code}`);
+    return code;
+}
+
+function decodeCards(code)
+{
+    const cnt = (code.length / 2) | 0,
+        cards = [];
+    for (let i = 0, p = 0; i < cnt; ++i, p += 2)
+    {
+        cards[i] = parseInt(code.substring(p, p+2), 16) ^ 0xAA;
+    }
+    return cards;
+}
+
 //encode mystery (card holder values) for link sharing for remote play
 function encodeMystery()
 {
-    const now = Date.now() & 0xffffff;
-    let code = 0,
-        shift = 0;
-    for (let i = 0; i < cardHolders.length; ++i, shift += 8)
-    {
-        code |= cardHolders[i] << shift;
-    }
-    //console.log(`now: 0x${now.toString()}, raw code: ${code.toString(16)}`);
-    code ^= now;
-    code = `${toHex6Chars(now)}${toHex6Chars(code)}`;
-    //console.log(`masked code: 0x${code.toString(16)}`);
-    return code;
+    return encodeCards(cardHolders);
 }
 
 function decodeMystery(code)
 {
-    const now = parseInt(code.substring(0, 6), 16);
-    code = parseInt(code.substring(6), 16);
-    code ^= now;
-    const cards = [];
-    for (let i = 0, shift = 0; i < 3; ++i, shift += 8)
-    {
-        cards[i] |= (code >> shift) & 0xff;
-    }
-    //console.log('decoded code:', cards);
-    return cards;
+    return decodeCards(code);
+}
+
+/*
+    Encode who received (up to 8) Murder cards (IDs), for remote play.
+    4 max from Super Clue, and 8 max from 1 from each (other) player.
+    Retval:
+    [player ID, 1 hex digit][mask, up to 8 hex digits][card IDs, 1 hex digit each for total of 1 to 8 hex digits]
+*/
+function encodeMurderCards(cards)
+{
+    const code = encodeCards(cards);
+    return `${who.toString(16)}${code}`;
+}
+
+function decodeMurderCards(code)
+{
+    const playerId = parseInt(code.substring(0, 2), 16),
+        cards = decodeCards(code.substring(2, code.length));
+    return [playerId, cards];
 }
 
 function updateGameCode()
@@ -104,6 +137,63 @@ function playerString(playerId)
 {
     playerId ??= who;
     return `<font color='${PLAYER_COLORS[playerId]}'>${PLAYERS[playerId]}</font>`;
+}
+
+function announceNewCardsRecv(info)
+{
+    const { numCardsTaken, newCardsCode } = info;
+    appendStatus(`${playerString()} got ${numCardsTaken} Murder cards
+        <span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
+            <button onclick='gotoNotes();'>(goto Notes)</button></span>
+        <span data-tooltip='Copy new cards codes to share for remote play' data-tooltip-position='bottom'>
+            <button onclick='navigator.clipboard.writeText("${newCardsCode}");'>Copy Cards Code: ${newCardsCode}</button></span>`);
+}
+
+function gimme5MurCards()
+{
+    announceNewCardsRecv(takeMurderCard(who, 5));
+}
+
+function claimCards()
+{
+    if (!remotePlay)
+    {
+        showStatus('&#9888;&#65039; Cannot claim cards when <i>Not</i> in remote play');
+        return;
+    }
+    const cards = decodeCards($('#inClaimCards')[0].value);
+    if (cards.length <= 0)
+    {
+        appendStatus(`&#9888;&#65039; Invalid cards code ${code}?! No card obtained.`);
+        return;
+    }
+    let cnt = 0;
+    createPlayerData(who);
+    const deck = playerCardDecks[who];
+    cards.forEach((card) => {
+        if ((card < 0) || (card >= CARD_NAMES.length))
+        {
+            appendStatus(`&#9888;&#65039; Tried to grab <i>invalid</i> card#${card}`);
+            return;
+        }
+        if (answers.indexOf(card) >= 0)
+        {
+            return; //silently abort without obviously giving away attempt to claim an answer card
+        }
+        if (deck.indexOf(card) >= 0)
+        {
+            appendStatus(`&#x270B; Already has card#${card}`, undefined, true);
+            return;
+        }
+        ++cnt;
+        deck.push(card);
+        playersData[who].clues.cardsSeen[card] = true;
+        deckPlayerMurderCards.append(`<div class='bg_gold'>
+            <div id='player${who}_mur${card}' class='card_alone'
+                style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
+        deckSpareMurderCards.removeCard(card);
+    });
+    appendStatus(`&#x1F44C; Claimed ${cnt} card(s).`, undefined, true);
 }
 
 //@retval player ID if its token has been clicked
@@ -194,10 +284,7 @@ function cellClicked(y, x)
         {
             const cnt = clue[2];
             showStatus(`Take ${cnt} murder card${(cnt>=1)?'s':''} from deck`);
-            const numCardsTaken = takeMurderCard(who, cnt);
-            appendStatus(`${playerString()} got ${numCardsTaken} Murder cards
-                <span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
-                    <button onclick='gotoNotes();' style='background:#dedea9'>(goto Notes)</button></span>`);
+            announceNewCardsRecv(takeMurderCard(who, cnt));
         }
         else if (clue[1] === 'clue')
         {
@@ -438,7 +525,7 @@ function showStatus(s, colour, silent)
         div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
-function appendStatus(s, colour)
+function appendStatus(s, colour, silent)
 {
     const div = $('#divStatus')[0];
     if (!colour)
@@ -449,7 +536,8 @@ function appendStatus(s, colour)
     {
         div.innerHTML += '<br>' + `<font color="${colour}"><b>${s}</b></font>`;
     }
-    div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    if (!silent)
+        div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
 function showWhoseTurn(freshStart)
@@ -1262,13 +1350,13 @@ function enableLastCardDragAndFlip(deck)
 
 function takeMurderCard(playerIndex, cnt)
 {
-    let numCardsTaken = 0;
+    const newCards = [];
     while ((cnt > 0) && (cardsDeck.length >= 1))
     {
         const card = cardsDeck.splice(0, 1)[0];
         playerCardDecks[playerIndex].push(card);
         --cnt;
-        ++numCardsTaken;
+        newCards.push(card);
 
         createPlayerData(playerIndex);
         playersData[playerIndex].clues.cardsSeen[card] = true;
@@ -1278,7 +1366,10 @@ function takeMurderCard(playerIndex, cnt)
                 style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
         deckSpareMurderCards.removeCard(card);
     }
-    return numCardsTaken;
+    return {
+        numCardsTaken: newCards.length,
+        newCardsCode: encodeCards(newCards)
+    };
 }
 
 function returnMurderCards()
@@ -1311,10 +1402,7 @@ function takeActionCard()
     {
         const cnt = card[2];
         appendStatus(`Action card: <h2>Take ${cnt} murder cards from deck</h2>`);
-        const numCardsTaken = takeMurderCard(who, cnt);
-        appendStatus(`${playerString()} got ${numCardsTaken} Murder cards
-            <span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
-                <button onclick='gotoNotes();' style='background:#dedea9'>(goto Notes)</button></span>`);
+        announceNewCardsRecv(takeMurderCard(who, cnt));
     }
     else
     {

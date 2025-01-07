@@ -38,16 +38,16 @@
                 </tr>
                 <tr style='font-size: 0.8em; line-height: 0.5em;'>
                     <td style='border:solid 0 #000; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
-                    <td style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
+                    <td colspan='4' style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
                 </tr>
                 <tr>
-                    <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px; border-right-width:2px;' colspan='5'>
+                    <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px; border-right-width:2px;' colspan='6'>
                         <span data-tooltip-position='right' data-tooltip='Scroll to current player token'>
                             <button onclick='whereAmI();'>Find Me!</button></span>
                         <span data-tooltip='Jump to Detective Notes at bottom of page' data-tooltip-position='right'>
                             <button onclick='gotoNotes();'>(goto Notes)</button></span>
                         <span data-tooltip='Cheat!: Give 5 free Murder Cards' data-tooltip-position='bottom'>
-                            <button onclick='takeMurderCard(who, 5);' class='button_final'>Gimme 5!</button></span>
+                            <button onclick='gimme5MurCards();' class='button_final'>Gimme 5!</button></span>
                     </td>
                 </tr>
             </table>
@@ -61,7 +61,7 @@
                     <td style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
                 </tr>
                 <tr>
-                    <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px; border-right-width:2px;' colspan='5'>
+                    <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px; border-right-width:2px;' colspan='6'>
                         <span data-tooltip-position='right' data-tooltip='Save game and switch to next player'>
                             <button onclick='nextPlayer();' class='button_final'>Next Player</button></span>
                         <span data-tooltip='Show clue counters list' data-tooltip-position='right'>
@@ -80,7 +80,7 @@
                 </tr>
                 <tr style='font-size: 0.8em; line-height: 0.5em;'>
                     <td style='border:solid 0 #00f; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
-                    <td style='border:solid 0 #00f; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
+                    <td colspan='6' style='border:solid 0 #00f; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
                 </tr>
                 <tr>
                     <td style='border:solid 0 #00f; border-left-width:2px; border-bottom-width:2px;' colspan='4'>
@@ -91,14 +91,13 @@
                         <span data-tooltip-position='bottom' data-tooltip='Auto-analyze (while annoucing analysis) and act on available clues - open flaps or solve.'>
                             <button id='buttAI2' onclick="think(true, true, true);" class='button_ai'>Act</button></span>
                         <span data-tooltip-position='bottom' data-tooltip='Auto-analyze secretly and act on available clues - open flaps or solve. [Use this to treat current player as a computer player]'>
-                            <button id='buttAI2' onclick="think(true, true, false);" class='button_ai'>Act Secretly</button></span>
+                            <button id='buttAI3' onclick="think(true, true, false);" class='button_ai'>Act Secretly</button></span>
                     </td>
                 </tr>
                 <tr>
                     <td colspan='8'></td>
                 </tr>
             </table>
-       </td><td>
         </td></tr></table>
     </td>
     <td>
@@ -112,14 +111,14 @@
 <tr>
     <td colspan='3'>
         <table>
-            <tr><td><span data-tooltip-position='bottom' data-tooltip='Go after these clues to get a "Super Clue" card, which give clues in the Card Holders'><b>Active Super Clues:</b></span></td></tr>
+            <tr><td colspan='2'><span data-tooltip-position='bottom' data-tooltip='Go after these clues to get a "Super Clue" card, which give clues in the Card Holders'><b>Active Super Clues:</b></span></td></tr>
             <tr>
                 <td>
-        <table class='cell' style='text-align: left;'>
-            <tr id='divActiveClues'>
-                <th class='no-active-clue'>
-                    (No Active Super Clues)
-                </th>
+                    <table class='cell' style='text-align: left;'>
+                        <tr id='divActiveClues'>
+                            <th class='no-active-clue'>
+                                (No Active Super Clues)
+                            </th>
                         </tr>
                     </table>
                 </td>
@@ -139,14 +138,52 @@
 <h2><span id='spanWhose'></span> Detective Notepad<button onclick="toggleView('divDetectiveNotepad');"> (show/hide)</button>
     &nbsp;<button onclick="goTop();">(back to top)</button>&nbsp;&nbsp;&nbsp;<button onclick="giveUp();" class='button_final'>Give Up!</button><br></h2>
 <div id='divDetectiveNotepad'>
-Clue style:
-  <input id='radDetectiveSmartEasy' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);' checked>
-  <label for='radDetectiveSmartEasy'><span data-tooltip-position='left' data-tooltip='clues in 4 corners like card'>Smart Easy</span></label>
-  <input id='radDetectiveSmart' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
-  <label for='radDetectiveSmart'><span data-tooltip-position='left' data-tooltip='clues in a row: top left clue, bottom-right clue, top-right, bottom-left'>Smart</span></label>
-  <input id='radDetectiveHardwork' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
-  <label for='radDetectiveHardwork'><span data-tooltip-position='left' data-tooltip='clues in a row, without tallying to card corners at all'>Hard</span></label>
+<table><tr><td>
+    <table>
+        <tr style='font-size: 0.8em; line-height: 0.5em;'>
+            <td>&nbsp;</td><td rowspan='2'><h3>Clue Style</h3></td><td colspan='4'>&nbsp;</td>
+        </tr>
+        <tr style='font-size: 0.8em; line-height: 0.5em;'>
+            <td style='border:solid 0 #000; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
+            <td style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;' colspan='5'>&nbsp;</td>
+        </tr>
+        <tr>
+            <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px' colspan='2'>
+                <input id='radDetectiveSmartEasy' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);' checked>
+                <label for='radDetectiveSmartEasy'><span data-tooltip-position='left' data-tooltip='clues in 4 corners like card'>Smart Easy</span></label>
+            </td>
+            <td style='border:solid 0 #000; border-bottom-width:2px;' colspan='2'>
+                <input id='radDetectiveSmart' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
+                <label for='radDetectiveSmart'><span data-tooltip-position='left' data-tooltip='clues in a row: top left clue, bottom-right clue, top-right, bottom-left'>Smart</span></label>
+            </td>
+            <td style='border:solid 0 #000; border-bottom-width:2px; border-right-width:2px;' colspan='2'>
+                <input id='radDetectiveHardwork' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
+                <label for='radDetectiveHardwork'><span data-tooltip-position='left' data-tooltip='clues in a row, without tallying to card corners at all'>Hard</span></label>
+            </td>
+        </tr>
+    </table>
+</td><td>
   <button onclick="saveLastPlayerDetNotes(who);">Save Notes</button>
+</td><td>
+    <table>
+        <tr style='font-size: 0.8em; line-height: 0.5em;'>
+            <td>&nbsp;</td><td rowspan='2'><h3>Cards Code</h3></td><td colspan='4'>&nbsp;</td>
+        </tr>
+        <tr style='font-size: 0.8em; line-height: 0.5em;'>
+            <td style='border:solid 0 #000; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
+            <td style='border:solid 0 #000; border-right-width:2px; border-top-width:2px;' colspan='4'>&nbsp;</td>
+        </tr>
+        <tr>
+            <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px;' colspan='3'>
+                <span data-tooltip-position='bottom' data-tooltip='Enter "new cards code" to claim Murder cards'>
+                    <input type="text" id="inClaimCards" size='16' style='width: 300px; font-size: 1.2em' name="inClaimCards"></span>
+            </td><td style='border:solid 0 #000; border-bottom-width:2px;border-right-width:2px;' colspan='3'>
+                <span data-tooltip-position='right' data-tooltip='Click to claim cards for current player'>
+                    <button onclick='claimCards();'>Claim</button></span>
+            </td>
+        </tr>
+    </table>
+</td></tr></table>
 <table>
     <tr>
         <td>
@@ -154,7 +191,7 @@ Clue style:
             <tr id='detective-card-container-0'></tr>
             <tr id='detective-card-container-1'></tr>
             <tr id='detective-card-container-2'></tr>
-            <tr><td class='big-font'>
+            <tr><td class='big-font' colspan='3'>
             <b>ACCUSATION</b>
             I accuse <select class='big-font' id='select0'><option value="Unknown">(Unknown)</option></select><br>
             of committing the murder with the <select class='big-font' id='select1'><option value="Unknown">(Unknown)</option></select><br>
