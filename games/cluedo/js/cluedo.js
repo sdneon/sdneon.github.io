@@ -2038,7 +2038,7 @@ function restoreSavedGame()
     cardsOrder[0].forEach((cardId) => {
         deckSpareMurderCards.addCard(cardId);
     });
-    deckSpareMurderCards.shuffle(spareMurderCardsDeckOrder);
+    deckSpareMurderCards.shuffle(cardsOrder);
     deckSpareMurderCards.smear();
 
     //placedOrns, placedClues, placedWeapons
