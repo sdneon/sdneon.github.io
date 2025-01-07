@@ -3319,6 +3319,10 @@ const RULES = `
 <div class="mw-parser-output"><div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" style="display:none" aria-pressed='true'><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
 <ul>
 <li class="toclevel-1 tocsection-1"><a href="#Set_up"><span class="tocnumber">1</span> <span class="toctext">Set up</span></a></li>
+<ul>
+<li class="toclevel-2 tocsection-8"><a href="#Webpage_Play"><span class="tocnumber">1.2</span> <span class="toctext">Webpage Play</span></a></li>
+<li class="toclevel-2 tocsection-9"><a href="#Partial_AI"><span class="tocnumber">1.2</span> <span class="toctext">Partial AI</span></a></li>
+</ul>
 <li class="toclevel-1 tocsection-2"><a href="#Gameplay"><span class="tocnumber">2</span> <span class="toctext">Gameplay</span></a>
 <ul>
 <li class="toclevel-2 tocsection-3"><a href="#Secret_Passages"><span class="tocnumber">2.1</span> <span class="toctext">Secret Passages</span></a></li>
@@ -3348,6 +3352,44 @@ const RULES = `
 </li>
 <li>Once the Murder Cards have been placed in the Murder Card Holders the remaining Murder Cards are shuffled together thoroughly and placed face down next to the Super Clue Cards.</li>
 <li>Each player take a "wipe off" Detective Note Sheet.</li></ol>
+<h3><span class="mw-headline" id="Webpage_Play">Webpage Play</span></h3>
+<p>When using Neon's Cluedo webpage to play, most setup is automatically done.
+</p>
+<ol>
+<li>Go to the bottom of the page to select players. You may still add/remove players after the game is started.</li>
+<li>Refresh the page (or click the 'New Game' button) to start a new game. You will be offered the chance to (a) restore a save game if available (click the corresponding 'Yes' button), (b) join a 'remote' play  (click the corresponding 'Yes' button), or start a new game (click 'No' button or just roll the dice and go!).
+    <ul>
+        <li>'Remote' play is a temporary proxy for networked multiplayer.
+            <ol>
+                <li>A host player hosts the game on a main webpage. Share this 'main' game board using video chat.</li>
+                <li>Click the 'Copy Game Link' button and send the link to the other players.</li>
+                <li>The latter opens the game page in their own devices to keep notes privately. The shared game code 'mirrors' the current mystery to their device.</li>
+                <li>Remote players directs the Host player to help make their moves. When a clue counter reward or Super Clue triggers:
+                    <ul>
+                        <li>For viewing flaps: remote players use their own device to click the 'mirrored' card holders and take notes.</li>
+                        <li>For Murder cards: Host has to send the 'Cards Code' to the current remote player. The latter claims the code in the Detective Notes in their own device, and views the Murder cards obtained, and take notes.</li>
+                    </ul>
+                </li>
+                <li>Host plays as normal on the main screen, and pauses sharing when making his private inspections and note taking.</li>
+            </ol>
+        </li>
+    </ul>
+</li>
+<li>Click the dice to roll. Click the 'Find Me!' button to scroll your player token into view. Mouse over the token to recall your rolled dice numbers.</li>
+<li>Click on map spaces to move. Clicking on items trigger relevant actions, which are stated at the top of the page.</li>
+<li>Click '(goto Notes)' button to jump to Detective Notes section to record your findings. When finished, click the '(back to top)' button to hide your Notes and jump back to the top of the page.</li>
+<li>Click 'Next Player' button to save game and pass the turn to the next player.</li>
+</ol>
+<h3><span class="mw-headline" id="Partial_AI">Partial AI</span></h3>
+<p>To play against partial Computer Players, help it to:
+</p>
+<ol>
+<li>Roll dice and move player token to find clue counters or active Super Clue items.</li>
+<li>When an action is available (Murder cards received or flaps available for peeking), click the 'Act Secretly' button to let the AI automatically select flaps to view, study available Murder cards and even make an accusation!</li>
+<li>Click 'Next Player' to pass.</li>
+</ol>
+<p>If you require assistance, you may click the 'Analyze' button to get recommendations. If more help is required, you may further click on the 'Act' button to automatically select the best flaps to view, study all your clues and form accusations!
+</p>
 <h2><span class="mw-headline" id="Gameplay">Gameplay</span></h2>
 <ol><li>Each player chooses a character and moves this piece throughout the game.</li>
 <li>Choose a starting player. The first player throws both dice and then moves their character EITHER the sum of the two dice OR the number on any single dice.</li>
