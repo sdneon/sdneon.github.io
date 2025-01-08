@@ -360,7 +360,7 @@ e.removeClass=function(a){this.g.classList.remove(a);return this};e.toggleClass=
         K = (!navigator.userAgentData || (navigator.userAgentData.platform !== 'Android'))?
             Math.min(a.clientWidth, window.innerWidth):
             Math.max(a.clientWidth, window.innerWidth); //Conversely for Android(/Fold?), take the max() to avoid WinBox being stuck on left half of screen
-        P = Math.min(a.clientHeight, window.innerHeight);
+        P = Math.max(a.clientHeight, window.innerHeight);
     }
     e = U.prototype;
     e.mount = function(a) {
