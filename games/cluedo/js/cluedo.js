@@ -3490,7 +3490,7 @@ function showCluesList()
         }
 
         poupupCluesList = new WinBox({
-            title: 'Rules',
+            title: 'Available Clues',
             x: '10px',
             y: '100px',
             width: '50%',
