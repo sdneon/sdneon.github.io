@@ -3385,6 +3385,9 @@ const RULES = `
 </p>
 <ol>
 <li>Roll dice and move player token to find clue counters or active Super Clue items.</li>
+<ul>
+<li>If you want a 'weaker' AI, simply move its token 'more aimlessly' or take bigger detours. E.g.: Go after clues one or two turns later, so as to let human players go after the clues first! Send AI's token outside and go round the garden, LOL!</li>
+</ul>
 <li>When an action is available (Murder cards received or flaps available for peeking), click the 'Act Secretly' button to let the AI automatically select flaps to view, study available Murder cards and even make an accusation!</li>
 <li>Click 'Next Player' to pass.</li>
 </ol>
