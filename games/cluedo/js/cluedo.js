@@ -215,21 +215,26 @@ function diceString()
     return `<span data-tooltip='${diceOne.val}+${diceTwo.val}=${diceOne.val+diceTwo.val}' data-tooltip-position='top'>&nbsp;&nbsp;&nbsp;</span>`;
 }
 
-function movePlayerThere(who, cellId)
+function movePlayerThere(playerId, cellId)
 {
-    const lastPos = playerPositions[who]; //cell ID
+    const lastPos = playerPositions[playerId]; //cell ID
     if (lastPos !== undefined)
     {
         const cell = $(`#cell_played${lastPos}`);
-        cell.removeClass(`cell_player_${who}`);
+        cell.removeClass(`cell_player_${playerId}`);
         cell[0].innerHTML = '';
         $(`#cell${lastPos}`).removeClass('cell_occupied');
     }
-    playerPositions[who] = cellId;
+    playerPositions[playerId] = cellId;
     const cell = $(`#cell_played${cellId}`);
-    cell.addClass(`cell_player_${who}`);
+    cell.addClass(`cell_player_${playerId}`);
     cell[0].innerHTML = diceString();
     $(`#cell${cellId}`).addClass('cell_occupied');
+    if (playerId === who)
+    {
+        $('td').removeClass('shimmer pulsate');
+        cell.addClass('shimmer');
+    }
 }
 
 function checkResetClueCounters()
@@ -542,14 +547,20 @@ function appendStatus(s, colour, silent)
 
 function showWhoseTurn(freshStart)
 {
-    const s = playerString();
-    $('#divWho')[0].innerHTML = `${s} turn...`;
+    const s = playerString(),
+        cell = $('#divWho');
+    cell[0].innerHTML = `${s} turn...`;
+    cell.addClass('pulsate_once');
     $('#spanWhose')[0].innerHTML = s;
+    setTimeout(() => {
+        cell.removeClass('pulsate_once');
+    }, 1000);
 
     if (lastPlayer === who)
     {
         return; //no change in player, so no need to swap UI data
     }
+    whereAmI(who, true, true);
     //also update shared player data UIs, like deckPlayerMurderCards & Detective Notepad
     if (freshStart)
     {
@@ -2274,15 +2285,26 @@ function nextPlayer(freshStart, dontSave)
     showWhoseTurn(freshStart);
 }
 
-function whereAmI(playerId)
+function whereAmI(playerId, dontScrollIntoView, shimmer)
 {
+    if (shimmer)
+    {
+        $('td').removeClass('shimmer');
+    }
     playerId ??= who;
     const cellId = playerPositions[playerId],
         cell = $(`#cell_played${cellId}`);
     cell.addClass('pulsate');
-    cell[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    if (!dontScrollIntoView)
+    {
+        cell[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    }
     setTimeout(() => {
         cell.removeClass('pulsate');
+        if (shimmer)
+        {
+            cell.addClass('shimmer');
+        }
     }, 5000);
 }
 

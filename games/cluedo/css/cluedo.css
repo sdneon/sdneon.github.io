@@ -836,22 +836,44 @@ body {
     animation-timing-function: linear;
 }
 
-@keyframes pulsate {
-/*
-  from {
-    transform: scale(3);
-  }
+.pulsate_once {
+    animation-name: pulsate_once;
+    animation-duration: 0.5s;
+    animation-iteration-count: 1;
+    /*animation-iteration-count: infinite;*/
+    animation-timing-function: linear;
+}
 
-  to {
-    transform: scale(1);
-  }
-*/
+@keyframes pulsate {
   10%, 30%, 50%, 70%, 90% {
     transform: scale(2);
   }
   20%, 40%, 60%, 80% {
     transform: scale(1);
   }
+}
+
+@keyframes pulsate_once {
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.shimmer {
+  color: grey;
+  display: inline-block;
+  mask: linear-gradient(-60deg, #000 30%, #0005, #000 70%) right/350% 100%;
+  animation: shimmer 6.5s infinite;
+  font-size: 50px;
+  max-width: 200px;
+  transform: scale(1.2);
+}
+
+@keyframes shimmer {
+  0% { mask-position: initial }
+  10% { mask-position: left }
+  50% { mask-position: initial }
+  60% { mask-position: left }
 }
 
 input {
