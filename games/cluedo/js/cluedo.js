@@ -190,7 +190,7 @@ function claimCards()
         playersData[who].clues.cardsSeen[card] = true;
         deckPlayerMurderCards.append(`<div class='bg_gold'>
             <div id='player${who}_mur${card}' class='card_alone'
-                style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
+                style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
         deckSpareMurderCards.removeCard(card);
     });
     appendStatus(`&#x1F44C; Claimed ${cnt} card(s).`, undefined, true);
@@ -350,7 +350,7 @@ function cellClicked(y, x)
                         myDeck.push(card);
                         takenFrom.push(playerId);
                         deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-                            style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
+                            style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
                         ++numTaken;
                     }
                 });
@@ -377,7 +377,7 @@ function cellClicked(y, x)
                     deck.splice(i, 1);
                     myDeck.push(card);
                     deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-                        style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
+                        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
                     ++numTaken;
                 }
             }
@@ -575,7 +575,7 @@ function showWhoseTurn(freshStart)
     {
         const id = cardIds[i];
         deckPlayerMurderCards.append(`<div id='player${who}_mur${id}' class='card_alone'
-            style='background-image: url(images/card-${CARD_IMAGES[id]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
+            style='background-image: url(images/card-${CARD_IMAGES[id]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
     }
 
     //saveLastPlayerDetNotes();
@@ -1374,7 +1374,7 @@ function takeMurderCard(playerIndex, cnt)
 
         deckPlayerMurderCards.append(`<div class='bg_gold'>
             <div id='player${who}_mur${card}' class='card_alone'
-                style='background-image: url(images/card-${CARD_IMAGES[card]}.png); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
+                style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
         deckSpareMurderCards.removeCard(card);
     }
     return {
@@ -2222,7 +2222,7 @@ function restoreSavedGame()
     deckPlayerMurderCards[0].innerHTML = '';
     playerCardDecks[who].forEach((cardId) => {
         deckPlayerMurderCards.append(`<div id='player${who}_mur${cardId}' class='card_alone'
-            style='background-image: url(images/card-${CARD_IMAGES[cardId]}.png); background-repeat: no-repeat;background-size: 100%;'></div>`);
+            style='background-image: url(images/card-${CARD_IMAGES[cardId]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
     });
 
     AVOID_BLOCKING_ROOM_ENTRY = gameData.AVOID_BLOCKING_ROOM_ENTRY;
@@ -3047,11 +3047,11 @@ function onChangeDetNoteCardHolder(holderId)
         img = $(`#detNoteCardHolderImg${holderId}`)[0];
     if (cardName === 'Unknown')
     {
-        img.src = 'images/card-unknown.png';
+        img.src = 'images/card-unknown.webp';
         return;
     }
     const cardId = CARD_NAMES.indexOf(cardName);
-    img.src = `images/card-${CARD_IMAGES[cardId]}.png`;
+    img.src = `images/card-${CARD_IMAGES[cardId]}.webp`;
 }
 
 const solveThis = [
@@ -3341,7 +3341,7 @@ function createDetectiveCard()
                             <option value="Unknown">(Unknown)</option>
                             ${cardComboOptions.join(' ')}
                         </select></div>
-                        <div><img id='detNoteCardHolderImg${i}' src='images/card-unknown.png' style='width:200px'/></div>
+                        <div><img id='detNoteCardHolderImg${i}' src='images/card-unknown.webp' style='width:200px'/></div>
                     </td>
                     <td id='detFlap${i}_2' class='${flapClass}'>
                         <select id="select_${i}_2" onchange='changeCellColour("#detFlap${i}_2", "#select_${i}_2");'>>

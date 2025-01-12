@@ -115,7 +115,7 @@
 }
 .card.superclue .back {
   position: absolute;
-  background-image: url("../images/card-super-clue.png");
+  background-image: url("../images/card-super-clue.webp");
   background-position: 50% 50%;
   -webkit-background-size: 100% 100%;
   -moz-background-size: 100% 100%;
@@ -128,7 +128,7 @@
 }
 .card.murder .back {
   position: absolute;
-  background-image: url("../images/card-murder.png");
+  background-image: url("../images/card-murder.webp");
   background-position: 50% 50%;
   -webkit-background-size: 100% 100%;
   -moz-background-size: 100% 100%;
@@ -219,146 +219,146 @@
 */
 
 .card.superclue .face {
-  background-image: url("../images/card-blank.png");
+  background-image: url("../images/card-blank.webp");
 }
 .card.superclue.rank0 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank1 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank2 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank3 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank4 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank5 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank6 .face {
-  background-image: url("../images/card-look-1.png");
+  background-image: url("../images/card-look-1.webp");
 }
 .card.superclue.rank7 .face {
-  background-image: url("../images/card-look-2.png");
+  background-image: url("../images/card-look-2.webp");
 }
 .card.superclue.rank8 .face {
-  background-image: url("../images/card-look-2.png");
+  background-image: url("../images/card-look-2.webp");
 }
 .card.superclue.rank9 .face {
-  background-image: url("../images/card-look-2.png");
+  background-image: url("../images/card-look-2.webp");
 }
 .card.superclue.rank10 .face {
-  background-image: url("../images/card-look-2.png");
+  background-image: url("../images/card-look-2.webp");
 }
 .card.superclue.rank11 .face {
-  background-image: url("../images/card-look-2.png");
+  background-image: url("../images/card-look-2.webp");
 }
 .card.superclue.rank12 .face {
-  background-image: url("../images/card-take-1.png");
+  background-image: url("../images/card-take-1.webp");
 }
 .card.superclue.rank13 .face {
-  background-image: url("../images/card-take-1.png");
+  background-image: url("../images/card-take-1.webp");
 }
 .card.superclue.rank14 .face {
-  background-image: url("../images/card-take-2.png");
+  background-image: url("../images/card-take-2.webp");
 }
 .card.superclue.rank15 .face {
-  background-image: url("../images/card-take-3.png");
+  background-image: url("../images/card-take-3.webp");
 }
 .card.superclue.rank16 .face {
-  background-image: url("../images/card-take-4.png");
+  background-image: url("../images/card-take-4.webp");
 }
 .card.superclue.rank17 .face {
-  background-image: url("../images/card-false-alarm.png");
+  background-image: url("../images/card-false-alarm.webp");
 }
 
 .card.murder .face {
-  background-image: url("../images/card-who-unknown.png");
+  background-image: url("../images/card-who-unknown.webp");
 }
 .card.murder.rank0 .face {
-  background-image: url("../images/card-player-yellow.png");
+  background-image: url("../images/card-player-yellow.webp");
 }
 .card.murder.rank1 .face {
-  background-image: url("../images/card-player-red.png");
+  background-image: url("../images/card-player-red.webp");
 }
 .card.murder.rank2 .face {
-  background-image: url("../images/card-player-brown.png");
+  background-image: url("../images/card-player-brown.webp");
 }
 .card.murder.rank3 .face {
-  background-image: url("../images/card-player-white.png");
+  background-image: url("../images/card-player-white.webp");
 }
 .card.murder.rank4 .face {
-  background-image: url("../images/card-player-gray.png");
+  background-image: url("../images/card-player-gray.webp");
 }
 .card.murder.rank5 .face {
-  background-image: url("../images/card-player-green.png");
+  background-image: url("../images/card-player-green.webp");
 }
 .card.murder.rank6 .face {
-  background-image: url("../images/card-player-purple.png");
+  background-image: url("../images/card-player-purple.webp");
 }
 .card.murder.rank7 .face {
-  background-image: url("../images/card-player-blue.png");
+  background-image: url("../images/card-player-blue.webp");
 }
 .card.murder.rank8 .face {
-  background-image: url("../images/card-player-pink.png");
+  background-image: url("../images/card-player-pink.webp");
 }
 .card.murder.rank9 .face {
-  background-image: url("../images/card-wpn-poison.png");
+  background-image: url("../images/card-wpn-poison.webp");
 }
 .card.murder.rank10 .face {
-  background-image: url("../images/card-wpn-blunderbuss.png");
+  background-image: url("../images/card-wpn-blunderbuss.webp");
 }
 .card.murder.rank11 .face {
-  background-image: url("../images/card-wpn-revolver.png");
+  background-image: url("../images/card-wpn-revolver.webp");
 }
 .card.murder.rank12 .face {
-  background-image: url("../images/card-wpn-axe.png");
+  background-image: url("../images/card-wpn-axe.webp");
 }
 .card.murder.rank13 .face {
-  background-image: url("../images/card-wpn-rope.png");
+  background-image: url("../images/card-wpn-rope.webp");
 }
 .card.murder.rank14 .face {
-  background-image: url("../images/card-wpn-spanner.png");
+  background-image: url("../images/card-wpn-spanner.webp");
 }
 .card.murder.rank15 .face {
-  background-image: url("../images/card-wpn-leadpiping.png");
+  background-image: url("../images/card-wpn-leadpiping.webp");
 }
 .card.murder.rank16 .face {
-  background-image: url("../images/card-wpn-dagger.png");
+  background-image: url("../images/card-wpn-dagger.webp");
 }
 .card.murder.rank17 .face {
-  background-image: url("../images/card-wpn-candlestick.png");
+  background-image: url("../images/card-wpn-candlestick.webp");
 }
 .card.murder.rank18 .face {
-  background-image: url("../images/card-room-hall.png");
+  background-image: url("../images/card-room-hall.webp");
 }
 .card.murder.rank19 .face {
-  background-image: url("../images/card-room-conservatory.png");
+  background-image: url("../images/card-room-conservatory.webp");
 }
 .card.murder.rank20 .face {
-  background-image: url("../images/card-room-study.png");
+  background-image: url("../images/card-room-study.webp");
 }
 .card.murder.rank21 .face {
-  background-image: url("../images/card-room-library.png");
+  background-image: url("../images/card-room-library.webp");
 }
 .card.murder.rank22 .face {
-  background-image: url("../images/card-room-lounge.png");
+  background-image: url("../images/card-room-lounge.webp");
 }
 .card.murder.rank23 .face {
-  background-image: url("../images/card-room-kitchen.png");
+  background-image: url("../images/card-room-kitchen.webp");
 }
 .card.murder.rank24 .face {
-  background-image: url("../images/card-room-billiard.png");
+  background-image: url("../images/card-room-billiard.webp");
 }
 .card.murder.rank25 .face {
-  background-image: url("../images/card-room-dining.png");
+  background-image: url("../images/card-room-dining.webp");
 }
 .card.murder.rank26 .face {
-  background-image: url("../images/card-room-ballroom.png");
+  background-image: url("../images/card-room-ballroom.webp");
 }
 
 /*
