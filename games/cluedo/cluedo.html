@@ -73,9 +73,9 @@
             <table>
                 <tr style='font-size: 0.8em; line-height: 0.5em;'>
                     <td>&nbsp;</td>
-                    <td rowspan='2' colspan='2'>AI Assist</td>
+                    <td rowspan='2' colspan='2'>Smart AI Assist</td>
                     <td rowspan='2' colspan='2'>|</td>
-                    <td rowspan='2' colspan='2'>AI Play</td>
+                    <td rowspan='2' colspan='2'>Smart AI Play</td>
                     <td>&nbsp;</td>
                 </tr>
                 <tr style='font-size: 0.8em; line-height: 0.5em;'>
@@ -92,6 +92,39 @@
                             <button id='buttAI2' onclick="think(true, true, true);" class='button_ai'>Act</button></span>
                         <span data-tooltip-position='bottom' data-tooltip='Auto-analyze secretly and act on available clues - open flaps or solve. [Use this to treat current player as a computer player]'>
                             <button id='buttAI3' onclick="think(true, true, false);" class='button_ai'>Act Secretly</button></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan='8'></td>
+                </tr>
+            </table>
+        </td></tr><tr><td>
+            <table>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td>&nbsp;</td>
+                    <td rowspan='2' colspan='2'>
+                        <span data-tooltip-position='bottom' data-tooltip="Handicapped AI assistance, using the HARD clues style">
+                            Weak Assist</span></td>
+                    <td rowspan='2' colspan='2'>|</td>
+                    <td rowspan='2' colspan='2'>
+                        <span data-tooltip-position='bottom' data-tooltip="Handicapped AI analysis and play, using the HARD clues style">
+                            Handicapped AI Play</span></td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr style='font-size: 0.8em; line-height: 0.5em;'>
+                    <td style='border:solid 0 #00f; border-left-width:2px; border-top-width:2px;'>&nbsp;</td>
+                    <td colspan='6' style='border:solid 0 #00f; border-right-width:2px; border-top-width:2px;'>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td style='border:solid 0 #00f; border-left-width:2px; border-bottom-width:2px;' colspan='4'>
+                        <span data-tooltip-position='bottom' data-tooltip="Ask sleepy Watson for help in analyzing current player's clues &#x1F619;">
+                            <button id='buttAI1' onclick="think(true, false, true, 1);" class='button_ai'>Analyze</button></span>
+                    </td>
+                    <td style='border:solid 0 #00f; border-bottom-width:2px; border-right-width:2px;' colspan='4'>
+                        <span data-tooltip-position='bottom' data-tooltip='Auto-analyze (while annoucing analysis) and act on available clues - open flaps or solve.'>
+                            <button id='buttAI2' onclick="think(true, true, true, 1);" class='button_ai'>Act</button></span>
+                        <span data-tooltip-position='bottom' data-tooltip='Auto-analyze secretly and act on available clues - open flaps or solve. [Use this to treat current player as a computer player]'>
+                            <button id='buttAI3' onclick="think(true, true, false, 1);" class='button_ai'>Act Secretly</button></span>
                     </td>
                 </tr>
                 <tr>

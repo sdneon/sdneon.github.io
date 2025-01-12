@@ -1458,11 +1458,25 @@ function cardTypeName(cardId)
 const FLAP_MASK = [
     0xff000000, 0xff0000, 0xff00, 0xff
 ];
+const FLAPS_MAP = [
+    //no change
+    [0,1,2,3],
+    //swapped to force CC##
+    [2,3,0,1]
+];
 /*
+Identify card holder contents from seen flaps and Murder cards.
+
 Inputs:
     flaps: [TL flap code, BR code, TR code, BL code],
     cardsSeen: { id of card seen: true },
     exclCardTypes: [...card types to exclude]
+    handicap:
+      0 (default): Uses the accurate-to-flap-position TL-BR-TR-BL codes, for smart analysis.
+      1: Handicap of using only CC## (colour, colour, number, number) codes.
+         For now, we'll still allow knowledge of the colours' top & bottom order.
+         I.e. CC## is actually: Top-Colour, Bottom-Colour, Top-Number, Bottom-Number.
+
 retval: [
     cardId if identified uniquely (-1: if no unique found; cardId o.w. within [0, 27]),
     [array of possibilities o.w.],
@@ -1471,7 +1485,7 @@ retval: [
 ]
 where poss: [cardId, typeOfCard]
 */
-function identify(flaps, cardsSeen, exclCardTypes)
+function identify(flaps, cardsSeen, exclCardTypes, handicap)
 {
     cardsSeen ??= {};
     exclCardTypes ??= [];
@@ -1503,11 +1517,28 @@ function identify(flaps, cardsSeen, exclCardTypes)
             unseenFlaps.push(i);
         }
     }
+    let flapsSwapped = 0,
+        allCodes = CARD_CODES;
+    if (handicap)
+    {
+        allCodes = CARD_CODES_HARD;
+        //2b. Transform to CC##
+        if ( ( (flaps[0] >= 0x07) && (flaps[0] <= 0x0c) ) //1st is number
+            || ( (flaps[1] >= 0x07) && (flaps[1] <= 0x0c) ) //2nd is number
+            || ( (flaps[2] >= 0x00) && (flaps[2] <= 0x06) ) //3rd is colour
+            || ( (flaps[3] >= 0x00) && (flaps[3] <= 0x06) ) ) //4th is colour
+        {
+            //swap numbers in front 2 to the back 2
+            code = ((code & 0xffff) << 16   ) | ((code >> 16) & 0xffff);
+            mask = ((mask & 0xffff) << 16) | ((mask >> 16) & 0xffff);
+            flapsSwapped = 1;
+        }
+    }
     const poss = [];
     let typeOfCard = -1;
-    for (i = 0; i < CARD_CODES.length; ++i)
+    for (i = 0; i < allCodes.length; ++i)
     {
-        if ( ((CARD_CODES[i] & mask) === code)
+        if ( ((allCodes[i] & mask) === code)
             && !cardsSeen[i] )
         {
             const type = cardType(i);
@@ -1548,11 +1579,11 @@ function identify(flaps, cardsSeen, exclCardTypes)
     for (i = cnt - 1; i >= 0; --i)
     {
         const codes = new Set(),
-            flapId = unseenFlaps[i],
+            flapId = FLAPS_MAP[flapsSwapped][unseenFlaps[i]],
             mask = FLAP_MASK[flapId];
         poss.forEach((cardIdAndType) => {
             const cardId = cardIdAndType[0],
-                code = CARD_CODES[cardId];
+                code = allCodes[cardId];
             codes.add(code & mask);
         });
         const numDiff = codes.size;
@@ -1588,7 +1619,7 @@ Usage e.g.'s:
     or identifyThis(['G', 'Y', -1, -1], {'Poison':true})
     identifyThis(['R', 'P', -1, -1]) //scarlett (1,4), blunderbuss (2,4), hall (0,4)
 */
-function identifyThis(codes, cardsSeen, exclCardTypes)
+function identifyThis(codes, cardsSeen, exclCardTypes, handicap)
 {
     cardsSeen ??= {};
     exclCardTypes ??= [];
@@ -1627,7 +1658,7 @@ function identifyThis(codes, cardsSeen, exclCardTypes)
             exclCardTypes[i] = CARD_TYPES.indexOf(c);
         }
     });
-    const result = identify(codes, cardsSeen, exclCardTypes),
+    const result = identify(codes, cardsSeen, exclCardTypes, handicap),
         resultRaw = JSON.parse(JSON.stringify(result));
     //2. 'decode' result to readable strings
     //2b. unique card?
@@ -1707,7 +1738,7 @@ function all3CardsKnown(results, showSuggestions, actOnSuggestions)
     return false;
 }
 
-function identifyAgain(results, clues)
+function identifyAgain(results, clues, handicap)
 {
     const card1Type = results[H1][TYPE],
         card2Type = results[H2][TYPE],
@@ -1725,7 +1756,8 @@ function identifyAgain(results, clues)
             newResults[i] = identifyThis(
                 clues.cardHolders[i],
                 clues.cardsSeen,
-                exclTypes);
+                exclTypes,
+                handicap);
         }
         console.log('new analysis');
         return newResults;
@@ -1746,7 +1778,7 @@ const FLAPS = JSON.stringify([
 const FLAPS = '[[[0,"Top Left",0],[0,"Bottom Right",1],[0,"Top Right",2],[0,"Bottom Left",3]],[[1,"Top Left",0],[1,"Bottom Right",1],[1,"Top Right",2],[1,"Bottom Left",3]],[[2,"Top Left",0],[2,"Bottom Right",1],[2,"Top Right",2],[2,"Bottom Left",3]]]';
 
 //talkAloud: whether to publicly announce analysis
-function think(showSuggestions, actOnSuggestions, talkAloud)
+function think(showSuggestions, actOnSuggestions, talkAloud, handicap)
 {
     let i, results = [];
     let { clues } = playersData[who],
@@ -1800,7 +1832,9 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
     {
         results[i] = identifyThis(
             clues.cardHolders[i],
-            clues.cardsSeen);
+            clues.cardsSeen,
+            undefined,
+            handicap);
     }
     clues.lastResults = results;
     //2. Trivial case of all 3 solved
@@ -1808,7 +1842,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
         return;
 
     //3a. Check if any of the 3 typeOfCard's are known. If yes, further narrow down the answer
-    let results2 = identifyAgain(results, clues);
+    let results2 = identifyAgain(results, clues, handicap);
     if (results2 !== results)
     {
         results = results2;
@@ -1819,7 +1853,7 @@ function think(showSuggestions, actOnSuggestions, talkAloud)
             return;
 
         //4a. Repeat #3, one last time
-        results2 = identifyAgain(results, clues);
+        results2 = identifyAgain(results, clues, handicap);
         if (results2 !== results)
         {
             results = results2;

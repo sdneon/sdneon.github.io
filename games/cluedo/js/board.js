@@ -313,6 +313,21 @@ const CARD_CODES = [ //order of clues (1B each): TL, BR, TR, BL
     0x206080B, 0xC070205, 0xC080105,
     0xC090304, 0x70B0306, 0x80A0406
 ];
+const CARD_CODES_HARD = [ //order of clues (1B each): Colour_Top, Colour_Bottom, Number_Top, Number_Bottom
+    //people
+    0x0206080C, 0x0104080A, 0x0102070A,
+    0x0305070B, 0x01050C07, 0x02050C09,
+    0x03040B09, 0x0306080B, 0x0406090A,
+    //weapons
+    0x0206070C, 0x0104090A, 0x0102080A,
+    0x0305080B, 0x0406090C, 0x0306080C,
+    0x03040B07, 0x02050B09, 0x01050A07,
+    //rooms
+    0x0104070A, 0x0102090A, 0x0305090B,
+    0x0206080B, 0x02050C07, 0x01050C08,
+    0x03040C09, 0x0306070B, 0x0406080A
+];
+//colours from 0x01 to 0x06, numbers from 0x07 to 0x0c
 const ELEMENT_MAP = [
     '?', 'R', 'G', 'B', 'P', 'W',
     'Y', '0', '1', '2', '4', '5', '7'
