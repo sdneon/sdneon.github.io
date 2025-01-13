@@ -2287,13 +2287,18 @@ function nextPlayer(freshStart, dontSave)
 
 function whereAmI(playerId, dontScrollIntoView, shimmer)
 {
+    playerId ??= who;
+    const cellId = playerPositions[playerId],
+        cell = $(`#cell_played${cellId}`),
+        hasSimmer = cell.hasClass('shimmer');
     if (shimmer)
     {
         $('td').removeClass('shimmer');
     }
-    playerId ??= who;
-    const cellId = playerPositions[playerId],
-        cell = $(`#cell_played${cellId}`);
+    if (hasSimmer)
+    {
+        cell.removeClass('shimmer'); //remove temporarily as pulsate will conflicts with it, and woon't show o.w.
+    }
     cell.addClass('pulsate');
     if (!dontScrollIntoView)
     {
@@ -2301,7 +2306,7 @@ function whereAmI(playerId, dontScrollIntoView, shimmer)
     }
     setTimeout(() => {
         cell.removeClass('pulsate');
-        if (shimmer)
+        if (shimmer || hasSimmer)
         {
             cell.addClass('shimmer');
         }
