@@ -1,0 +1,357 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>《认识中文字:拼音》 Recognizing Chinese Characters: PinYin</title>
+<script src="js/jquery.min.js"></script>
+<script src="js/cn-words.js"></script>
+<script>
+const VOWELS = {
+	a: 'āáǎà',
+	e: 'ēéěè',
+	o: 'ōóǒò',
+	i: 'īíǐì',
+	u: 'ūúǔù',
+	v: 'ǖǘǚǜü'
+};
+const VOWELS2 = [
+	'āáǎà',
+	'ēéěè',
+	'ōóǒò',
+	'īíǐì',
+	'ūúǔù',
+	'ǖǘǚǜü'
+];
+const REGEX_VOWELS = [/([āáǎà])/g, /([ēéěè])/g, /([ōóǒò])/g, /([īíǐì])/g, /([ūúǔù])/g, /([ǖǘǚǜü])/g],
+	REPLACE_VOWELS = ['a', 'e', 'o', 'i', 'u', 'v'];
+const URL_SEARCH_A = 'https://duckduckgo.com/?q=define+',
+	URL_SEARCH_B = 'https://www.omgchinese.com/dictionary/chinese/',
+	URL_SEARCH = URL_SEARCH_B;
+
+/*
+	Return what the given pinyin sounds like, i.e. remove accent
+	@param word (string) Pinyin like 'gōng'
+	@return (string) Pinyin without accent like 'gong'
+*/
+function soundsLike(pinyin)
+{
+	for (let i = 0; i < REGEX_VOWELS.length; ++i)
+		pinyin = pinyin.replaceAll(REGEX_VOWELS[i], REPLACE_VOWELS[i]);
+	return pinyin;
+}
+
+/*
+	Return the given pinyin (e.g.: 'yǔ') in 2 parts:
+	1. pinyin without accent, e.g.: yu
+	2. its accent number, e.g.: 3
+	@param word (string) Pinyin like 'gōng'
+	@return (array: [string, int]) array of 2 pinyin forms, e.g.: ['yu', 3]
+*/
+function pinyinParts(pinyin)
+{
+	let j, m;
+	for (j = 0; j < REGEX_VOWELS.length; ++j)
+	{
+		REGEX_VOWELS[j].lastIndex = 0; //also reset before reuse!
+		m = REGEX_VOWELS[j].exec(pinyin);
+		if (m && m[1])
+		{
+			const num = VOWELS2[j].indexOf(m[1]);
+			let py = pinyin.replace(m[1], REPLACE_VOWELS[j]);
+			return [py, num + 1];
+		}
+	}
+	return [];
+}
+
+//global data
+let wordKeys, cntWords,
+	levels,
+	dic = {}, dicSound = {},
+	level = 'P1A',
+	lvl = 1;
+
+function loadDictionary()
+{
+	const lines = words.split(/\n/);
+	dic = {}; dicSound = {}; //reset, in case of levels choice changes
+
+	let i;
+	/*
+	for (i = 0; i < lines.length; ++i)
+	{
+		const line = lines[i];
+		if ((line[0] === 'P') || (line[0] === 'w'))
+		{
+			lines.splice(i, 1);
+			--i;
+		}
+	}
+	console.log(lines);
+	*/
+	for (i = 0; i < lines.length; ++i)
+	{
+		let line = lines[i];
+		if (line === 'P3A') break; //TRY skipping the rest without translations
+		if ((line.length === 3) && (line[0] === 'P')
+			&& (line[1] >= '1') && (line[1] <= '9'))
+		{
+			level = line;
+			lvl = parseInt(level[1], 10);
+			continue;
+		}
+		//read chinese chars to learn
+		let cnt = line.length;
+		// and read hanyu pinyin of above chars
+		const pinyins = lines[i+1].split(' ');
+		let j;
+		for (j = 0; j < cnt; ++j)
+		{
+			const ch = line[j];
+			if (dic[ch] === undefined)
+			{
+				//const group = soundsLike(pinyins[j]);
+				const [ group, accNum ] = pinyinParts(pinyins[j]);
+				dic[ch] = {
+					pinyin: pinyins[j],
+					level: level,
+					lvl: lvl,
+					soundsLike: group,
+					accNum: accNum
+				};
+				if (dicSound[group] === undefined)
+				{
+					dicSound[group] = [];
+				}
+				dicSound[group].push(ch);
+			}
+			else console.log('repeated:', ch);
+		}
+		//read english translation if any
+		i += 2;
+		const lineEn = lines[i];
+		if ((lineEn.length >= 2) && (lineEn.charCodeAt(1) < 200))
+		{
+			const translations = lineEn.split(',');
+			for (j = 0; j < cnt; ++j)
+			{
+				const ch = line[j];
+				dic[ch].en = translations[j];
+			}
+			line = lines[i+1];
+			++i;
+		}
+		else line = lineEn;
+		//read chinese chars to write
+		// verify leading 'w'
+		//if (line[0] === 'w') //OK
+		line = line.substring(1); //remove leading 'w'
+		cnt = line.length;
+		for (j = 0; j < cnt; ++j)
+		{
+			const ch = line[j];
+			if (dic[ch])
+				dic[ch].write = true;
+		}
+	}
+	wordKeys = Object.keys(dic);
+	cntWords = wordKeys.length;
+}
+
+function checkHasAccent(data)
+{
+	if (!data) return true;
+	let j, m;
+	for (j = 0; j < REGEX_VOWELS.length; ++j)
+	{
+		REGEX_VOWELS[j].lastIndex = 0; //also reset before reuse!
+		m = REGEX_VOWELS[j].exec(data.pinyin);
+		if (m && m[1])
+		{
+			break;
+		}
+	}
+	return j < REGEX_VOWELS.length;
+}
+
+//performance/streak tracking
+let correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false;
+
+let qn, ans,
+	choices = [],
+	correctIndex = -1,
+	alreadyCorrect = false;
+function randPick()
+{
+	alreadyCorrect = false;
+	curQnEverWrong = false;
+	const i = (Math.random() * cntWords) | 0,
+		word = wordKeys[i],
+		data = dic[word];
+	qn = word;
+	ans = data;
+	let hint = data.en || '';
+	hint = hint.replace(word, '_');
+	//hint = hint.replace(word, data.pinyin);
+	$('#txtMeaning')[0].textContent = hint;
+	$('#txtQn')[0].textContent = qn;
+
+	//figure what what accent it is
+	let j, soundCh, replaceCh, m;
+	for (j = 0; j < REGEX_VOWELS.length; ++j)
+	{
+		REGEX_VOWELS[j].lastIndex = 0; //also reset before reuse!
+		m = REGEX_VOWELS[j].exec(data.pinyin);
+		if (m && m[1])
+		{
+			soundCh = m[1];
+			replaceCh = REPLACE_VOWELS[j];
+			correctIndex = VOWELS[replaceCh].indexOf(soundCh);
+			if (replaceCh === 'v')
+			{
+				//treat ü as ǖ
+				if (correctIndex === 4)
+					correctIndex = 0;
+			}
+			break;
+		}
+	}
+	if (j >= REGEX_VOWELS.length)
+	{
+		//unexpected error!!
+		console.log('Cannot find accented vowel!? (maybe a silent sound) for ', qn, data.pinyin);
+		randPick();
+		return;
+	}
+
+	const replacementPos = data.pinyin.indexOf(soundCh);
+	//fill in other all choices
+	for (let i = 0; i < 4; ++i)
+	{
+		//reset
+		$(`#choice${i}`).prop('checked', false);
+		$(`#choice${i}`).attr('disabled', false);
+		$(`#choiceTxt${i}`).css('color', 'black');
+
+		const e = $(`#choiceTxt${i}`)[0];
+		e.innerHTML = choices[i] = data.pinyin.substring(0, replacementPos) + VOWELS[replaceCh][i]
+			+ data.pinyin.substring(replacementPos + 1);
+		while (e.parentElement.childElementCount > 2)
+		{
+			e.parentElement.removeChild(e.parentElement.children[2]);
+		}
+		$(e.parentElement).append(`<a onclick='this.firstChild.play();'><audio preload='none' src='audio/${data.soundsLike}${i+1}.mp3'/>&#x1F50A;</a>`);
+	}
+}
+
+function startup()
+{
+	loadDictionary();
+	randPick();
+}
+
+$(document).ready(startup);
+
+function checkAnswer(i)
+{
+	if (alreadyCorrect) return;
+	if (i === undefined)
+	{
+		for (i = 0; i < 4; ++i)
+		{
+			if ($(`#choice${i}`).prop('checked')) break;
+		}
+	}
+	if (i === correctIndex)
+	{
+		//correct choice made
+		alreadyCorrect = true;
+		//show all choices' pinyins
+		for (i = 0; i < 4; ++i)
+		{
+			const label = $(`#choiceTxt${i}`)[0];
+			if (i === correctIndex)
+			{
+				//also turn into search link
+				label.innerHTML = `<a href="${URL_SEARCH}${qn}"  target='_blank'>${label.innerHTML}</a>`;
+				label.innerHTML = '<font color="green">&#x2713;&nbsp</font>' + label.innerHTML;
+			}
+			$(`#choice${i}`).attr('disabled', true);
+		}
+
+		if (!curQnEverWrong)
+		{
+			++correct;
+			++streak;
+			$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+			if (streak > 1)
+			{
+				$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+			}
+		}
+		//setTimeout(() => alert('Correct!'), 1000);
+		//setTimeout(() => randPick(), 1000);
+	}
+	else //wrong choice made
+	{
+		$(`#choice${i}`).attr('disabled', true);
+		$(`#choiceTxt${i}`).css('color', 'gray');
+		//show pinyin of wrong choice (and maybe meaning next time or on mouseover tooltip)
+		const label = $(`#choiceTxt${i}`)[0];
+		label.innerHTML = '<font color="red">&#x274C;&nbsp</font>' + label.innerHTML;
+
+		if (!curQnEverWrong)
+		{
+			++wrong;
+			$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+		}
+		curQnEverWrong = true;
+		streak = 0;
+
+		//alert('Wrong!');
+	}
+}
+</script>
+</head>
+<body>
+<h1>《认识中文字:拼音》 Recognizing Chinese Characters</h1>
+<h2>&nbsp;&nbsp;&nbsp;(小一 至 小二)</h2>
+<font size='+5'>
+选出正确的拼音。<br>
+<span style='background:#0f0' id='divQn'>
+字：<span id='txtQn'></span></span>
+意识(大概）：<span id='txtMeaning'></span><br>
+<table style='font-size: 150%'>
+<tr>
+	<td>
+		<input style='font-size: 150%' type="radio" id="choice0" name="choices" value="" onclick="checkAnswer(0);">
+		<label id="choiceTxt0" for="choice0"></label>
+	</td>
+	<td>
+		<input style='font-size: 150%' type="radio" id="choice1" name="choices" value="" onclick="checkAnswer(1);">
+		<label id="choiceTxt1" for="choice1"></label>
+	</td>
+</tr>
+<tr>
+	<td><input type="radio" id="choice2" name="choices" value="" onclick="checkAnswer(2);"><label id="choiceTxt2" for="choice2"></label>
+	</td><td><input style='font-size: 150%' type="radio" id="choice3" name="choices" value="" onclick="checkAnswer(3);"><label id="choiceTxt3" for="choice3"></label>
+	</td>
+	<td><input style='font-size: 80%; margin-left: 50px' id='submit' type="submit" value="Next/跳" onclick='randPick();'>
+	</td>
+</tr></table>
+</font>
+<p/><br><br><br><hr>
+<b>使用说明</b>：
+<ol>
+<li>选到<font color="green">&#x2713;</font><u>对</u>为止；或点击'Next'跳到下一题。<p/></li>
+<li>答对后，可点击<font color="green">&#x2713;</font>和<font color="red">&#x274C;</font>的选项跳去细节，如：解释，发音，笔画，常见词（包括发音）等等。</li>
+</ol>
+<div id='divInfo'>
+<b>资料</b>:<br>
+<a href='https://www.omgchinese.com/tools/chinese-pinyin-chart'>汉语拼音"发音"表</a> - 点击拼音（如：ka）,'Pinyin Pronunciation'（拼音发音）盒子就出现。点击其中发音就能听见其发音。
+<hr>
+如有错误，请拍张照，传给作者。谢谢。<p/>
+</div>
+<div id='divScore' style='background:#df24; float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+</body>
+</html>

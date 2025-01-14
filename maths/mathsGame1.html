@@ -1,0 +1,410 @@
+<html>
+	<head>
+		<title>Maths Puzzle Game: &times; then +/-</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 5px
+}
+
+td {
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 150%;
+  color: #000;
+  text-align: center;
+  aspect-ratio: 1 / 1 ;
+}
+/*
+col:nth-child(odd) {
+  background: #7008;
+}
+
+col:nth-child(even) {
+  background: $a008;
+}
+
+tr:nth-child(odd) {
+  background: #0078;
+}
+
+tr:nth-child(even) {
+  background: $00a8;
+}
+*/
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="js/jquery.min.js"></script>
+<script>
+const MAX = 10; //size of each side of grid
+const VAL_MAX = 9 * 9 + 9;
+
+let q, ans = 0, lastQ = [0,0],
+	qnAvail = false,
+	isNewQn = true,
+	gridNums = [],
+	strQn = '',
+	correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false;
+
+function next()
+{
+	$('#divWrong')[0].innerHTML = `Correct answer @ (${q[0]+1}, ${q[1]+1}). [PS: Top left corner is (0, 0)]`;
+	showAnswer();
+	newQn();
+}
+
+function giveUp()
+{
+	qnAvail = false;
+	$("#giveup").attr("disabled", true);
+	curQnEverWrong = true;
+	$('#divWrong')[0].innerHTML = `Correct answer @ (${q[0]+1}, ${q[1]+1}). [PS: Top left corner is (0, 0)]`;
+	showAnswer();
+}
+
+//Get random integer within (1, 9)
+function randInt1to9()
+{
+    let n = ((Math.random() * 8) | 0) + 1;
+    return n;
+}
+
+//Get random integer within game limits
+function randInt()
+{
+	let n = ((Math.random() * (VAL_MAX - 1)) | 0) + 1;
+	return n;
+}
+const N = 0,
+	E = 1,
+	S = 2,
+	W = 3,
+	NE = 4,
+	SE = 5,
+	SW = 6,
+	NW = 7;
+const OFFSETS = [
+	//dx, dy, dx2, dy2
+	[ 0, -1,  0, -2], //N
+	[ 1,  0,  2,  0], //E
+	[ 0,  1,  0,  2], //S
+	[-1,  0, -2,  0], //W
+	[ 1, -1,  2, -2], //NE
+	[ 1,  1,  2,  2], //SE
+	[-1,  1, -2,  2], //SW
+	[-1, -1, -2, -2] //NW
+];
+/*
+Get random integer within game grid limits,
+accounting for dir so as not to go out of grid!
+*/
+function randIntGridX(dir)
+{
+	let max = MAX;
+	if ((dir !== N) && (dir !== S))
+		max = MAX - 2;
+	let n = ((Math.random() * max) | 0);
+	if ((dir === W) || (dir === SW) || (dir === NW))
+		n += 2;
+	return n;
+}
+function randIntGridY(dir)
+{
+	let max = MAX;
+	if ((dir !== E) && (dir !== W))
+		max = MAX - 2;
+	let n = ((Math.random() * max) | 0);
+	if ((dir === N) || (dir === NE) || (dir === NW))
+		n += 2;
+	return n;
+}
+
+/*
+	Get random compass direction.
+	0-3: NESW
+	4-7: NE, SE, SW, NW
+*/
+function randDir()
+{
+	let n = ((Math.random() * 8) | 0);
+	return n;
+}
+
+function showAnswer(dontResetGridColors)
+{
+	if (!dontResetGridColors) resetGridColours();
+	$('#lastAns')[0].textContent = ans;
+	if (!q) return;
+	let x = q[0], y = q[1], dir = q[2], plusminus = q[3];
+
+	$(`#c${x}r${y}`).css('background', '#060');
+	$(`#c${x + OFFSETS[dir][0]}r${y + OFFSETS[dir][1]}`).css('background', '#070');
+	$(`#c${x + OFFSETS[dir][2]}r${y + OFFSETS[dir][3]}`).css('background', plusminus > 0? '#0f0': '#f00'); //green: add, red: minus
+}
+
+function revise()
+{
+	const div = $('#divAllOldAns')[0];
+	let oldQns = div.innerHTML;
+	oldQns = oldQns.replaceAll(/= \d+/g, '=');
+	div.innerHTML = oldQns;
+}
+
+const REGEX = /(\d{1,2})(?:[^0-9]+)(\d{1,2})\s+=/;
+function reveal()
+{
+	const div = $('#divAllOldAns')[0];
+	let oldQns = div.innerHTML.split('<br>');
+	const cnt = oldQns.length;
+	if (cnt <= 0)
+	{
+		return;
+	}
+	for (let i = 0; i < cnt; ++i)
+	{
+		const m = REGEX.exec(oldQns[i]);
+		if (m)
+		{
+			const a = parseInt(m[1], 10),
+				b = parseInt(m[2], 10);
+			oldQns[i] = `${m[1]} &times; ${m[2]} = ${a * b}`;
+		}
+	}
+	div.innerHTML = oldQns.join('<br>');
+}
+
+function newQn()
+{
+	qnAvail = true;
+	isNewQn = true;
+	$("#giveup").attr("disabled", false);
+	$("#skip").attr("disabled", false);
+	curQnEverWrong = false;
+	//$('#divWrong')[0].textContent = '';
+	//randomly generate desired solution as a grid position, direcion and plus/minus:
+	const dir = randDir(),
+		x = randIntGridX(dir), y = randIntGridY(dir);
+	q = [x, y, dir, Math.random() < 0.5? 1: -1];
+	//compute answer
+	const x1 = x + OFFSETS[dir][0],
+		y1 = y + OFFSETS[dir][1],
+		x2 = x + OFFSETS[dir][2],
+		y2 = y + OFFSETS[dir][3];
+	if (x1 < 0 || x1 > MAX)
+		console.log('bad x1', x1);
+	if (x2 < 0 || x2 > MAX)
+		console.log('bad x2', x2);
+	if (y1 < 0 || y1 > MAX)
+		console.log('bad y1', y1);
+	if (y2 < 0 || y2 > MAX)
+		console.log('bad y2', y2);
+	ans = ( (gridNums[y][x] * gridNums[y1][x1])
+		+ (q[3] * gridNums[y2][x2]) );
+	if (ans < 0)
+	{
+		console.log('Opps, negative answer, so find a given answer!');
+		newQn();
+		return;
+	}
+	//console.log(q, ans, '=', gridNums[y][x], 'x', gridNums[y1][x1], q[3]? '+':'-', gridNums[y2][x2]); //DEBUG
+	if (isNaN(ans))
+		console.log('Invalid ANS!?!?', q);
+	$('#divQn')[0].innerHTML = strQn = '' + ans;
+
+	//$(`#c${x}r${y}`).css('background', 'red'); //DEBUG
+}
+
+
+function checkOutOfBounds(x)
+{
+	return (x < 0) || (x >= MAX);
+}
+
+function checkAnswer(x, y)
+{
+	if (!qnAvail) return;
+	if (isNewQn) resetGridColours();
+	isNewQn = false;
+
+	$(`#c${x}r${y}`).css('background', 'pink');
+	if (checkOutOfBounds(x) || checkOutOfBounds(y)) return;
+
+	let arrAns = [];
+	function foundAnswer(x, y, dir)
+	{
+		const x1 = x + OFFSETS[dir][0];
+		if (checkOutOfBounds(x1)) return false;
+		const y1 = y + OFFSETS[dir][1];
+		if (checkOutOfBounds(y1)) return false;
+		const x2 = x + OFFSETS[dir][2];
+		if (checkOutOfBounds(x2)) return false;
+		const y2 = y + OFFSETS[dir][3];
+		if (checkOutOfBounds(y2)) return false;
+
+		let ansTemp = ( (gridNums[y][x] * gridNums[y1][x1])
+			+ gridNums[y2][x2] );
+		if (ansTemp === ans)
+		{
+			arrAns = [x, y, dir, 1];
+			return true;
+		}
+		ansTemp = ( (gridNums[y][x] * gridNums[y1][x1])
+			- gridNums[y2][x2] );
+		if (ansTemp === ans)
+		{
+			arrAns = [x, y, dir, -1];
+			return true;
+		}
+		return false;
+	}
+
+	let guess = -1,
+		reset = true,
+		right = false;
+	//1. Try all directions to see if answer can be found centred at given coordinates
+	for (let dir = 0; dir < 8; ++dir)
+	{
+		if (foundAnswer(x, y, dir))
+		{
+			right = true;
+			q = arrAns;
+			showAnswer(!reset);
+			reset = false;
+			//break;
+		}
+	}
+
+	//1. Update score
+	if (right)
+	{
+		++correct;
+		++streak;
+	}
+	else
+	{
+		curQnEverWrong = true;
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+		//if (streak >= 10) console.log('big streak!');
+	}
+
+	//allow answering until correct
+	if (right)
+	{
+		qnAvail = false;
+		$("#giveup").attr("disabled", true);
+		$('#divWrong')[0].innerHTML = `&#9989; You've found it @ (${x+1}, ${y+1}) &#128513;`;
+		newQn();
+		return;
+	}
+	//else inform of mistake and let player try again
+	$('#divWrong')[0].innerHTML = `&#10060; Cannot find answer centred at (${x+1}, ${y+1}). Try again. [PS: Top left corner is (0, 0)]`;
+}
+
+const GRID_COLOURS = ['#009de0', '#8c8c8c'];
+
+function resetGridColours()
+{
+	let z = 0;
+	for (let r = 0; r < MAX; ++r)
+	{
+		for (let c = 0; c < MAX; ++c)
+		{
+			let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
+			$(`#c${c}r${r}`).css('background', colour);
+		}
+	}
+}
+
+function newGrid()
+{
+	const grid = $('#divGrid')[0];
+	grid.innerHTML = '';
+	let s = '<table><colgroup>',
+		row;
+	for (let c = 0; c < MAX; ++c)
+	{
+		s += '<col>';
+	}
+  	s += '</colgroup><tbody>';
+  	gridNums = [];
+  	let z = 0;
+	for (let r = 0; r < MAX; ++r)
+	{
+		s += '<tr>';
+		gridNums[r] = row = [];
+		for (let c = 0; c < MAX; ++c)
+		{
+			const v = randInt1to9();
+			row[c] = v;
+			let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
+			s += `<td id='c${c}r${r}' style='background:${colour}' onclick='checkAnswer(${c},${r}); return false;'><span href=''>${v}</span></td>`;
+		}
+		s += '</tr>\n';
+	}
+	s += '</tbody></table>';
+	grid.innerHTML = s;
+	newQn();
+}
+
+function load()
+{
+	newGrid();
+	newQn();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Maths Puzzle Game: &times; then +/-</h1>
+<h3>Find the given number in the grid as a <b>trio</b> of 3 consecutive numbers
+<br>in the form <i>a &times; b +/- c</i>. Can be horizontal, vertical, diagonal, forward or reverse.</h3>
+E.g.: 45 &#8594; [5][8][5] &#8592; 5 * 8 + 5
+<br>&nbsp;or 45 &#8594; [7][7][4] &#8596; [4][7][7] &#8592; 7 * 7 - 4
+<br><br><span style='font-size: 2em'>
+Find: <span id='divQn'>88</span></span>
+&nbsp;&nbsp;<input id='giveup' type="submit" value="Give Up" onclick='giveUp();'></input>
+&nbsp;&nbsp;<input id='skip' type="submit" value="Skip/Next" onclick='next();'></input>(last number: <span id='lastAns'>NA</span>)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id='reset' type="submit" value="Reset Grid" onclick='newGrid();'></input>
+<span id='divGrid'>(grid of numbers here)</span>
+<!--
+<input id='ans' type='text'></input>
+<input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
+-->
+<div id='divWrong'></div>
+</h2>
+</div>
+<!--
+<input id='revise' type="submit" value="Revise" onclick='revise();'>
+<input id='reveal' type="submit" value="Reveal" onclick='reveal();'>
+-->
+<h3 id='divAllOldAns'></h3>
+<div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+<hr>
+<b>Tips</b><br>
+<ul>
+<li>If you forget a &times;9, do a &times;10 and substract. E.g.: 8&times;9 = (8&times;10) - 8 = 80 - 8 = 72.</li>
+<li>&times;5 is half of &times;10. E.g.: 4&times;8 = 80 &divide; 2 = 40</li>
+<li>Remembering the &times;5's can help you to get the &times;4 and &times;6 by subtracting and adding respectively.
+<br>E.g.: 4&times;8 = (40) - 8 = 32</li>
+</ul>
+</body>
+</html>

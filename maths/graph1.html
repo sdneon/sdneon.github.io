@@ -1,0 +1,324 @@
+<html>
+	<head>
+		<title>Reading the Grid (x-axis)</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+.grid {
+  border-collapse: collapse;
+}
+
+.gridtd {
+  border: 1px solid black;
+  border-bottom: 4px solid black;
+  border-collapse: collapse;
+}
+
+td {
+  width: 40px;
+  height: 40px;
+  text-align: center;
+}
+
+.boldtext {
+  font-weight: bold;
+}
+
+.tdHalfBorderless {
+	border: none;
+	width: 20px;
+}
+
+.tdThick {
+  width:0px;
+  background-color: black;
+  border: 1px solid black;
+}
+
+.tdHighlightLeft {
+  border-left: 3px solid red;
+}
+
+.tdHighlightRight {
+  border-right: 3px solid red;
+}
+
+.tdThickHighlight {
+  width:0px; /*this alone leaves a 1px wide cell!*/
+  background-color: red;
+  border: 1px solid red;
+}
+
+.redtext {
+  color: red;
+  font-weight: bold;
+}
+
+pre {
+	font-size: large;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/numbers.js"></script>
+<script src="js/graph.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"></script>
+<script>
+let q, correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false,
+	answered = false;
+
+function showAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	elemGuess.value = '';
+	//flag those answered wrongly or skipped with '*'
+	const answer = `${curQnEverWrong? '*':''}Answer is ${q.v}`;
+	$('#divPrevAns')[0].innerHTML = `&#9989; : ${answer}`;
+
+	let skipGrid;
+	if (!q.midGrid)
+	{
+		skipGrid = q.gridIndex;
+		$(`#tdn${q.gridIndex}`).addClass('redtext');
+		$(`#tdn${q.gridIndex}`)[0].innerHTML = q.v;
+	}
+	else
+	{
+		//skipGrid = q.whichMiniGrid-1;
+		skipGrid = 100; //i.e. none
+		$(`#td${q.whichMiniGrid-1}`).addClass('redtext');
+		$(`#td${q.whichMiniGrid-1}`)[0].innerHTML = q.v;
+	}
+	let v = q.v1 + q.miniGridWidth;
+	for (let i = 1; i < 10; ++i, v += q.miniGridWidth)
+	{
+		if (i !== skipGrid)
+		{
+			if (q.miniGridWidth < 1)
+			{
+				//round decimals!
+				v = Math.round((v * 10)) * 0.1;
+				let v1 = String(v);
+				const dotPos = v1.indexOf('.');
+				if (dotPos >= 0)
+				{
+					v1 = v1.substring(0, dotPos + 2);
+					$(`#tdn${i}`)[0].innerHTML = v1;
+					continue;
+				}
+			}
+			$(`#tdn${i}`)[0].innerHTML = v;
+		}
+	}
+
+	let s = `Width of each small grid<br>= [(right big mark value) - (left big mark value)] &#xF7; (number of small grid boxes inbetween)<br>
+		\\(=(${q.v2} - (${q.v1})) \\div ${q.numMiniGrid} = ${q.miniGridWidth}\\)<br><br>
+		Value at mark = (left big mark value) + [(number of small grid boxes) * (width of each small grid)]<br>
+		\\(=${q.v1} + (${q.gridIndex} * ${q.miniGridWidth}) = ${q.v}\\)
+	`;
+	$('#divAns')[0].innerHTML = s;
+	MathJax.typeset();
+
+	$('#submit')[0].value = 'Next Qn';
+	//$('#ans').css('display', 'none');
+	$('#ans')[0].value = q.v;
+	$('#skip').css('display', 'none');
+	answered = true;
+}
+
+function giveUp()
+{
+	curQnEverWrong = true;
+	showAnswer();
+	//newQn();
+}
+
+function checkAnswer()
+{
+	if (answered)
+	{
+		newQn();
+		$('#submit')[0].value = 'Submit';
+		return;
+	}
+	const elemGuess = $('#ans')[0];
+	let guess = elemGuess.value;
+
+	if (typeof guess !== 'string') guess = '';
+	guess = guess.trim();
+	let right = (''+q.v) === guess;
+
+	//1. Update score
+	if (right){
+		++correct;
+		++streak;
+	}
+	else
+	{
+		curQnEverWrong = true;
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>You're on a streak! &#128513; of ${streak}</span>`;
+	}
+
+	//allow answering until correct
+	if (right)
+	{
+		showAnswer();
+		//newQn();
+		return;
+	}
+	//else inform of mistake and let player try again
+	$('#divPrevAns')[0].innerHTML = `&#10060;: ${guess}. Try again`;
+}
+
+function newQn()
+{
+	//randomly generate num for solving:
+	q = new GridQn();
+	console.log(q.toString());
+	$('#divAns')[0].innerHTML = '';
+	$('#divPrevAns')[0].innerHTML = '';
+	/*$('#ans').css('display', '');*/
+	$('#ans')[0].value = '';
+	$('#ans')[0].focus();
+	$('#skip').css('display', '');
+	answered = false;
+
+	if (q.numMiniGrid === 5)
+	{
+		$('#tdM').css('display', '');
+	}
+	else
+	{
+		$('#tdM').css('display', 'none');
+	}
+	//a. clear table of highlighted marks
+	for (let i = 0; i < 10; ++i)
+	{
+		$(`#td${i}`).removeClass('tdHighlightRight');
+		$(`#td${i}`).removeClass('tdHighlightLeft');
+		$(`#tdn${i}`).removeClass('tdHighlightRight');
+		$(`#tdn${i}`).removeClass('tdHighlightLeft');
+		$(`#td${i}`).removeClass('redtext');
+		$(`#tdn${i}`).removeClass('redtext');
+		$(`#td${i}`)[0].innerHTML = '';
+		$(`#tdn${i}`)[0].innerHTML = '';
+	}
+	//b. fill in start and end grid values
+	$('#tdn0')[0].innerHTML = q.v1;
+	if (q.numMiniGrid === 5)
+	{
+		$('#tdM').css('display', '');
+		$('#tdn5')[0].innerHTML = q.v2;
+		$('#tdn10')[0].innerHTML = q.v3;
+		$(`#tdn5`).addClass('boldtext');
+	}
+	else
+	{
+		$('#tdM').css('display', 'none');
+		$('#tdn10')[0].innerHTML = q.v2;
+		$(`#tdn5`).removeClass('boldtext');
+	}
+	//c. set new mark
+	if (!q.midGrid)
+	{
+		$(`#td${q.gridIndex-1}`).addClass('tdHighlightRight');
+		$(`#td${q.gridIndex}`).addClass('tdHighlightLeft');
+		$(`#tdn${q.gridIndex}`).addClass('redtext');
+		$(`#tdn${q.gridIndex}`)[0].innerHTML = '?';
+	}
+	else
+	{
+		$(`#tdn${q.whichMiniGrid-1}`).addClass('tdHighlightRight');
+		//$(`#tdn${q.whichMiniGrid}`).addClass('tdHighlightLeft');
+		$(`#td${q.whichMiniGrid-1}`).addClass('redtext');
+		$(`#td${q.whichMiniGrid-1}`)[0].innerHTML = '?';
+	}
+
+	curQnEverWrong = false;
+}
+
+function load()
+{
+	$('#ans')[0].addEventListener("keypress", function(event) {
+		// If the user presses the "Enter" key on the keyboard
+		if (event.key === "Enter") {
+			// Cancel the default action, if needed
+			event.preventDefault();
+			// Trigger the button element with a click
+			$('#submit').click();
+		}
+	});
+	newQn();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Reading the Grid (x-axis)</h1>
+<h2>Practise reading the unmarked values from a graph.<br>
+The grid below is a <i>zoomed-in</i> section of the graph.<br>
+What is the value at the <font color='red'>red</font> mark on the graph?</h2>
+(If the mark falls in the middle of a grid box, assume it's at the half way point).<p>
+<div id='grid'>
+<table class='grid'>
+<tr class='gridth'>
+ <td id='tdL1' class='tdHalfBorderless' style=''></td>
+ <td id='tdL' class='tdThick' style=''></td>
+ <td id='td0' class='gridtd' style=''></td>
+ <td id='td1' class='gridtd' style=''></td>
+ <td id='td2' class='gridtd' style=''></td>
+ <td id='td3' class='gridtd' style=''></td>
+ <td id='td4' class='gridtd' style=''></td>
+ <td id='tdM' class='tdThick' style='display:none'></td>
+ <td id='td5' class='gridtd' style=''></td>
+ <td id='td6' class='gridtd tdHighlightRight' style=''></td>
+ <td id='td7' class='gridtd tdHighlightLeft' style=''></td>
+ <td id='td8' class='gridtd' style=''></td>
+<!-- <td id='tdMark' class='tdThickHighlight' style=''></td> -->
+ <td id='td9' class='gridtd' style=''></td>
+ <td id='tdR' class='tdThick' style=''></td>
+ <td id='tdR1' class='tdHalfBorderless' style=''></td>
+ <!-- class='tdThickHighlight' -->
+</tr>
+</table>
+<table style='border:none;'>
+<tr>
+ <td id='tdn0' class='boldtext' style='vertical-align: text-top;'>100</td>
+ <td id='tdn1' style='vertical-align: text-top;'></td>
+ <td id='tdn2' style='vertical-align: text-top;'></td>
+ <td id='tdn3' style='vertical-align: text-top;'></td>
+ <td id='tdn4' style='vertical-align: text-top;'></td>
+ <td id='tdn5' style='vertical-align: text-top;'></td>
+ <td id='tdn6' style='vertical-align: text-top;'></td>
+ <td id='tdn7' style='vertical-align: text-top;'>?</td>
+ <td id='tdn8' style='vertical-align: text-top;'></td>
+ <td id='tdn9' style='vertical-align: text-top;'></td>
+ <td id='tdn10' class='boldtext' style='vertical-align: text-top;'>120</td>
+</tr>
+</table>
+</grid>
+<div id='divAns'></div><br>
+<b>Answer:&nbsp;x=</b>
+<input id='ans' type='text' autofocus></input>
+<input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
+<input id='skip' type="submit" value="Skip" onclick='giveUp();'>
+<hr>
+<h2 id='divPrevAns'></h2>
+</div>
+<hr>
+<h3 style='display:none'><u>Previous Qns</u></h3>
+<div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+</body>
+</html>

@@ -1,0 +1,1113 @@
+<html lang="en"><head>
+<title>Ferrules board game</title>
+<style>
+html,
+body {
+  font-family: Century Gothic,CenturyGothic,AppleGothic,sans-serif;
+}
+
+.table_grid {
+    border: 1px solid black;
+    background: #f9f9f9;
+}
+
+.cell_container {
+    min-width: 80px;
+    height: 80px;
+}
+
+.cell {
+    min-width: 60px;
+    height: 80px;
+    text-align: center;
+}
+
+.cellp {
+    min-width: 95px;
+    height: 80px;
+    text-align: center;
+}
+
+.cellp_side {
+    min-width: 80px;
+    height: 80px;
+    text-align: center;
+}
+
+.cellmini {
+    min-width: 20px;
+    height: 10px;
+    text-align: center;
+}
+
+.choice_gone { /*for everyone in a spot*/
+    visibility: hidden
+}
+
+.choice_unavailable { /*for a player for pieces of one type*/
+    visibility: hidden
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.box {
+    position: absolute;
+    width: 100%;
+    /* height: 100%; */
+    top: 0;
+    left: 0;
+    color: #eee;
+    font-size: 3.5em;
+    text-align: center;
+}
+.overlay1 {
+    z-index: 9;
+    width: 100%;
+    /* height: 100%; */
+    color: #eee;
+    font-size: 2em;
+    text-align: center;
+    padding-top: 32%;
+    padding-left: 10%;
+}
+.overlay2 {
+    z-index: 19;
+    width: 100%;
+    /* height: 100%; */
+    color: #eee;
+    font-size: 1em;
+    text-align: center;
+    padding-top: 56%;
+    padding-left: 10%;
+}
+
+.overlay1p {
+    z-index: 1;
+    padding-top: 21%;
+    padding-left: 0%;
+}
+.overlay2p {
+    z-index: 2;
+    /* height: 100%; */
+    color: #eee;
+    font-size: 1em;
+    text-align: center;
+    padding-top: 35%;
+    padding-left: 0%;
+}
+
+.overlay1s {
+    z-index: 1;
+    padding-top: 25%;
+    padding-left: 0%;
+}
+.overlay2s {
+    z-index: 2;
+    padding-top: 43%;
+    padding-left: 0%;
+}
+
+.hint {
+    transform: scale(0.6);
+    position: relative;
+    top: -45px;
+    left: -50px;
+}
+
+.highlight {
+    -webkit-text-stroke: 5px;
+}
+
+.hint_other_may_win {
+    color: black;
+    animation: blinker 1s linear infinite;
+}
+
+.hint_red_may_win {
+    color: red;
+    animation: blinker 1s linear infinite;
+}
+
+.hint_green_may_win {
+    color: green;
+    animation: blinker 1s linear infinite;
+}
+
+.hint_blue_may_win {
+    color: blue;
+    animation: blinker 1s linear infinite;
+}
+
+.hint_purple_may_win {
+    color: purple;
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0.3;
+  }
+}
+</style>
+<script src="js/jquery.min.js"></script>
+<script>
+
+let NUM_PLAYERS = 2,
+    UNLIMITED_PIECES = false,
+    BAN_SUREWIN_CENTRE = false,
+    SHOW_OWN_WIN_HINTS = false,
+    SHOW_OTHERS_WIN_HINTS = false;
+let MAX_PCS = 18;
+const COLORS = ['', 'red', 'green', 'blue', 'purple'],
+    PCS = ['big', 'medium', 'small'],
+    ROW = ['top', 'middle', 'bottom'],
+    COL = ['left', 'middle', 'right'];
+
+let who = 0,
+    pcsPlayed = 0;
+    winBy = '',
+    status = 'New game',
+    /*
+    Structure: 3x3 grid:
+    [
+      //R1 (i.e. row 0)
+      [ //R1C1 from top left
+        [color of big pc if any], [color of med pc if any], [color of small pc if any] ],
+        //R1C2
+        [color of big pc if any], [color of med pc if any], [color of small pc if any] ],
+        //R1C3
+        [color of big pc if any], [color of med pc if any], [color of small pc if any] ]
+      ]
+      //R2
+      ...
+      //R3
+      ...
+    ]
+    */
+    board = [],
+    /*
+    Structure:
+    [
+      [ num of red big circles, num of red medium circles, num of red dots ],
+      [ ...blue pcs ], ...
+    ]
+    */
+    gamePcs = [];
+
+function hideChoices()
+{
+    $('.choices').css('visibility', 'hidden');
+    $('div').removeClass('hint_other_may_win');
+    $('div').removeClass('hint_red_may_win');
+    $('div').removeClass('hint_green_may_win');
+    $('div').removeClass('hint_blue_may_win');
+    $('div').removeClass('hint_purple_may_win');
+}
+
+function showChoices()
+{
+    const c = $('.choices');
+    c.css('visibility', '');
+    c.css('color', COLORS[who + 1]);
+
+    $('td').removeClass('choice_unavailable');
+
+    if (!UNLIMITED_PIECES)
+    {
+        //hide unavailable pieces for current player
+        let y, x;
+        for (let size = 0; size < 3; ++size)
+        {
+            if (gamePcs[who][size] <= 0)
+            {
+                for (y = 0; y < 3; ++y)
+                {
+                    for (x = 0; x < 3; ++x)
+                    {
+                        $(`#cell${y}${x}${size}`).addClass('choice_unavailable');
+                    }
+                }
+            }
+        }
+    }
+
+    if (BAN_SUREWIN_CENTRE)
+    {
+        $('#cell111').addClass('choice_unavailable');
+        $(`#cell11_played1`).css('color', '#0000');
+    }
+}
+
+//return who wins (as colour) or false
+function checkWins(curPlayerColor, applyWin)
+{
+    let y, x, s;
+
+    function todoCheck(slotPlayerColor)
+    {
+        if (slotPlayerColor === '')
+            return false; //never check empty slot
+        return slotPlayerColor === curPlayerColor;
+    }
+
+    //Check vertical lines (same colour & size, OR same colour of big to small)
+    for (x = 0; x < 3; ++x)
+    {
+        for (s = 0; s < 3; ++s)
+        {
+            const slotPlayerColor = board[0][x][s]; //colour of player whose piece (in current slot) that we are testing for a win
+            if (todoCheck(slotPlayerColor))
+            {
+                if ((slotPlayerColor === board[1][x][s]) && (slotPlayerColor === board[2][x][s]))
+                {
+                    if (applyWin)
+                    {
+                        for (y = 0; y < 3; ++y)
+                        {
+                            $(`#cell${y}${x}_container`).css('background', 'yellow');
+                            $(`#cell${y}${x}_played${s}`).addClass('highlight');
+                        }
+                    }
+                    winBy = `line of ${PCS[s]} circles`;
+                    return slotPlayerColor;
+                }
+                //check changing sizes
+                if (s === 0)
+                {
+                    if ((slotPlayerColor === board[1][x][1]) && (slotPlayerColor === board[2][x][2]))
+                    {
+                        if (applyWin)
+                        {
+                            let l = 50;
+                            for (y = 0, s = 0; y < 3; ++y, l -= 3, ++s)
+                            {
+                                $(`#cell${y}${x}_container`).css('background', `hsl(50.6,100%,${l}%)`);
+                                $(`#cell${y}${x}_played${s}`).addClass('highlight');
+                            }
+                        }
+                        winBy = `line of shrinking circles`;
+                        return slotPlayerColor;
+                    }
+                }
+                else if (s === 2)
+                {
+                    if ((slotPlayerColor === board[1][x][1]) && (slotPlayerColor === board[2][x][0]))
+                    {
+                        if (applyWin)
+                        {
+                            let l = 46;
+                            for (y = 0, s = 0; y < 3; ++y, l += 3, ++s)
+                            {
+                                $(`#cell${2-y}${x}_container`).css('background', `hsl(50.6,100%,${l}%)`);
+                                $(`#cell${2-y}${x}_played${s}`).addClass('highlight');
+                            }
+                        }
+                        winBy = `line of enlarging circles`;
+                        return slotPlayerColor;
+                    }
+                }
+            }
+        }
+    }
+    //Check horizontal lines
+    for (y = 0; y < 3; ++y)
+    {
+        for (s = 0; s < 3; ++s)
+        {
+            const slotPlayerColor = board[y][0][s];
+            if (todoCheck(slotPlayerColor))
+            {
+                if ((slotPlayerColor === board[y][1][s]) && (slotPlayerColor === board[y][2][s]))
+                {
+                    if (applyWin)
+                    {
+                        for (x = 0; x < 3; ++x)
+                        {
+                            $(`#cell${y}${x}_container`).css('background', 'yellow');
+                            $(`#cell${y}${x}_played${s}`).addClass('highlight');
+                        }
+                    }
+                    winBy = `line of ${PCS[s]} circles`;
+                    return slotPlayerColor;
+                }
+                //check changing sizes
+                if (s === 0)
+                {
+                    if ((slotPlayerColor === board[y][1][1]) && (slotPlayerColor === board[y][2][2]))
+                    {
+                        if (applyWin)
+                        {
+                            let l = 50;
+                            for (x = 0, s = 0; x < 3; ++x, l -= 3, ++s)
+                            {
+                                $(`#cell${y}${x}_container`).css('background', `hsl(50.6,100%,${l}%)`);
+                                $(`#cell${y}${x}_played${s}`).addClass('highlight');
+                            }
+                        }
+                        winBy = `line of shrinking circles`;
+                        return slotPlayerColor;
+                    }
+                }
+                else if (s === 2)
+                {
+                    if ((slotPlayerColor === board[y][1][1]) && (slotPlayerColor === board[y][2][0]))
+                    {
+                        if (applyWin)
+                        {
+                            let l = 46;
+                            for (x = 0, s = 0; x < 3; ++x, l += 3, ++s)
+                            {
+                                $(`#cell${y}${2-x}_container`).css('background', `hsl(50.6,100%,${l}%)`);
+                                $(`#cell${y}${2-x}_played${s}`).addClass('highlight');
+                            }
+                        }
+                        winBy = `line of enlarging circles`;
+                        return slotPlayerColor;
+                    }
+                }
+            }
+        }
+    }
+    //Check diagonals
+    function shadeBackslash(s, inc)
+    {
+        if (!applyWin) return;
+        let incL = -inc * 3;
+            l = ((incL < 0)? 58: 25) + (incL * 3),
+            c = 'yellow';
+        for (let x = 0; x < 3; ++x, s += inc, l += incL)
+        {
+            if (inc !== 0)
+            {
+                c = `hsl(50.6,100%,${l}%)`;
+            }
+            $(`#cell${x}${x}_container`).css('background', c);
+            $(`#cell${x}${x}_played${s}`).addClass('highlight');
+        }
+    }
+    function shadeForwardSlash(s, inc)
+    {
+        if (!applyWin) return;
+        let incL = -inc * 3;
+            l = ((incL < 0)? 58: 25) + (incL * 3),
+            c = 'yellow';
+        for (let x = 0; x < 3; ++x, s += inc, l += incL)
+        {
+            if (inc !== 0)
+            {
+                c = `hsl(50.6,100%,${l}%)`;
+            }
+            $(`#cell${2-x}${x}_container`).css('background', c);
+            $(`#cell${2-x}${x}_played${s}`).addClass('highlight');
+        }
+    }
+    for (s = 0; s < 3; ++s)
+    {
+        let slotPlayerColor = board[0][0][s];
+        if (todoCheck(slotPlayerColor))
+        {
+            if ((slotPlayerColor === board[1][1][s]) && (slotPlayerColor === board[2][2][s]))
+            {
+                shadeBackslash(s, 0);
+                winBy = `line of ${PCS[s]} circles`;
+                return slotPlayerColor;
+            }
+            //check changing sizes
+            if (s === 0)
+            {
+                if ((slotPlayerColor === board[1][1][1]) && (slotPlayerColor === board[2][2][2]))
+                {
+                    shadeBackslash(0, 1);
+                    winBy = `line of shrinking circles`;
+                    return slotPlayerColor;
+                }
+            }
+            else if (s === 2)
+            {
+                if ((slotPlayerColor === board[1][1][1]) && (slotPlayerColor === board[2][2][0]))
+                {
+                    shadeBackslash(2, -1);
+                    winBy = `line of enlarging circles`;
+                    return slotPlayerColor;
+                }
+            }
+        }
+        slotPlayerColor = board[2][0][s];
+        if (todoCheck(slotPlayerColor))
+        {
+            if ((slotPlayerColor === board[1][1][s]) && (slotPlayerColor === board[0][2][s]))
+            {
+                shadeForwardSlash(s, 0);
+                winBy = `line of ${PCS[s]} circles`;
+                return slotPlayerColor;
+            }
+            //check changing sizes
+            if (s === 0)
+            {
+                if ((slotPlayerColor === board[1][1][1]) && (slotPlayerColor === board[0][2][2]))
+                {
+                    shadeForwardSlash(0, 1);
+                    winBy = `line of shrinking circles`;
+                    return slotPlayerColor;
+                }
+            }
+            else if (s === 2)
+            {
+                if ((slotPlayerColor === board[1][1][1]) && (slotPlayerColor === board[0][2][0]))
+                {
+                    shadeForwardSlash(2, -1);
+                    winBy = `line of enlarging circles`;
+                    return slotPlayerColor;
+                }
+            }
+        }
+    }
+    //Check concentric for all cells
+    for (y = 0; y < 3; ++y)
+    {
+        for (x = 0; x < 3; ++x)
+        {
+            const cell = board[y][x],
+                slotPlayerColor = cell[0];
+            if ((todoCheck(slotPlayerColor))
+                && (slotPlayerColor === cell[1]) && (slotPlayerColor === cell[2]))
+            {
+                if (applyWin)
+                {
+                    $(`#cell${y}${x}_container`).css('background', 'yellow');
+                    for (let s = 0; s < 3; ++s)
+                    {
+                        $(`#cell${y}${x}_played${s}`).addClass('highlight');
+                    }
+                }
+                winBy = 'concentric pieces';
+                return slotPlayerColor;
+            }
+        }
+    }
+    return false;
+}
+
+function disableAllChoices()
+{
+    for (let y = 0; y < 3; ++y)
+    {
+        for (let x = 0; x < 3; ++x)
+        {
+            for (let s = 0; s < 3; ++s)
+            {
+                $(`#cell${y}${x}${s}`).addClass('choice_gone');
+            }
+        }
+    }
+}
+
+function choiceClicked(row, col, size)
+{
+    hideChoices();
+
+    if (!UNLIMITED_PIECES && (gamePcs[who][size] <= 0))
+    {
+        alert('Invalid move! Insufficient pieces.'); //should not be able to come in here, as choice should have been hidden
+    }
+    gamePcs[who][size] -= 1;
+    const lastPlayer = who;
+
+    $(`#cell${row}${col}${size}`).addClass('choice_gone');
+    const curPlayer = who,
+        curPlayerColor = COLORS[who + 1];
+    board[row][col][size] = curPlayerColor;
+    $(`#cell${row}${col}_played${size}`).css('color', curPlayerColor);
+    ++who;
+    if (who >= NUM_PLAYERS)
+        who = 0;
+
+    showChoices();
+
+    //Hide a piece in player deck
+    if (!UNLIMITED_PIECES)
+    {
+        $(`#cell_p${lastPlayer}_s${size}${gamePcs[lastPlayer][size]}`).addClass('choice_unavailable');
+    }
+
+    //check for wins
+    const won = checkWins(curPlayerColor, true); //applyWin
+    if (won)
+    {
+        disableAllChoices();
+        const s = `Game over - ${won} wins by ${winBy}!`;
+        showStatus(s, won);
+        setTimeout(() => {
+            alert(s);
+        }, 100);
+        return;
+    }
+
+    ++pcsPlayed;
+    if (pcsPlayed >= MAX_PCS)
+    {
+        const s = 'Game over - no more moves available';
+        showStatus(s);
+        setTimeout(() => {
+            alert(s);
+        }, 100);
+        return;
+    }
+
+    showWhoseTurn();
+
+    //Show possible winning moves for self and others?
+    const upcomingPlayerColor = COLORS[who + 1]; //who == upcomingPlayer
+	const possWins = {};
+	let gonnaWin = false;
+    if (SHOW_OTHERS_WIN_HINTS)
+    {
+        //console.log('Calculating possible winning moves for other players...');
+        for (let y = 0; y < 3; ++y)
+        {
+            for (let x = 0; x < 3; ++x)
+            {
+                for (let s = 0; s < 3; ++s)
+                {
+                    if (board[y][x][s] !== '')
+                        continue; //skip occupied slot
+                    if (BAN_SUREWIN_CENTRE && (y === 1) && (x === 1) && (s === 1))
+                        continue; //skip banned piece in killer slot
+
+                    for (let p = 0; p < NUM_PLAYERS; ++p)
+                    {
+                        if (p === who) continue; //skip self
+                        if (!UNLIMITED_PIECES && (gamePcs[p][s] <= 0))
+                            continue; //no more piece of this size to play, so skip
+                        const testPlayerColor = COLORS[p + 1];
+                        board[y][x][s] = testPlayerColor;
+                        const willWin = checkWins(testPlayerColor, false); //check this 'test' player, do not apply win
+                        board[y][x][s] = ''; //reset slot
+                        if (willWin)
+                        {
+                            //console.log(`Someone else (${willWin}) will be win by playing ${PCS[s]} piece at ${ROW[y]} row, ${COL[x]} column. Other winning options may exist.`);
+                            $(`#cell${y}${x}_played${s}`).addClass('hint_other_may_win');
+                            possWins[`${y}${x}${s}`] = true; //record unique winning positions
+                        }
+                    }
+                }
+            }
+        }
+    } //end SHOW_OTHERS_WIN_HINTS
+    if (SHOW_OWN_WIN_HINTS)
+    {
+        //console.log(`Calculating your (${upcomingPlayerColor}) possible winning moves...`);
+        for (let y = 0; y < 3; ++y)
+        {
+            for (let x = 0; x < 3; ++x)
+            {
+                for (let s = 0; s < 3; ++s)
+                {
+                    if (board[y][x][s] !== '')
+                        continue; //skip occupied slot
+                    if (BAN_SUREWIN_CENTRE && (y === 1) && (x === 1) && (s === 1))
+                        continue; //skip banned piece in killer slot
+                    if (!UNLIMITED_PIECES && (gamePcs[who][s] <= 0))
+                        continue; //no more piece of this size to play, so skip
+
+                    board[y][x][s] = upcomingPlayerColor;
+                    const willWin = checkWins(upcomingPlayerColor, false); //check this (upcoming) player, do not apply win
+                    board[y][x][s] = ''; //reset slot
+                    if (willWin)
+                    {
+                        //console.log(`You (${upcomingPlayerColor}) will be win by playing ${PCS[s]} piece at ${ROW[y]} row, ${COL[x]} column. Other winning options may exist.`);
+                        $(`#cell${y}${x}_played${s}`).addClass(`hint_${upcomingPlayerColor}_may_win`);
+                        gonnaWin = true;
+                    }
+                }
+            }
+        }
+    } //end SHOW_OWN_WIN_HINTS
+    if (gonnaWin)
+    {
+    	$('#divStatus')[0].innerHTML += " &#128521; Don't forget to win!";
+    }
+    else if ((Object.keys(possWins)).length >= NUM_PLAYERS)
+	{
+		$('#divStatus')[0].innerHTML += ' ... Checkmate! &#128561;';
+	}
+}
+
+function showStatus(s, colour)
+{
+    if (!colour)
+        $('#divStatus')[0].innerHTML = s;
+    else
+    {
+        $('#divStatus')[0].innerHTML = `<font color="${colour}"><b>${s}</b></font>`;
+    }
+}
+
+function showWhoseTurn()
+{
+    const c = COLORS[who+1];
+    showStatus(`<font color="${c}"><b>${c}'s</b></font> turn...`);
+}
+
+
+function setUnlimitedPieces(unlimited)
+{
+    if (UNLIMITED_PIECES !== unlimited)
+    {
+        UNLIMITED_PIECES = unlimited;
+        newGameBoard();
+    }
+}
+
+function setBanSureWin(ban)
+{
+    if (BAN_SUREWIN_CENTRE !== ban)
+    {
+        BAN_SUREWIN_CENTRE = ban;
+        newGameBoard();
+    }
+}
+
+function setHintOwn(show)
+{
+    if (SHOW_OWN_WIN_HINTS !== show)
+    {
+        SHOW_OWN_WIN_HINTS = show;
+    }
+}
+
+function setHintOthers(show)
+{
+    if (SHOW_OTHERS_WIN_HINTS !== show)
+    {
+        SHOW_OTHERS_WIN_HINTS = show;
+    }
+}
+
+function resetOptions()
+{
+    NUM_PLAYERS = 2;
+    $('#rad2')[0].checked = true;
+    UNLIMITED_PIECES = false;
+    $('#option_unlimited_pieces')[0].checked = false;
+    BAN_SUREWIN_CENTRE = false;
+    $('#option_ban_surewin')[0].checked = false;
+    SHOW_OWN_WIN_HINTS = false;
+    $('#option_hint_own')[0].checked = false;
+    SHOW_OTHERS_WIN_HINTS = false;
+    $('#option_hint_others')[0].checked = false;
+    newGameBoard();
+}
+
+//create game board
+function newGameBoard()
+{
+    for (let i = 2; i <= 4; ++i)
+    {
+        if ($(`#rad${i}`)[0].checked)
+        {
+            NUM_PLAYERS = i;
+            break;
+        }
+    }
+    console.log(`new game for ${NUM_PLAYERS} players`);
+    $('div').removeClass('choice_unavailable');
+    UNLIMITED_PIECES = $('#option_unlimited_pieces')[0].checked;
+    BAN_SUREWIN_CENTRE = $('#option_ban_surewin')[0].checked;
+    SHOW_OWN_WIN_HINTS = $('#option_hint_own')[0].checked;
+    SHOW_OTHERS_WIN_HINTS = $('#option_hint_others')[0].checked;
+
+    //1. draw game board
+    const div = $('#divPlayingArea');
+    div[0].innerHTML = '';
+    let s = `<table class='table_grid'>`;
+    for (let y = 0; y < 3; ++y)
+    {
+        s += `<tr id='row${y}'>`;
+        for (let x = 0; x < 3; ++x)
+        {
+            s += `<td id='cell${y}${x}_container' class='cell_container table_grid'>
+            <table  id='choices${y}${x}' class='choices'>
+                <tr>
+                    <td id='cell${y}${x}' rowspan='3' class='cell'>
+                    <div id='cell${y}${x}_played' class="container">
+                          <div id='cell${y}${x}_played0' class="box">&#x25ef;</div>
+                          <div id='cell${y}${x}_played1' class="box overlay1">&#x25ef;</div>
+                          <div id='cell${y}${x}_played2' class="box overlay2">&#x25cf;</div>
+                    </div>
+                    </td>
+                    <td id='cell${y}${x}0' class='cellmini' style='font-size: larger;'
+                        onclick='choiceClicked(${y}, ${x}, 0)'>&#x25ef;</td></tr>
+                <tr><td id='cell${y}${x}1' class='cellmini' onclick='choiceClicked(${y}, ${x}, 1)'>&#x25ef;</td></tr>
+                <tr><td id='cell${y}${x}2' class='cellmini' onclick='choiceClicked(${y}, ${x}, 2)'>&#x25cf;</td></tr>
+            </table></td>`;
+        }
+        s += `</tr>`;
+    }
+    s += '</table>';
+    div.append(s);
+
+    //1b. Show player decks
+    for (let y = 1; y <= 4; ++y)
+    {
+        $(`#table_p${y}`).css('visibility', (y <= NUM_PLAYERS)? '': 'hidden');
+    }
+    $('#row_p3_deck').css('display', (NUM_PLAYERS <= 2)? 'none': '');
+    $('.hide_for_few_players').css('display', (NUM_PLAYERS <= 3)? 'none': '');
+
+    //2. new game data
+    who = 0;
+    pcsPlayed = 0;
+    winBy = '';
+    status = 'New game';
+    showStatus(status);
+    board = [];
+    gamePcs = [];
+    for (let y = 0; y < NUM_PLAYERS; ++y)
+    {
+        gamePcs[y] = [3, 3, 3];
+    }
+
+    for (let y = 0; y < 3; ++y)
+    {
+        board[y] = [];
+        for (let x = 0; x < 3; ++x)
+        {
+            board[y][x] = ['', '', ''];
+        }
+    }
+
+    //3. show player choices in colour of current player
+    showChoices();
+
+    //4. update status
+    showWhoseTurn();
+}
+
+function setNumPlayers(num)
+{
+    if (num !== NUM_PLAYERS)
+    {
+        NUM_PLAYERS = num;
+        MAX_PCS = NUM_PLAYERS * 9;
+        newGameBoard();
+    }
+}
+
+function toggleHint()
+{
+    const d = $('#divHint');
+    if (d.css('visibility') === 'hidden')
+        d.css('visibility', '');
+    else
+        d.css('visibility', 'hidden');
+}
+
+$(document).ready(() => {
+    const div = $('#divPlayingArea')[0];
+    console.log('init', div);
+
+    newGameBoard();
+});
+</script>
+</head>
+<body>
+<h1>Ferrules board game</h1>
+<div id='divStatus'></div>
+<table>
+    <tr>
+        <td class='hide_for_few_players'></td>
+        <td id='table_p1' colspan='3'>
+            <table><tr><td>
+                <table class='choices' style='color: red;'><tbody><tr>
+                    <td class="cellp">
+                        <div class="container">
+                              <div id='cell_p0_s00' class="box" style="color: red;">&#x25ef;</div>
+                              <div id='cell_p0_s10' class="box overlay1 overlay1p" style="color: red;">&#x25ef;</div>
+                              <div id='cell_p0_s20' class="box overlay1 overlay2p" style="color: red;">&#x25cf;</div>
+                        </div>
+                    </td>
+                    <td class="cellp">
+                        <div class="container">
+                              <div id='cell_p0_s01' class="box" style="color: red;">&#x25ef;</div>
+                              <div id='cell_p0_s11' class="box overlay1 overlay1p" style="color: red;">&#x25ef;</div>
+                              <div id='cell_p0_s21' class="box overlay1 overlay2p" style="color: red;">&#x25cf;</div>
+                        </div>
+                    </td>
+                    <td class="cellp">
+                        <div class="container">
+                              <div id='cell_p0_s02' class="box" style="color: red;">&#x25ef;</div>
+                              <div id='cell_p0_s12' class="box overlay1 overlay1p" style="color: red;">&#x25ef;</div>
+                              <div id='cell_p0_s22' class="box overlay1 overlay2p" style="color: red;">&#x25cf;</div>
+                        </div>
+                    </td>
+                </tr></tbody>
+                </table>
+            </td></tr></table>
+        </td>
+        <td></td>
+    </tr><tr>
+        <td class='hide_for_few_players'>
+            <table><tr><td>
+                <table class="choices" style="color: purple;">
+                <tbody><tr>
+                    <td class="cellp_side">
+                        <div class="container">
+                              <div id='cell_p3_s00' class="box" style="color: purple;">&#x25ef;</div>
+                              <div id='cell_p3_s10' class="box overlay1 overlay1s" style="color: purple;">&#x25ef;</div>
+                              <div id='cell_p3_s20' class="box overlay2 overlay2s" style="color: purple;">&#x25cf;</div>
+                        </div>
+                    </td></tr><tr>
+                    <td class="cellp_side">
+                        <div class="container">
+                              <div id='cell_p3_s01' class="box" style="color: purple;">&#x25ef;</div>
+                              <div id='cell_p3_s11' class="box overlay1 overlay1s" style="color: purple;">&#x25ef;</div>
+                              <div id='cell_p3_s21' class="box overlay2 overlay2s" style="color: purple;">&#x25cf;</div>
+                        </div>
+                    </td></tr><tr>
+                    <td class="cellp_side">
+                        <div class="container">
+                              <div id='cell_p3_s02' class="box" style="color: purple;">&#x25ef;</div>
+                              <div id='cell_p3_s12' class="box overlay1 overlay1s" style="color: purple;">&#x25ef;</div>
+                              <div id='cell_p3_s22' class="box overlay2 overlay2s" style="color: purple;">&#x25cf;</div>
+                        </div>
+                    </td>
+                </tr></tbody>
+                </table>
+            </td></tr></table>
+        </td><td>
+            <div id='divPlayingArea'></div>
+        </td>
+        <td id='table_p2'>
+            <table><tr><td>
+                <table class="choices" style="color: green;">
+                <tbody><tr>
+                    <td class="cellp_side">
+                        <div class="container">
+                              <div id='cell_p1_s00' class="box" style="color: green;">&#x25ef;</div>
+                              <div id='cell_p1_s10' class="box overlay1 overlay1s" style="color: green;">&#x25ef;</div>
+                              <div id='cell_p1_s20' class="box overlay2 overlay2s" style="color: green;">&#x25cf;</div>
+                        </div>
+                    </td></tr><tr>
+                    <td class="cellp_side">
+                        <div class="container">
+                              <div id='cell_p1_s01' class="box" style="color: green;">&#x25ef;</div>
+                              <div id='cell_p1_s11' class="box overlay1 overlay1s" style="color: green;">&#x25ef;</div>
+                              <div id='cell_p1_s21' class="box overlay2 overlay2s" style="color: green;">&#x25cf;</div>
+                        </div>
+                    </td></tr><tr>
+                    <td class="cellp_side">
+                        <div class="container">
+                              <div id='cell_p1_s02' class="box" style="color: green;">&#x25ef;</div>
+                              <div id='cell_p1_s12' class="box overlay1 overlay1s" style="color: green;">&#x25ef;</div>
+                              <div id='cell_p1_s22' class="box overlay2 overlay2s" style="color: green;">&#x25cf;</div>
+                        </div>
+                    </td>
+                </tr></tbody>
+                </table>
+            </td></tr></table>
+        </td>
+    </tr>
+    <tr id='row_p3_deck'><td class='hide_for_few_players'></td><td id='table_p3' colspan='3'>
+        <table><tr><td>
+            <table class='choices' style='color: blue;'><tbody><tr>
+                <td class="cellp">
+                    <div class="container">
+                          <div id='cell_p2_s00' class="box" style="color: blue;">&#x25ef;</div>
+                          <div id='cell_p2_s10' class="box overlay1 overlay1p" style="color: blue;">&#x25ef;</div>
+                          <div id='cell_p2_s20' class="box overlay2 overlay2p" style="color: blue;">&#x25cf;</div>
+                    </div>
+                </td>
+                <td class="cellp">
+                    <div class="container">
+                          <div id='cell_p2_s01' class="box" style="color: blue;">&#x25ef;</div>
+                          <div id='cell_p2_s11' class="box overlay1 overlay1p" style="color: blue;">&#x25ef;</div>
+                          <div id='cell_p2_s21' class="box overlay2 overlay2p" style="color: blue;">&#x25cf;</div>
+                    </div>
+                </td>
+                <td class="cellp">
+                    <div class="container">
+                          <div id='cell_p2_s02' class="box" style="color: blue;">&#x25ef;</div>
+                          <div id='cell_p2_s12' class="box overlay1 overlay1p" style="color: blue;">&#x25ef;</div>
+                          <div id='cell_p2_s22' class="box overlay2 overlay2p" style="color: blue;">&#x25cf;</div>
+                    </div>
+                </td>
+            </tr></tbody>
+            </table>
+        </td></tr></table>
+    </td>
+<td></td></tr>
+</table>
+<br>Refresh page to restart, or click: <button onclick="newGameBoard();">New Game</button>
+<div>
+<b>Help</b> (applies on next move made):<br>
+<input type="checkbox" id="option_hint_own" name="option_hint_own" value="option_hint_own"
+     onclick='setHintOwn(this.checked);'>
+<label for="option_hint_own"> Show hint of current player's winning moves</label><br>
+<input type="checkbox" id="option_hint_others" name="option_hint_others" value="option_hint_others"
+     onclick='setHintOthers(this.checked);'>
+<label for="option_hint_others"> Show hint of other players' winning moves</label><br>
+<b>Options</b> (changes will restart game):<br>
+Number of players:
+  <input id='rad2' type="radio" class="chngRadio" name="radio" value="val1" onchange='setNumPlayers(2);' checked>
+  <label for="val1">2</label>
+  <input id='rad3' type="radio" class="chngRadio" name="radio" value="val2" onchange='setNumPlayers(3);'>
+  <label for="val2">3</label>
+  <input id='rad4' type="radio" class="chngRadio" name="radio" value="val3" onchange='setNumPlayers(4);'>
+  <label for="val3">4</label>
+<br>
+<input type="checkbox" id="option_unlimited_pieces" name="option_unlimited_pieces" value="option_unlimited_pieces"
+     onclick='setUnlimitedPieces(this.checked);'>
+<label for="option_unlimited_pieces"> Unlimited pieces</label><br>
+<input type="checkbox" id="option_ban_surewin" name="option_ban_surewin" value="option_ban_surewin"
+     onclick='setBanSureWin(this.checked);'>
+<label for="option_ban_surewin"> Ban centre</label><br>
+<button onclick="resetOptions();">Reset Options</button><br>
+</div>
+<br><br><hr><div id='divRules'>
+<h2>Win by:</h2>
+1. Concentric circles:<br>
+<table class="choices" style="color: green;">
+    <tbody><tr><td class="table_grid cell">
+        <div class="container">
+              <div class="box" style="color: green;">&#x25ef;</div>
+              <div class="box overlay1" style="color: green;">&#x25ef;</div>
+              <div class="box overlay2" style="color: green;">&#x25cf;</div>
+        </div>
+    </td></tr></tbody>
+</table>
+2. Line of same sized circles (of same colour) (can be horizontal, vertical or diagonal):<br>
+<table class="choices" style="color: green;">
+    <tbody><tr>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: green;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: green;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: green;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+    </tr></tbody>
+</table>
+3. Line of enlarging or shrinking circles (of same colour) (must be in sequence):<br>
+<table class="choices" style="color: green;">
+    <tbody><tr>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: green;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: green;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: green;">&#x25cf;</div>
+            </div>
+        </td>
+    </tr></tbody>
+</table>
+<h3>Hint&nbsp;<button onclick="toggleHint();">(show/hide)</button></h3>
+<div id='divHint' style='visibility: hidden'>
+Unless you're sleepy, in a 2 players game, the strongest/"sure win" position is a <b>medium circle</b> in the <b>centre</b>.
+<table class="choices hint" style="color: green;">
+    <tbody>
+    <tr>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee">&#x25cf;</div>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: green">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee">&#x25cf;</div>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee;">&#x25cf;</div>
+            </div>
+        </td>
+        <td class="table_grid cell">
+            <div class="container">
+                  <div class="box" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay1" style="color: #eee;">&#x25ef;</div>
+                  <div class="box overlay2" style="color: #eee">&#x25cf;</div>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</div>
+</div>
+</body>
+</html>

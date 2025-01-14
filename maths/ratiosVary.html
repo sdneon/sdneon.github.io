@@ -1,0 +1,241 @@
+<html>
+	<head>
+		<title>Simple Ratios</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+pre {
+	font-size: large;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/numbers.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"></script>
+<script>
+const NAMES = [
+	'Liam', 'Olivia',
+	'Noah', 'Emma',
+	'Oliver', 'Charlotte',
+	'Elijah', 'Amelia',
+	'James', 'Ava',
+	'William', 'Sophia',
+	'Benjamin', 'Isabella',
+	'Lucas', 'Mia',
+	'Henry', 'Evelyn',
+	'Theodore', 'Harper'];
+const ITEMS = 'apples,pears,oranges,grapefruits,mandarins,limes,nectarines,apricots,peaches,plums,bananas,mangoes,strawberries,raspberries,blueberries,kiwifruit,passionfruit,watermelons,rockmelons,honeydew'.split(',');
+
+//difficulty config
+const DEF_maxSharesPerPax = 8,
+	DEF_maxSharesTotal = 12;
+
+let q, ans = 0, item, correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false;
+let maxSharesPerPax = DEF_maxSharesPerPax,
+	maxSharesTotal = DEF_maxSharesTotal;
+
+function readVal(id, def)
+{
+	const elem = $(id)[0];
+	let val = elem.value;
+	if (typeof val !== 'string') val = '';
+	val = val.trim();
+	try
+	{
+		val = parseInt(val, 10);
+	}
+	catch (ignore) {
+		console.log('Invalid value! Setting to default:', def);
+		val = def;
+	}
+	return val;
+}
+
+function changeDifficulty()
+{
+	let v1 = readVal('#maxSharesPerPax', DEF_maxSharesPerPax),
+		v2 = readVal('#maxSharesTotal', DEF_maxSharesTotal);
+	if (v1 <= 0) v1 = DEF_maxSharesPerPax;
+	if (v2 <= 0) v1 = DEF_maxSharesTotal;
+	if (v2 < v1) v2 += v1;
+	maxSharesPerPax = v1;
+	maxSharesTotal = v2;
+	$('#maxSharesPerPax')[0].value = '' + v1;
+	$('#maxSharesTotal')[0].value = '' + v2;
+	console.log('Changed difficulty to:', v1, v2);
+	newQn();
+}
+
+function showAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	elemGuess.value = '';
+	//flag those answered wrongly or skipped with '*'
+	//const answer = `${curQnEverWrong? '*':''}${$('#divSf')[0].innerHTML}<br>${ans[0]}: ${ans[1]} ${item}`;
+	const answer = `${curQnEverWrong? '*':''}${$('#divSf')[0].innerHTML}<br>${ans[2]}<br>${ans[0]}: ${ans[1]} ${item}`;
+	$('#divPrevAns')[0].innerHTML = `&#9989; : ${answer}`;
+
+	$('#divAllOldAns')[0].innerHTML = `${answer}<hr>${$('#divAllOldAns')[0].innerHTML}`;
+	MathJax.typeset();
+}
+
+function giveUp()
+{
+	curQnEverWrong = true;
+	showAnswer();
+	newQn();
+}
+
+function randItem()
+{
+	return ITEMS[randInt(ITEMS.length)];
+}
+
+function randName(exclude)
+{
+	const max = exclude? (NAMES.length - 1): NAMES.length;
+	let i = randInt(max);
+	if (i === exclude) i = i + 1;
+	return [i, NAMES[i]];
+}
+
+function randNames()
+{
+	const name1 = randName(),
+		name2 = randName(name1[0]);
+	return [name1[1], name2[1]];
+}
+
+function checkAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	let guess = elemGuess.value;
+
+	if (typeof guess !== 'string') guess = '';
+	guess = guess.trim();
+	let right = (ans[1]) === guess;
+
+	//1. Update score
+	if (right){
+		++correct;
+		++streak;
+	}
+	else
+	{
+		curQnEverWrong = true;
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+	}
+
+	//allow answering until correct
+	if (right)
+	{
+		showAnswer();
+		newQn();
+		return;
+	}
+	//else inform of mistake and let player try again
+	$('#divPrevAns')[0].innerHTML = `&#10060;: ${guess}. Try again`;
+}
+
+function newQn()
+{
+	curQnEverWrong = false;
+	//randomly generate num for solving:
+	q = new RatioSum(maxSharesPerPax, maxSharesTotal);
+	const names = randNames();
+	item = randItem();
+	if (q.ask === 0)
+	{
+		$('#divSf')[0].innerHTML = `${names[0]} and ${names[1]} have ${item} in the ratio of ${q.ratio1}:${q.ratio2}.<br>If they have a total of ${q.totalAmount} ${item},<br>how many ${item} does ${names[0]} have?`;
+		ans = [names[0], ''+q.p1Has,
+			`\\({${q.ratio1} \\over (${q.ratio1} + ${q.ratio2})} \\times ${q.totalAmount} = ${q.p1Has}\\)`
+			];
+	}
+	else if (q.ask === 1)
+	{
+		$('#divSf')[0].innerHTML = `${names[0]} and ${names[1]} have ${item} in the ratio of ${q.ratio1}:${q.ratio2}.<br>If they have a total of ${q.totalAmount} ${item},<br>how many ${item} does ${names[1]} have?`;
+		ans = [names[1], ''+q.p2Has,
+			`\\({${q.ratio2} \\over (${q.ratio1} + ${q.ratio2})} \\times ${q.totalAmount} = ${q.p2Has}\\)`
+			];
+	}
+	else //if (q.ask === 2)
+	{
+		$('#divSf')[0].innerHTML = `${names[0]} and ${names[1]} have ${item} in the ratio of ${q.ratio1}:${q.ratio2}.<br>`;
+		let s = '';
+		if (Math.random() < 0.5)
+		{
+			$('#divSf')[0].innerHTML += `If ${names[0]} has ${q.p1Has} ${item}, what is the total number of ${item}?`;
+			s = `\\(${q.p1Has} \\over ${q.ratio1} \\times (${q.ratio1} + ${q.ratio2})\\) = ${q.totalAmount}`;
+		}
+		else
+		{
+			$('#divSf')[0].innerHTML += `If ${names[1]} has ${q.p2Has} ${item}, what is the total number of ${item}?`;
+			s = `\\({${q.p2Has} \\over ${q.ratio2}} \\times (${q.ratio1} + ${q.ratio2})\\) = ${q.totalAmount}`;
+		}
+		ans = ['Total', ''+q.totalAmount, s];
+	}
+	$('#divNum')[0].textContent = q[0];
+}
+
+function load()
+{
+	$('#ans')[0].addEventListener("keypress", function(event) {
+		// If the user presses the "Enter" key on the keyboard
+		if (event.key === "Enter") {
+			// Cancel the default action, if needed
+			event.preventDefault();
+			// Trigger the button element with a click
+			$('#submit').click();
+		}
+	});
+	newQn();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Solve the question about ratios</h1>
+<h2>Qn:&nbsp;<span id='divSf'></span></h2>
+<p>
+<h2>Number:&nbsp;<span id='divNum'></span></h2>
+<p>
+<input id='ans' type='text'></input>
+<input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
+<input id='skip' type="submit" value="Skip" onclick='giveUp();'>
+<hr>
+<h2 id='divPrevAns'></h2>
+</div>
+<hr>
+<h3><u>Previous Qns</u></h3>
+<h3 id='divAllOldAns'></h3>
+<div><hr><b>"Difficulty" Configuration hint</b><br>
+The 2 numbers are: (1) maximum number of units or shares per person (number will be tuned up by 2),<br>
+(2) maximum total number of units or shares.
+Smaller numbers make for easier mental calculations; bigger numbers may need calculator.
+</div>
+<div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+<div id='divConfig' style='float:right; position:fixed; top: 200px; right:18px; font-size:100%'>
+Set "difficulty":<br>
+<input id='maxSharesPerPax' type='text' maxlength='5' size='5' value='8'></input>
+<input id='maxSharesTotal' type='text' maxlength='5' size='5' value='12'></input>
+<input id='submit' type="submit" value="Set" onclick='changeDifficulty();'>
+</div>
+</body>
+</html>

@@ -1,0 +1,162 @@
+
+<html>
+	<head>
+		<title>Ratios - Combining</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="js/jquery.min.js"></script>
+<script src="js/ratios3.js"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+
+let eqs;
+function showHint(i)
+{
+	const q = eqs[i],
+		divQn = $($(`#q${i}`)[0]);
+	$(`#butt${i}a`)[0].remove();
+	let atLeastOne = false,
+		s = '';
+	for (let j = 0; j < 4; ++j)
+	{
+		const factors = q.getFactorsStr(j);
+		if (factors)
+		{
+			atLeastOne = true;
+			s += `<br>factors of ${factors}. `;
+		}
+	}
+	if (!atLeastOne)
+	{
+		divQn.append("<br><span>Figure them out yourself! X)</span>");
+		return;
+	}
+	divQn.append(`<span>${s}</span>`);
+}
+
+function showAns(i)
+{
+	const q = eqs[i],
+		divQn = $($(`#q${i}`)[0]);
+	if ($(`#butt${i}a`).length > 0)
+		$(`#butt${i}a`)[0].remove();
+	$(`#butt${i}b`)[0].remove();
+	divQn.append(`<br><b>Ans</b>: <span id='ans${i}'>${q.toAnsString()}</span>`);
+	MathJax.typeset([$(`#ans${i}`)[0]]); //transfrom this new element alone for performance (instead of entire page)
+}
+
+function showDetails()
+{
+	$('#buttShow').css('display', 'none');
+	$('#buttHide').css('display', '');
+	$('#example').css('display', '');
+}
+
+function hideDetails()
+{
+	$('#buttHide').css('display', 'none');
+	$('#buttShow').css('display', '');
+	$('#example').css('display', 'none');
+}
+
+/*
+Either use config to load 'cancel' module, or specify this in a MathJax expression:
+  \require{cancel}
+*/
+window.MathJax = {
+	loader: {load: ['[tex]/cancel']},
+	tex: {packages: {'[+]': ['cancel']}}
+};
+
+function load()
+{
+	//randomly generate eqns for solving:
+	eqs = randEqs(MAX);
+
+	//randomly generate eqns for determining if to use elimination:
+	//eqs = randEqs(MAX, {  });
+
+	let i = 65, j = 0,
+		n = 0;
+	const divText = $('#text'),
+		divAns = $('#ans');
+	let row = $("<tr></tr>");
+	divAns.append(row);
+	eqs.forEach((e) => {
+		//1. add qn
+		const ii = String.fromCharCode(i);
+		divText.append(`<div id="q${j}"><b>` + ii + '</b><br><span>'
+			+ `${e.toString().replace(' ', '&nbsp;')}&nbsp;&nbsp;&nbsp;`
+			+ `<button style='display:none' id='butt${j}a' onclick='showHint(${j})'>Hint: Show factor(s)</button>`
+			+ `<button id='butt${j}b' onclick='showAns(${j})'>Show Answer</button>`
+			+ `</span></div><p>`
+			//DEBUG: show answer together with qn
+			//+ `${e.toString().replace(' ', '&nbsp;')} : ${e.toAnsString().replace(' ', '&nbsp;')}</span></div><p>`
+		);
+		++j;
+		//2. add ans
+		row.append(`<td><b>${ii}</b>: ${e.toAnsString().replace(' ', '&nbsp;')}`
+			+ `</td>`);
+		if (++n >= 5)
+		{
+			n = 0;
+			row = $("<tr></tr>");
+			divAns.append(row);
+		}
+		++i;
+	});
+	MathJax.typeset();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Ratios - Combining (Work in progress)</h1>
+<h2>Combine separate ratios to compare altogether</h2>
+<b>E.g.</b>:<br>
+Alice and Benjamin have oranges in the ratio of 1:3, while Benjamin and Calvin has oranges in the ratio of 2:5.<br>
+What is the ratio of oranges between Alice and Calvin? I.e. Alice : Calvin.<br>
+What is the ratio of oranges for all of them? I.e. Alice : Benjamin : Calvin.<br>
+If Benjamin has 12 oranges, what is the total number of oranges they have altogether?<br><br>
+<b>Ans</b>: A:B = 1:3 and B:C = 2:5 => A:B:C = 2:6:15 and a total of 46 oranges.&nbsp;<button id='buttShow' onclick='showDetails()'>Show Details</button><button id='buttHide' style='display:none' onclick='hideDetails()'>Hide Details</button>
+<br><br>
+<div id='example' style='display:none'>
+Firstly, observe that Benjamin is the <b>commonality</b> in both ratios given.<br>
+In order to compare the 2 ratios directly, we have to make Benjamin's "share" the same.<br>
+Hence, we choose <b style='color:#171'>3 X 2</b> to make Benjamin's share in each ratio into <b style='color:#171'>"6"</b>.<br><br>
+A:B = 1:3 = (1 <u>X 2</u>) : (3 <u>X 2</u>) = 2:<b style='color:#171'>6</b><br>
+B:C = 2:5 = (2 <u>X 3</u>) : (5 <u>X 3</u>) = <b style='color:#171'>6</b>:15<br>
+Now that Benjamin's share is the same (<b style='color:#171'>"6"</b>) in both ratios, we can combine the ratios into:<br>
+A:B:C = 2:<b style='color:#171'>6</b>:15<br>
+Therefore, A:C is 2:15, by simply taking out the A & C parts in A:B:C.<br><br>
+Benjamin's 6 shares is worth/equivalent to 12 oranges => 12/6 = 2 oranges per share.<br>
+Total number of shares = 2 + 6 + 15 = 23<br>
+Hence, total number of oranges = 23 x 2 = 46 oranges.
+</div><hr>
+<!--
+Sample: When \(a \ne 0\), there are two solutions to \(ax^2 + bx + c = 0\) and they are
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+-->
+<div id='text'></div>
+<hr>
+<div><table id='ans'></table>
+</div>
+</div>
+<div>
+  <br><a href='maths.html'>(&#x221E; home)</a>
+</div>
+</body>
+</html>

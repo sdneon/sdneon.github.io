@@ -1,0 +1,156 @@
+
+<html>
+	<head>
+		<title>Ratios - Fill in the Blanks</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="js/jquery.min.js"></script>
+<script src="js/ratios2.js"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+
+let eqs;
+function showHint(i)
+{
+	const q = eqs[i],
+		divQn = $($(`#q${i}`)[0]);
+	$(`#butt${i}a`)[0].remove();
+	let atLeastOne = false,
+		s = '';
+	for (let j = 0; j < 4; ++j)
+	{
+		const factors = q.getFactorsStr(j);
+		if (factors)
+		{
+			atLeastOne = true;
+			s += `<br>factors of ${factors}. `;
+		}
+	}
+	if (!atLeastOne)
+	{
+		divQn.append("<br><span>Just one's!</span>");
+		return;
+	}
+	divQn.append(`<span>${s}</span>`);
+}
+
+function showAns(i)
+{
+	const q = eqs[i],
+		divQn = $($(`#q${i}`)[0]);
+	if ($(`#butt${i}a`).length > 0)
+		$(`#butt${i}a`)[0].remove();
+	$(`#butt${i}b`)[0].remove();
+	divQn.append(`<br><b>Ans</b>: <span id='ans${i}'>${q.toAnsString()}</span>`);
+	MathJax.typeset([$(`#ans${i}`)[0]]); //transfrom this new element alone for performance (instead of entire page)
+}
+
+function showDetails()
+{
+	$('#buttShow').css('display', 'none');
+	$('#buttHide').css('display', '');
+	$('#example').css('display', '');
+}
+
+function hideDetails()
+{
+	$('#buttHide').css('display', 'none');
+	$('#buttShow').css('display', '');
+	$('#example').css('display', 'none');
+}
+
+/*
+Either use config to load 'cancel' module, or specify this in a MathJax expression:
+  \require{cancel}
+*/
+window.MathJax = {
+	loader: {load: ['[tex]/cancel']},
+	tex: {packages: {'[+]': ['cancel']}}
+};
+
+function load()
+{
+	//randomly generate eqns for solving:
+	eqs = randEqs(MAX);
+
+	//randomly generate eqns for determining if to use elimination:
+	//eqs = randEqs(MAX, {  });
+
+	let i = 65, j = 0,
+		n = 0;
+	const divText = $('#text'),
+		divAns = $('#ans');
+	let row = $("<tr></tr>");
+	divAns.append(row);
+	eqs.forEach((e) => {
+		//1. add qn
+		const ii = String.fromCharCode(i);
+		divText.append(`<div id="q${j}"><b>` + ii + '</b><br><span>'
+			+ `${e.toString().replace(' ', '&nbsp;')}&nbsp;&nbsp;&nbsp;`
+			+ `<button id='butt${j}a' onclick='showHint(${j})'>Hint: Show factor(s)</button>`
+			+ `<button id='butt${j}b' onclick='showAns(${j})'>Show Answer</button>`
+			+ `</span></div><p>`
+			//DEBUG: show answer together with qn
+			//+ `${e.toString().replace(' ', '&nbsp;')} : ${e.toAnsString().replace(' ', '&nbsp;')}</span></div><p>`
+		);
+		++j;
+		//2. add ans
+		row.append(`<td><b>${ii}</b>: ${e.toAnsString().replace(' ', '&nbsp;')}`
+			+ `</td>`);
+		if (++n >= 5)
+		{
+			n = 0;
+			row = $("<tr></tr>");
+			divAns.append(row);
+		}
+		++i;
+	});
+	MathJax.typeset();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Ratios - Fill in the Blanks</h1>
+<h2>Know your multiples in order to simplify or expand the given ratios</h2>
+<b>E.g.</b>:<br>
+2:4:6 = (expand) 3:&#x25A2;:&#x25A2; = (expand) 8:16:24 = (simplify) 1:2:&#x25A2;<br>
+<b>Ans</b>: 2:4:6 = \(3 : \boxed{6} : \boxed{9}\) = 8:16:24 = \(1:2:\boxed{3}\) <button id='buttShow' onclick='showDetails()'>Show Details</button><button id='buttHide' style='display:none' onclick='hideDetails()'>Hide Details</button>
+<br><br>
+<div id='example' style='display:none'>
+2:4:6 = \(\boxed{3 = \big(\cancel{2}^1 \times \frac{3}{\cancel{2}^1}\big)} : \boxed{4 \times \frac{3}{2}} : \boxed{6 \times \frac{3}{2}}\)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= \(3 : \boxed{\cancel{4}^2 \times \frac{3}{\cancel{2}^1} = 6} : \boxed{\cancel{6}^3 \times \frac{3}{\cancel{2}^1} = 9}\)<br>
+&rArr; 2:4:6 = \(3 : \boxed{6} : \boxed{9}\)<br><br>
+2:4:6 = 1:2:&#x25A2;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= \((2 \underline{\div 2} = 1) : (4 \underline{\div 2} = 2) : \boxed{6 \underline{\div 2} = 3} \)<br>
+&rArr; 2:4:6 = \(1:2:\boxed{3}\)<br><br>
+2:4:6 = 8:16:24<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= \((2 \underline{\times 4} = 8) : (4 \underline{\times 4} = 16) : \boxed{6 \underline{\times 4} = 24} \)<br><p>
+</div><hr>
+<!--
+Sample: When \(a \ne 0\), there are two solutions to \(ax^2 + bx + c = 0\) and they are
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+-->
+<div id='text'></div>
+<hr>
+<div><table id='ans'></table>
+</div>
+</div>
+<div style='width:200px; height:400px'>
+  <canvas id="myChart"></canvas>
+</div>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<html>
+	<head>
+		<title>Simple Multiplication Table Tests</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="js/jquery.min.js"></script>
+<script>
+
+let q, ans = 0, lastQ = [0,0],
+	strQn = '',
+	correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false;
+
+function giveUp()
+{
+	curQnEverWrong = true;
+	showAnswer();
+	newQn();
+}
+
+//Get random integer within (2, 10)
+function randInt2to10()
+{
+    const n = ((Math.random() * 9) | 0) + 2;
+    return n;
+}
+
+//Get random integer within (1, 10)
+// Favour bigger numbers if only a big streak!
+function randInt1to10()
+{
+    let n = ((Math.random() * 9) | 0) + 1;
+    if ((streak < 10) || (Math.random < 0.5)) //chance to favour bigger numbers (5 to 9) when on a big streak!
+    {
+    	return n;
+    }
+    n = ((Math.random() * 5) | 0) + 5;
+    return n;
+}
+
+function showAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	elemGuess.value = '';
+	//flag those answered wrongly or skipped with '*'
+	const answer = `${strQn} ${ans}`;
+
+	$('#divAllOldAns')[0].innerHTML = `${answer}<br>${$('#divAllOldAns')[0].innerHTML}`;
+}
+
+function revise()
+{
+	const div = $('#divAllOldAns')[0];
+	let oldQns = div.innerHTML;
+	oldQns = oldQns.replaceAll(/= \d+/g, '=');
+	div.innerHTML = oldQns;
+}
+
+const REGEX = /(\d{1,2})(?:[^0-9]+)(\d{1,2})\s+=/;
+function reveal()
+{
+	const div = $('#divAllOldAns')[0];
+	let oldQns = div.innerHTML.split('<br>');
+	const cnt = oldQns.length;
+	if (cnt <= 0)
+	{
+		return;
+	}
+	for (let i = 0; i < cnt; ++i)
+	{
+		const m = REGEX.exec(oldQns[i]);
+		if (m)
+		{
+			const a = parseInt(m[1], 10),
+				b = parseInt(m[2], 10);
+			oldQns[i] = `${m[1]} &times; ${m[2]} = ${a * b}`;
+		}
+	}
+	div.innerHTML = oldQns.join('<br>');
+}
+
+function newQn()
+{
+	curQnEverWrong = false;
+	$('#ans')[0].textContent = '';
+	$('#divWrong')[0].textContent = '';
+	//randomly generate num for solving:
+	q = [randInt2to10(), randInt1to10()];
+	//randomly flip them around for variety
+	if (Math.random() < 0.5)
+	{
+		//console.log('flip');
+		q = [q[1], q[0]];
+	}
+	if ((q[0] === lastQ[0]) && (q[1] === lastQ[1]))
+	{
+		console.log('changing duplicate qn!');
+		++(q[0]);
+		if (q[0] > 10)
+			q[0] = 2;
+	}
+	ans = '' + (q[0] * q[1]);
+	$('#divQn')[0].innerHTML = strQn = `${q[0]} &times; ${q[1]} =`;
+}
+
+
+function checkAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	let guess = elemGuess.value;
+
+	if (typeof guess !== 'string') guess = '';
+	guess = guess.trim();
+	let right = ans === guess;
+
+	//1. Update score
+	if (right){
+		++correct;
+		++streak;
+	}
+	else
+	{
+		curQnEverWrong = true;
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+		//if (streak >= 10) console.log('big streak!');
+	}
+
+	//allow answering until correct
+	if (right)
+	{
+		showAnswer();
+		newQn();
+		return;
+	}
+	//else inform of mistake and let player try again
+	$('#divWrong')[0].innerHTML = `&#10060; ${q[0]} &times; ${q[1]} &ne; ${guess}. Try again`;
+}
+
+function load()
+{
+	$('#ans')[0].addEventListener("keypress", function(event) {
+		// If the user presses the "Enter" key on the keyboard
+		if (event.key === "Enter") {
+			// Cancel the default action, if needed
+			event.preventDefault();
+			// Trigger the button element with a click
+			$('#submit').click();
+		}
+	});
+	newQn();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Simple Multiplication Table Tests</h1>
+<h3>(2 times table to 10 times table)</h3>
+<h2>
+<span id='divQn'>\(1 \times 2 = \)</span>&nbsp;<input id='ans' type='text'></input>
+<input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
+<input id='skip' type="submit" value="Skip" onclick='giveUp();'>
+<div id='divWrong'></div>
+</h2>
+</div>
+<hr>
+<h3><u>Previous Qns</u></h3>
+<input id='revise' type="submit" value="Revise" onclick='revise();'>
+<input id='reveal' type="submit" value="Reveal" onclick='reveal();'>
+<h3 id='divAllOldAns'></h3>
+<div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+<hr>
+<b>Tips</b><br>
+<ul>
+<li>If you forget a &times;9, do a &times;10 and substract. E.g.: 8&times;9 = (8&times;10) - 8 = 80 - 8 = 72.</li>
+<li>&times;5 is half of &times;10. E.g.: 4&times;8 = 80 &divide; 2 = 40</li>
+<li>Remembering the &times;5's can help you to get the &times;4 and &times;6 by subtracting and adding respectively.
+<br>E.g.: 4&times;8 = (40) - 8 = 32</li>
+</ul>
+</body>
+</html>

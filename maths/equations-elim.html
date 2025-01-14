@@ -1,0 +1,163 @@
+<html>
+	<head>
+		<title>Simple Linear Equations - Elimination?</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+pre {
+	font-size: large;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/equations.js"></script>
+<script>
+let eqs, correct = 0, wrong = 0, streak = 0;
+
+function showElimSoln(i)
+{
+	const div = $(`#ans${i}`)[0],
+		s = (new Solver(eqs[i][1])).solve();
+	div.textContent = s;
+	div.style.display = '';
+	const butt2 = $(`#butt${i}b`)[0];
+	butt2.remove();
+}
+
+function giveElimAnswer(i, txt, canUseElim, right)
+{
+	//1. Update score
+	if (right){
+		++correct;
+		++streak;
+	}
+	else
+	{
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>You're on a streak! &#128513; of ${streak}</span>`;
+	}
+
+	//2. Update buttons
+	const butt1 = $(`#butt${i}a`)[0],
+		butt2 = $(`#butt${i}b`)[0];
+	butt1.textContent = txt;
+	butt1.onclick = null;
+	$(`#elim${i}`)[0].style.display = '';
+
+	if (canUseElim)
+	{
+		butt2.textContent = 'Show Solution';
+		butt2.onclick = //`showElimSoln(${i});`;
+			function() {
+				showElimSoln(i);
+			};
+		return;
+	}
+	//else
+	butt2.remove();
+}
+
+function load()
+{
+	//randomly generate eqns for solving:
+	//eqs = randEqs(MAX);
+
+	//randomly generate eqns for determining if to use elimination:
+	eqs = randEqs(MAX, { style: 0, sameStyle: true, easyMultiples: true });
+
+	let i = 65, j= 0;
+		n = 0;
+	const divText = $('#text'),
+		divAns = $('#ans');
+	let row = $("<tr></tr>"),
+		cumElims = '';
+	divAns.append(row);
+	eqs.forEach((e) => {
+		const ii = String.fromCharCode(i);
+
+		//2. add ans
+		//row.append(`<td><b>${ii}</b>: x=${e[0].x}, y=${e[0].y}</td>`);
+		//3. add hint whether to use elimination method
+		const metd = e[1].isEasyForElimination(),
+			useElim = metd.info !== false;
+		let s = '';
+		if (useElim)
+		{
+			cumElims += ii + ' ';
+			s = `e: ${metd.variable}: ${metd.factorRaw} &times; eq#${metd.eqNum}`;
+		}
+		row.append(`<td><b>${ii}</b>: x=${e[0].x}, y=${e[0].y}`
+			+ `<br>${useElim? s:''}`
+			+ `</td>`);
+		if (++n >= 10)
+		{
+			n = 0;
+			row = $("<tr></tr>");
+			divAns.append(row);
+		}
+
+		//1. add qn
+		let choice;
+		if (useElim)
+		{
+			choice = `<button id='butt${j}a' onclick='giveElimAnswer(${j}, "Correct, Elimination can be used", true, true)'>Use Elimination</button><button id='butt${j}b' onclick='giveElimAnswer(${j}, "Nope, Elimination can be used", true, false)'>Nope</button>`;
+		}
+		else
+		{
+			choice = `<button id='butt${j}a' onclick='giveElimAnswer(${j}, "Nope, Elimination is inconvenient", false, false)'>Use Elimination</button><button id='butt${j}b' onclick='giveElimAnswer(${j}, "Correct, Elimination is inconvenient", false, true)'>Nope</button>`;
+		}
+		choice += `&nbsp;<span id='elim${j}' style='display:none'>${s}</span>`;
+		divText.append('<div><b>' + ii + '</b>&nbsp;'
+			+ choice
+			+ '<br><pre>'
+			+ e[0].toString() + '&nbsp;&nbsp;&#9135;&#9135;&nbsp;&#9312;<br>'
+			+ e[1].toString() + '&nbsp;&nbsp;&#9135;&#9135;&nbsp;&#9313;</pre></div><p>'
+			+ `<pre id="ans${j}" style="display:none"></pre>`
+		);
+		++i; ++j;
+	});
+	$('#divAns').append(`<div>You may use Elimination for: ${cumElims}</div>`);
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Simple Linear Equations</h1>
+<h2>Identify the questions that are easily suitable for solving by Elimination method</h2>
+i.e. which pair of equations has (ignoring the sign):
+<br>a. Easiest: same amount of x or same amount of y => just add or subtract both equations together. E.g.s:
+<li><b>x</b> + By & <b>x</b> + Cy <- same amount of x
+<li>Cx + <b>4y</b> & Dx - <b>4y</b>. <- same amount (ignoring sign) of y
+<br>b. Moderate: either x or y can be adjusted to the same amount by one multiplication to one equation.
+<li>Gx + <b>4y</b> & Hx - <b>y</b>. <- multiples of y, specifically 4. Hence, can multiply 2nd equation by 4 to get same 4y.
+<li><b>2x</b> + Ey & <b>6x</b> + Fy <- multiples of x, specifically 3. Hence, can multiply 1st equation by 3 to get the same 6x.
+<br><br>Not convenient for Elimination otherwise when there are no common multiples. Although you can still brute-force it and cross-multiply both equations.
+<li> E.g.: Kx + Ly & Mx + Ny, where neither K or M is a multiple of the other; same for L&N.
+
+<p>
+<div id='text'></div>
+<hr>
+<div id='divAns'><table id='ans'></table>
+If 'e' appears, it means that 'elimination method' can be somewhat easily used for that question. It also suggests an example.<br>
+E.g.: <b>e: x: -2 &times; eq#1</b> means use Elimination by multiplying eq#2 by -2 and adding to eq#1.
+<p>
+</div>
+</div>
+<div id='divScore' style='float:right; position:fixed; top: 10px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+</body>
+</html>

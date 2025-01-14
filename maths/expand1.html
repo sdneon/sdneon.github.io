@@ -1,0 +1,106 @@
+
+<html>
+	<head>
+		<title>Expand Expressions Type 1</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/factorize1.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"></script>
+<script>
+
+let eqs;
+function showAnswer(i)
+{
+	const q = eqs[i],
+		divQn = $($(`#q${i}`)[0]),
+		working = q.toStepByStepSolution();
+	$(`#butt${i}a`)[0].remove();
+	divQn.append(`<span><br>${working}</span>`);
+	MathJax.typeset();
+}
+
+function load()
+{
+	//randomly generate eqns for solving:
+	eqs = randEqs(MAX);
+
+	//randomly generate eqns for determining if to use elimination:
+	//eqs = randEqs(MAX, {  });
+
+	let i = 65, j = 0,
+		n = 0;
+	const divText = $('#text'),
+		divAns = $('#ans');
+	let row = $("<tr></tr>");
+	divAns.append(row);
+	eqs.forEach((e) => {
+		//1. add qn
+		const ii = String.fromCharCode(i);
+		divText.append(`<div id="q${j}"><b>` + ii + '</b><br><span>'
+			+ `${e.toAnsString().replace(' ', '&nbsp;')}&nbsp;&nbsp;&nbsp;`
+			+ `<button id='butt${j}a' onclick='showAnswer(${j})'>Show raw working</button>`
+			+ `</span></div><p>`
+			//DEBUG: show answer together with qn
+			//+ `${e.toString().replace(' ', '&nbsp;')} : ${e.toAnsString().replace(' ', '&nbsp;')}</span></div><p>`
+		);
+		++j;
+		//2. add ans
+		row.append(`<td><b>${ii}</b>: ${e.toString().replace(' ', '&nbsp;')}`
+			+ `</td>`);
+		if (++n >= 5)
+		{
+			n = 0;
+			row = $("<tr></tr>");
+			divAns.append(row);
+		}
+		++i;
+	});
+	MathJax.typeset();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Expand Expressions Type 1 (quadratic in x)</h1>
+<h2>Expand (Dx + E)(Fx + G) into its quadratic form of \(Ax^2 + Bx + C\)</h2>
+<b>Guide</b>:<br>
+<img width="300px" src='images/expandBrackets.webp'/><br>
+- Expand the brackets step by step:<br>
+- Take the 1st term in 1st bracket (Dx) and multiply with each of the terms in the 2nd bracket (Fx & G), like this: Dx(Fx) + Dx(G)<br>
+- Next, do the same with the 2nd term in 1st bracket (E). Take it and multiply with each of the terms in the 2nd bracket (Fx & G), like this: E(Fx) + E(G)<br>
+- Lastly, multiply and add the x terms together to get the form: \(Ax^2 + Bx + C\). <br>
+<b>E.g.</b>: (2x + 3)(4x + 5)<br>
+[2x(4x) + 2x(5)] + [3(4x) + 3(5)]<br>
+= \(8x^2 + 10x + 12x + 15\)<br>
+= \(8x^2 + (10x + 12x) + 15\)<br>
+= \(8x^2 + 22x + 15\)<br>
+<p>
+<b>Special Case</b>:<br>
+\((Ax + B)(Ax - B)\)<br>
+= \([A^2x^2 - ABx] + [ABx - B^2]\)<br>
+= \(A^2x^2 + (-ABx + ABx) - B^2\)<br>
+= \((Ax)^2 - B^2\)<p>
+<!--
+Sample: When \(a \ne 0\), there are two solutions to \(ax^2 + bx + c = 0\) and they are
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+-->
+<div id='text'></div>
+<hr>
+<div><table id='ans'></table>
+</div>
+</div>
+</body>
+</html>

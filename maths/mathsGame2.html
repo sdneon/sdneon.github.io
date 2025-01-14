@@ -1,0 +1,507 @@
+<html>
+	<head>
+		<title>Simple Maths Game: Matching Multiplications</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th {
+  border: 1px solid black;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 5px;
+}
+
+td {
+  width: 60px;
+  height: 80px;
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  //font-size: 0.5em;
+  color: #000;
+  text-align: center;
+  aspect-ratio: 1 / 1;
+}
+/*
+col:nth-child(odd) {
+  background: #7008;
+}
+
+col:nth-child(even) {
+  background: #a008;
+}
+
+tr:nth-child(odd) {
+  background: #0078;
+}
+
+tr:nth-child(even) {
+  background: #00a8;
+}
+*/
+.reset-a, .reset-a:hover, .reset-a:visited, .reset-a:focus, .reset-a:active {
+  text-decoration: none;
+  color: inherit;
+  outline: 0;
+  cursor: auto;
+}
+.resetb-a, .resetb-a:hover, .resetb-a:visited, .resetb-a:focus, .resetb-a:active {
+  text-decoration: none;
+}
+
+.res-closed {
+	font-size: 0;
+}
+.res-opened {
+	background: #f81 !important;
+	font-size: 0.5em;
+}
+.res-reveal {
+	background: #d60 !important;
+	font-size: 0.5em;
+}
+.res-correct {
+	background: #0f0 !important;
+	font-size: 0.5em;
+}
+.res-wrong {
+	background: #f00 !important;
+	font-size: 0.5em;
+}
+.res-last-ans {
+	text-decoration: overline underline;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="js/jquery.min.js"></script>
+<script>
+let MAX = 4; //size of each side of grid
+
+const COLOUR_OPENED = '#c00',
+	COLOR_CORRECT = '#0f0',
+	INTERAVL_REVEAL = 3000; //ms
+const timesTables = [],
+	ansTables = {}; //will have 42 unique numbers only
+let uniqueNums, maxUniqueNums,
+	numPairs = 0,
+	numCorrect = 0,
+	correctCellIndices = {},
+	strLastPick = 0,
+	lastPick = 0,
+	lastPickX = -1, lastPickY = -1,
+	pickNum = 0;
+
+let q, ans = 0, lastQ = [0,0],
+	gridNums = [];
+	strQn = '',
+	correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false,
+	revealed = false;
+
+function gimme()
+{
+	if (revealed) return;
+	curQnEverWrong = true;
+	if (pickNum === 1)
+	{
+		//Find the answer for player! XD
+		for (let r = 0; r < MAX; ++r)
+		{
+			for (let c = 0; c < MAX; ++c)
+			{
+				if ((r === lastPickY) && (c === lastPickX))
+					continue;
+				let v = gridNums[r][c];
+				if (typeof v !== 'string')
+				{
+					v = v[2];
+				}
+				if (lastPick === v)
+				{
+					checkAnswer(c, r);
+					return;
+				}
+			}
+		}
+		$('#skip').attr("disabled", true);
+	}
+}
+
+function hide()
+{
+	for (let r = 0; r < MAX; ++r)
+	{
+		for (let c = 0; c < MAX; ++c)
+		{
+			$(`#c${c}r${r}`).removeClass('res-reveal');
+		}
+	}
+	pickNum = 0;
+	$('#skip').attr("disabled", true);
+	$('#reveal').attr("disabled", false);
+	$('#revealAll').attr("disabled", false);
+	$('td.res-wrong,td.res-opened').addClass('res-closed').removeClass('res-opened res-wrong');
+	revealed = false;
+}
+
+function reveal(all)
+{
+	revealed = true;
+	$('#reveal').attr("disabled", true);
+	$('#revealAll').attr("disabled", true);
+	setTimeout(hide, INTERAVL_REVEAL);
+	for (let r = 0; r < MAX; ++r)
+	{
+		for (let c = 0; c < MAX; ++c)
+		{
+			if (all || (typeof gridNums[r][c] !== 'string'))
+				$(`#c${c}r${r}`).addClass('res-reveal');
+		}
+	}
+}
+
+function newQn()
+{
+	pickNum = 0;
+	curQnEverWrong = false;
+	$('#skip').attr("disabled", true);
+}
+
+function checkAnswer(x, y)
+{
+	if (revealed) return;
+	const cellIndex = y * MAX + x;
+	if (correctCellIndices[cellIndex]) return;
+
+	let right = false;
+
+	$('td').removeClass('res-last-ans');
+	if (pickNum === 0)
+	{
+		$('td.res-wrong,td.res-opened').addClass('res-closed').removeClass('res-opened res-wrong');
+
+		++pickNum;
+		strLastPick = lastPick = gridNums[y][x];
+		if (typeof lastPick !== 'string')
+		{
+			strLastPick = `${lastPick[0]}&times;${lastPick[1]}`;
+			lastPick = lastPick[2];
+		}
+		lastPickX = x;
+		lastPickY = y;
+		$(`#c${x}r${y}`).removeClass('res-closed');
+		$(`#c${x}r${y}`).addClass('res-opened');
+		$('#skip').attr("disabled", false);
+		return;
+	}
+	else
+	{
+		if ((lastPickX === x) && (lastPickY === y))
+			return;
+		$(`#c${x}r${y}`).removeClass('res-closed');
+		$(`#c${x}r${y}`).addClass('res-opened');
+		//check if has a match
+		let curPick = gridNums[y][x],
+			strCurPick = curPick;
+		if (typeof curPick !== 'string')
+		{
+			strCurPick = `${curPick[0]}&times;${curPick[1]}`;
+			curPick = curPick[2];
+		}
+		if (curPick === lastPick)
+		{
+			//correct
+			right = true;
+			++numCorrect;
+			correctCellIndices[cellIndex] = true;
+			correctCellIndices[lastPickY * MAX + lastPickX] = true;
+
+			$(`#c${x}r${y}`).removeClass('res-opened');
+			$(`#c${x}r${y}`).addClass('res-correct res-last-ans');
+			$(`#c${lastPickX}r${lastPickY}`).removeClass('res-opened');
+			$(`#c${lastPickX}r${lastPickY}`).addClass('res-correct res-last-ans');
+			$('#divStatus')[0].innerHTML = `&#9989; You've found ${strLastPick} = ${strCurPick}`;
+		}
+		else
+		{
+			//wrong
+			$(`#c${x}r${y}`).removeClass('res-opened');
+			$(`#c${x}r${y}`).addClass('res-wrong');
+			$(`#c${lastPickX}r${lastPickY}`).removeClass('res-opened');
+			$(`#c${lastPickX}r${lastPickY}`).addClass('res-wrong');
+			$('#divStatus')[0].innerHTML = `&#10060; ${strLastPick} &ne; ${strCurPick}`;
+		}
+		pickNum = 0; //reset
+		$('#skip').attr("disabled", true);
+	}
+
+	//1. Update score
+	if (right){
+		++correct;
+		++streak;
+	}
+	else
+	{
+		curQnEverWrong = true;
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+		//if (streak >= 10) console.log('big streak!');
+	}
+
+	if (numCorrect >= numPairs)
+	{
+		$('#divStatus')[0].innerHTML += '<br>&#128513; All Found!';
+		$('#reveal').attr("disabled", true);
+		$('#revealAll').attr("disabled", true);
+		return;
+	}
+	//allow answering until correct
+	if (right)
+	{
+		resetGridColours();
+		newQn();
+	}
+}
+
+const GRID_COLOURS = ['#009de0', '#8c8c8c'];
+
+function resetGridColours()
+{
+	let z = 0;
+	for (let r = 0; r < MAX; ++r)
+	{
+		for (let c = 0; c < MAX; ++c)
+		{
+			let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
+			$(`#c${c}r${r}`).css('background', colour);
+		}
+	}
+}
+
+function randInt(dir)
+{
+	let max = MAX;
+	if ((dir !== E) && (dir !== W))
+		max = MAX - 2;
+	let n = ((Math.random() * max) | 0);
+	if ((dir === N) || (dir === NE) || (dir === NW))
+		n += 2;
+	return n;
+}
+
+//Get random integer within game limits
+function randIntLimit(max)
+{
+	let n = ((Math.random() * max) | 0);
+	return n;
+}
+
+/*
+ Durstenfeld (optimized Fisher–Yates aka Knuth) shuffle.
+ Shuffle in-place, by putting randomly selected elements in the back of the array, filling up from backwards =)
+*/
+function shuffle(array)
+{
+	let m = array.length, t, i;
+
+	// While there remain elements to shuffle…
+	while (m) {
+		// Pick a remaining element…
+		i = Math.floor(Math.random() * m--);
+
+		// And swap it with the current element.
+		t = array[m];
+		array[m] = array[i];
+		array[i] = t;
+	}
+
+	return array;
+}
+
+/*
+	Variant of shuffle(), and only returns a subset (as a sliced copy of array).
+	@param m (int) number of elements needed
+*/
+function shufflePick(array, m)
+{
+	if (!m) return shuffle(array);
+	let max = array.length;
+	if (m > max)
+		m = max;
+	const p = max - m; //position of 1st element of resultant array
+	let t, i;
+
+	// While there remain elements to shuffle…
+	while (m) {
+		// Pick a remaining element…
+		i = Math.floor(Math.random() * max--);
+
+		// And swap it with the current element.
+		t = array[max];
+		array[max] = array[i];
+		array[i] = t;
+		--m;
+	}
+
+	return array.slice(p);
+}
+
+function newGrid()
+{
+	numCorrect = 0;
+	correctCellIndices = {};
+	const cntPositionsNeeded = MAX * MAX;
+		cntUniqueNumsNeeded = cntPositionsNeeded / 2;
+	numPairs = cntUniqueNumsNeeded;
+
+	const arrUniqueNumPicksAvail = uniqueNums.slice(),
+		arrPosPicksAvail = [];
+	for (let i = 0; i < cntPositionsNeeded; ++i) arrPosPicksAvail[i] = i;
+//	for (let i = 0, j = cntUniqueNumsNeeded; i < cntUniqueNumsNeeded; ++i, ++j)
+//		arrUniqueNumPicksAvail[j] = -arrUniqueNumPicksAvail[i]; //negate number to indicate to use 'AxB'
+
+	//pick cntUniqueNumsNeeded numbers out of arrUniqueNumPicksAvail for puzzle
+	const arrSelectedNums = shufflePick(arrUniqueNumPicksAvail, cntUniqueNumsNeeded);
+	//random select AxB for each selection in arrSelectedNums
+	for (let i = 0, j = cntUniqueNumsNeeded; i < cntUniqueNumsNeeded; ++i, ++j)
+	{
+		const v = arrSelectedNums[i],
+			arrAxBs = ansTables[v];
+		if (arrAxBs.length === 1)
+		{
+			arrSelectedNums[j] = arrAxBs[0];
+		}
+		else
+		{
+			arrSelectedNums[j] = arrAxBs[randIntLimit(arrAxBs.length)];
+		}
+		arrSelectedNums[j][2] = v; //also put in the number itself for easier checking of answer
+	}
+	//maybe random swap within arrSelectedNums to scatter numbers from their AxB?
+	shuffle(arrSelectedNums);
+
+	const grid = $('#divGrid')[0];
+	grid.innerHTML = '';
+	let s = '<table><colgroup>',
+		row;
+	for (let c = 0; c < MAX; ++c)
+	{
+		s += '<col>';
+	}
+  	s += '</colgroup><tbody>';
+  	gridNums = [];
+  	let z = 0, m = arrSelectedNums.length;
+	for (let r = 0; r < MAX; ++r)
+	{
+		s += '<tr>';
+		gridNums[r] = row = [];
+		for (let c = 0; c < MAX; ++c)
+		{
+			const index = randIntLimit(m--);
+			let v = arrSelectedNums[index];
+			row[c] = v;
+			arrSelectedNums[index] = arrSelectedNums[m]; //instead of slow splicing, just pull unused element from the end to this vacated spot =)
+			if (typeof v !== 'string')
+			{
+				v = `${v[0]}&times;${v[1]}`;
+			}
+			let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
+			s += `<td id='c${c}r${r}' class='res-closed' style='background:${colour}' onclick='checkAnswer(${c},${r});'>${v}</td>`;
+		}
+		s += '</tr>\n';
+	}
+	s += '</tbody></table>';
+	grid.innerHTML = s;
+	$('#reveal').attr("disabled", false);
+	$('#revealAll').attr("disabled", false);
+	newQn();
+}
+
+function changeDifficulty(newSize)
+{
+	MAX = newSize;
+	newGrid();
+}
+
+function genTimesTables()
+{
+	for (let i = 2; i <= 10; ++i)
+	{
+		let row = timesTables[i] = [];
+		for (let j = 2; j <= 10; ++j)
+		{
+			const v = i * j;
+			row[j] = v;
+			if (ansTables[v] === undefined)
+			{
+				ansTables[v] = [];
+			}
+			ansTables[v].push([i, j]);
+		}
+	}
+	//console.log(ansTables);
+	uniqueNums = Object.keys(ansTables);
+	maxUniqueNums = uniqueNums.length;
+}
+
+function load()
+{
+	if ($('#choice2')[0].checked) MAX = 2;
+	else if ($('#choice4')[0].checked) MAX = 4;
+	else
+	{
+		MAX = 8;
+		$('#choice8')[0].checked = true;
+	}
+	genTimesTables();
+	newGrid();
+	newQn();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Simple Maths Game: Matching Multiplications</h1>
+<h3>Find matching pairs like <i>4 &times; 5</i> and <i>20</i>.
+<br><br><span style='font-size: 2em'>
+&nbsp;&nbsp;<input id='skip' type="submit" value="Give me" disabled onclick='gimme();'/>
+&nbsp;&nbsp;&nbsp;
+<input id='reveal' type="submit" value="Reveal (A x B) For A While" onclick='reveal();'/>
+<input id='revealAll' type="submit" value="Reveal All For A While" onclick='reveal(true);'/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id='reset' type="submit" value="New Game" onclick='newGrid();'/>
+&nbsp;<font size='3em'>Difficulty: <input type="radio" id="choice2" name="choices" value="2" onclick="changeDifficulty(2);"/>
+<label id="choiceTxt2" for="choices">Easy (2x2)</label>
+<input type="radio" id="choice4" name="choices" value="4" checked onclick="changeDifficulty(4);"/>
+<label id="choiceTxt4" for="choices">Medium (4x4)</label>
+<input type="radio" id="choice8" name="choices" value="8" onclick="changeDifficulty(8);"/>
+<label id="choiceTxt8" for="choices">Hard (8x8)</label></font>
+<span id='divGrid'>(grid of numbers here)</span>
+<div id='divStatus'></div>
+</h2>
+</div>
+<div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+<hr>
+<b>Tips</b><br>
+<ul>
+<li>If you forget a &times;9, do a &times;10 and substract. E.g.: 8&times;9 = (8&times;10) - 8 = 80 - 8 = 72.</li>
+<li>&times;5 is half of &times;10. E.g.: 4&times;8 = 80 &divide; 2 = 40</li>
+<li>Remembering the &times;5's can help you to get the &times;4 and &times;6 by subtracting and adding respectively.
+<br>E.g.: 4&times;8 = (40) - 8 = 32</li>
+</ul>
+<div>
+  <br><a href='maths.html'>(&#x221E; home)</a>
+</div>
+</body>
+</html>

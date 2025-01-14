@@ -1,0 +1,122 @@
+
+<html>
+	<head>
+		<title>Factorize Expressions Type 1</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/factorize1.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"></script>
+<script>
+
+let eqs;
+function showHint(i)
+{
+	const q = eqs[i],
+		divQn = $($(`#q${i}`)[0]),
+		factors1 = q.getFactorsStr(0),
+		factors2 = q.getFactorsStr(1);
+	$(`#butt${i}a`)[0].remove();
+	if (!factors1 && !factors2)
+	{
+		divQn.append("<br><span>Just one's!</span>");
+		return;
+	}
+	let s = '';
+	if (factors1)
+	{
+		s += `<br>factors of coefficient of \\(x^2: ${factors1.replace(/x/g,'\\times')}\\). `;
+	}
+	if (factors2)
+	{
+		s += `<br>factors of constant: \\(${factors2.replace(/x/g,'\\times')}\\)`;
+	}
+	divQn.append(`<span>${s}</span>`);
+	MathJax.typeset();
+}
+
+function load()
+{
+	//randomly generate eqns for solving:
+	eqs = randEqs(MAX);
+
+	//randomly generate eqns for determining if to use elimination:
+	//eqs = randEqs(MAX, {  });
+
+	let i = 65, j = 0,
+		n = 0;
+	const divText = $('#text'),
+		divAns = $('#ans');
+	let row = $("<tr></tr>");
+	divAns.append(row);
+	eqs.forEach((e) => {
+		//1. add qn
+		const ii = String.fromCharCode(i);
+		divText.append(`<div id="q${j}"><b>` + ii + '</b><br><span>'
+			+ `${e.toString().replace(' ', '&nbsp;')}&nbsp;&nbsp;&nbsp;`
+			+ `<button id='butt${j}a' onclick='showHint(${j})'>Hint: Show factor(s)</button>`
+			+ `</span></div><p>`
+			//DEBUG: show answer together with qn
+			//+ `${e.toString().replace(' ', '&nbsp;')} : ${e.toAnsString().replace(' ', '&nbsp;')}</span></div><p>`
+		);
+		++j;
+		//2. add ans
+		row.append(`<td><b>${ii}</b>: ${e.toAnsString().replace(' ', '&nbsp;')}`
+			+ `</td>`);
+		if (++n >= 5)
+		{
+			n = 0;
+			row = $("<tr></tr>");
+			divAns.append(row);
+		}
+		++i;
+	});
+	MathJax.typeset();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Factorize Expressions Type 1 (quadratic in x)</h1>
+<h2>Factorize \(Ax^2 + Bx + C\) into the form of (Dx + E)(Fx + G)</h2>
+<b>Guide</b>:<br>
+- Think of the factors of C. Find a pair of the factors that give C = E x G<br>
+- Similiarly, think of the factors of A. Find a pair of the factors that give A = D x F<br>
+- Write out the expression (?x + ?)(?x + ?) where ? are the chosen numbers/factors from earlier.<br>
+&nbsp;&nbsp;Expand to see if you get the right amount of x.<br>
+&nbsp;&nbsp;i.e. B = (D x G) + (E x F)<p>
+<b>E.g.</b>: \(x^2 + 7x + 12\)<br>
+C = 12 = 2 x 6 = 3 x 4<br>
+Say we try the pair of 2 & 6, we get (x + 2)(x + 6)<br>
+However, expanding it (just the x), we get: +2x +6x = 8x instead of the desired 7x (we are looking for).<br>
+Hence, we try the next possible pair of 3 & 4, giving (x + 3)(x + 4).<br>
+Expanding it, we get: +3x +4x = 7x as desired. Therefore, (x + 3)(x + 4) is the answer.<br>
+<p>
+<b>Special Case</b>:<br>
+\(A^2x^2 - B^2 = (Ax)^2 - B^2 = (Ax + B)(Ax - B)\)<p>
+<!--
+Sample: When \(a \ne 0\), there are two solutions to \(ax^2 + bx + c = 0\) and they are
+$$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+-->
+<div id='text'></div>
+<hr>
+<div><table id='ans'></table>
+</div>
+</div>
+<div style='width:200px; height:400px'>
+  <canvas id="myChart"></canvas>
+</div>
+</body>
+</html>

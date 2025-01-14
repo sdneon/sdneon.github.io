@@ -1,0 +1,136 @@
+<html>
+	<head>
+		<title>Rounding Numbers to X Significant Figures</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+pre {
+	font-size: large;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/numbers.js"></script>
+<script>
+let q, correct = 0, wrong = 0, streak = 0,
+	curQnEverWrong = false;
+
+function showAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	elemGuess.value = '';
+	//flag those answered wrongly or skipped with '*'
+	const answer = `${curQnEverWrong? '*':''}${q[0]} to ${q[1]} s.f. is ${q[2]}`
+	$('#divPrevAns')[0].innerHTML = `&#9989; : ${answer}`;
+
+	$('#divAllOldAns')[0].innerHTML = `${answer}<br>${$('#divAllOldAns')[0].innerHTML}`;
+}
+
+function giveUp()
+{
+	curQnEverWrong = true;
+	showAnswer();
+	newQn();
+}
+
+function checkAnswer()
+{
+	const elemGuess = $('#ans')[0];
+	let guess = elemGuess.value;
+
+	if (typeof guess !== 'string') guess = '';
+	guess = guess.trim();
+	let right = (''+q[2]) === guess;
+
+	//1. Update score
+	if (right){
+		++correct;
+		++streak;
+	}
+	else
+	{
+		curQnEverWrong = true;
+		++wrong;
+		streak = 0;
+	}
+	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+	if (streak > 1)
+	{
+		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>You're on a streak! &#128513; of ${streak}</span>`;
+	}
+
+/*  //one chance only
+	elemGuess.value = '';
+	//2. Show answer
+	if (q)
+	{
+		$('#divPrevAns')[0].innerHTML = `${right?'&#9989; : ':(guess + '&#10060; : Ans:')} ${q[0]} to ${q[1]} s.f. is ${q[2]}`;
+	}
+
+	//3. Next qn
+	newQn();
+*/
+	//allow answering until correct
+	if (right)
+	{
+		showAnswer();
+		newQn();
+		return;
+	}
+	//else inform of mistake and let player try again
+	$('#divPrevAns')[0].innerHTML = `&#10060;: ${guess}. Try again`;
+}
+
+function newQn()
+{
+	//randomly generate num for solving:
+	q = rand2();
+	$('#divSf')[0].textContent = q[1];
+	$('#divNum')[0].textContent = q[0];
+	curQnEverWrong = false;
+}
+
+function load()
+{
+	$('#ans')[0].addEventListener("keypress", function(event) {
+		// If the user presses the "Enter" key on the keyboard
+		if (event.key === "Enter") {
+			// Cancel the default action, if needed
+			event.preventDefault();
+			// Trigger the button element with a click
+			$('#submit').click();
+		}
+	});
+	newQn();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Write the given number in the given number of significant figures</h1>
+<h2>Significant figures:&nbsp;<span id='divSf'></span></h2>
+<p>
+<h2>Number:&nbsp;<span id='divNum'></span></h2>
+<p>
+<input id='ans' type='text'></input>
+<input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
+<input id='skip' type="submit" value="Skip" onclick='giveUp();'>
+<hr>
+<h2 id='divPrevAns'></h2>
+</div>
+<hr>
+<h3><u>Previous Qns</u></h3>
+<h3 id='divAllOldAns'></h3>
+<div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+</body>
+</html>

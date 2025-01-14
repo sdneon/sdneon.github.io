@@ -1,0 +1,240 @@
+<html>
+	<head>
+		<title>Simplify fractions with terms with powers</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js"></script>
+<script src="js/factorize1.js"></script>
+<script>
+//Get random integer within (-10, 10)
+function randInt20()
+{
+    const n = ((Math.random() * 20) | 0) - 10;
+    return n;
+}
+
+//Get random integer within (-10, 10) excluding 0
+function randNonZeroInt10()
+{
+    const n = ((Math.random() * 20) | 0) - 10;
+    if (n !== 0)
+        return n;
+    return 1;
+}
+
+// Reduce a fraction by finding the Greatest Common Divisor and dividing by it.
+function reduce(numerator,denominator){
+  var gcd = function gcd(a,b){
+    return b ? gcd(b, a%b) : a;
+  };
+  gcd = gcd(numerator,denominator);
+  numerator = numerator/gcd;
+  denominator = denominator/gcd;
+  if (denominator < 0)
+  {
+  	denominator = -denominator;
+  	numerator = -numerator;
+  }
+  return [numerator, denominator];
+}
+
+const LETTER_SETS = ['pqr', 'abc', 'xyz', 'fgh'];
+let n, L;
+
+function rand()
+{
+	n = [];
+	L = LETTER_SETS[(Math.random() * LETTER_SETS.length) | 0];
+
+	let i;
+	for (i = 0; i < 24; ++i)
+		n[i] = randInt20();
+	n[0] = randNonZeroInt10();
+	n[4] = randNonZeroInt10();
+	n[8] = randNonZeroInt10();
+	n[12] = randNonZeroInt10();
+	n[20] = randNonZeroInt10();
+	n[16] = randNonZeroInt10();
+	n[20] = randNonZeroInt10();
+	//let s = `\\(\\frac{2p^2 q^3 r^4}{\\frac{2}{3}p^{-2} q ^7 r^5} \\times \\frac{1p^{2} q^3 r^4}{2p^{-\\frac{2}{5}} q ^7 r^5} \\div \\frac{1p^2 q^3 r^4}{2p^{-2} q ^{7} r^5}\\)`;
+/*	let s = `\\(\\frac{{${n[0]}}p^{${n[1]}} q^{${n[2]}} r^{${n[3]}}}{{${n[4]}}p^{${n[5]}} q^{${n[6]}} r^{${n[7]}}}
+		\\times
+		\\frac{{${n[8]}}p^{${n[9]}} q^{${n[10]}} r^{${n[11]}}}{{${n[12]}}p^{${n[13]}} q^{${n[14]}} r^{${n[15]}}}
+		\\div
+		\\frac{{${n[16]}}p^{${n[17]}} q^{${n[18]}} r^{${n[19]}}}{{${n[20]}}p^{${n[21]}} q^{${n[22]}} r^{${n[23]}}}
+		\\)`;
+*/
+	let s = `\\(\\frac{{${n[0]}}${L[0]}^{${n[1]}} ${L[1]}^{${n[2]}} ${L[2]}^{${n[3]}}}{{${n[4]}}${L[0]}^{${n[5]}} ${L[1]}^{${n[6]}} ${L[2]}^{${n[7]}}}
+		\\times
+		\\frac{{${n[8]}}${L[0]}^{${n[9]}} ${L[1]}^{${n[10]}} ${L[2]}^{${n[11]}}}{{${n[12]}}${L[0]}^{${n[13]}} ${L[1]}^{${n[14]}} ${L[2]}^{${n[15]}}}
+		\\div
+		\\frac{{${n[16]}}${L[0]}^{${n[17]}} ${L[1]}^{${n[18]}} ${L[2]}^{${n[19]}}}{{${n[20]}}${L[0]}^{${n[21]}} ${L[1]}^{${n[22]}} ${L[2]}^{${n[23]}}}
+		\\)`;
+	//console.log(s);
+	//erase power of 1
+	s = s.replace(/\^\{1\}/g, '');
+	console.log(s);
+	const div = $('#divQn')[0];
+	div.innerHTML = s;
+	$(div).append(`&nbsp;<input id='showAns' type='submit' value="Answer" onclick='showAnswer();'>`);
+	MathJax.typeset();
+}
+
+function showAnswer()
+{
+	$('#showAns').remove();
+	const div = $('#divQn')[0];
+
+	let s = `\\(=\\frac{{${n[0]}}${L[0]}^{${n[1]}} ${L[1]}^{${n[2]}} ${L[2]}^{${n[3]}}}{{${n[4]}}${L[0]}^{${n[5]}} ${L[1]}^{${n[6]}} ${L[2]}^{${n[7]}}}
+		\\times
+		\\frac{{${n[8]}}${L[0]}^{${n[9]}} ${L[1]}^{${n[10]}} ${L[2]}^{${n[11]}}}{{${n[12]}}${L[0]}^{${n[13]}} ${L[1]}^{${n[14]}} ${L[2]}^{${n[15]}}}
+		\\times
+		\\frac{{${n[20]}}${L[0]}^{${n[21]}} ${L[1]}^{${n[22]}} ${L[2]}^{${n[23]}}}{{${n[16]}}${L[0]}^{${n[17]}} ${L[1]}^{${n[18]}} ${L[2]}^{${n[19]}}}
+		\\)`;
+	$(div).append(`<div>${s}</div>`);
+
+	let p1 = n[1] - n [5] + n[9] - n[13] - n[17] + n[21];
+	console.log(L[0], p1);
+	let p2 = n[2] - n [6] + n[10] - n[14] - n[18] + n[22];
+	console.log(L[1], p2);
+	let p3 = n[3] - n [7] + n[11] - n[15] - n[19] + n[23];
+	console.log(L[2], p3);
+	let numerator = n[0] * n[8] * n[20];
+	let denominator = n[4] * n[12] * n[16];
+	//let f1 = getFactors(Math.abs(numerator)),
+	//	f2 = getFactors(Math.abs(denominator));
+	const num = reduce(numerator, denominator);
+	console.log(numerator, '/', denominator, '->', num);
+
+	//form simplified expression:
+	s = `<div>\\(=`;
+	//number:
+	if (num[1] !== 1)
+	{
+		//number is fraction
+		if (num[0] > 0)
+		{
+			s += `\\frac{${num[0]}}{${num[1]}}`;
+		}
+		else
+		{
+			s += `-\\frac{${-num[0]}}{${num[1]}}`;
+		}
+	}
+	else
+	{
+		//number is not fraction, so no denominator
+		if (num[0] !== -1)
+		{
+			s += `${num[0]}`;
+		}
+		else
+		{
+			s += '-';
+		}
+	}
+	if ((p1 < 0) || (p2 < 0) || (p3 < 0))
+	{
+		s += '\\frac{';
+		//numerator:
+		let hasTop = false;
+		if (p1 > 0)
+		{
+			hasTop = true;
+			if (p1 !== 1)
+				s += `${L[0]}^{${p1}}`;
+			else
+				s += `${L[0]}`;
+		}
+		if (p2 > 0)
+		{
+			hasTop = true;
+			if (p2 !== 1)
+				s += `${L[1]}^{${p2}}`;
+			else
+				s += `${L[1]}`;
+		}
+		if (p3 > 0)
+		{
+			hasTop = true;
+			if (p2 !== 1)
+				s += `${L[2]}^{${p3}}`;
+			else
+				s += `${L[2]}`;
+		}
+		if (!hasTop)
+			s += '1'; //special case: 1/(...)
+		s += '}{';
+		//denominator:
+		if (p1 < 0)
+			s += `${L[0]}^{${-p1}}`;
+		if (p2 < 0)
+			s += `${L[1]}^{${-p2}}`;
+		if (p3 < 0)
+			s += `${L[2]}^{${-p3}}`;
+		s += '}';
+	}
+	else
+	{
+		//s += `${L[0]}^{${p1}}${L[1]}^{${p2}}${L[2]}^{${p3}}`;
+		if (p1 !== 0)
+		{
+			if (p1 !== 1)
+				s += `${L[0]}^{${p1}}`;
+			else
+				s += `${L[0]}`;
+		}
+		if (p2 !== 0)
+		{
+			if (p2 !== 1)
+				s += `${L[1]}^{${p2}}`;
+			else
+				s += `${L[1]}`;
+		}
+		if (p3 !== 0)
+		{
+			if (p2 !== 1)
+				s += `${L[2]}^{${p3}}`;
+			else
+				s += `${L[2]}`;
+		}
+	}
+	s += `\\)</div>`;
+	$(div).append(s);
+
+	MathJax.typeset();
+}
+
+function load()
+{
+	rand();
+	MathJax.typeset();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Algebra: Simplify fractions with terms with powers</h1>
+<h2 id='divQn'>
+\(\frac{1p^2 q^3 r^4}{\frac{2}{3}p^{-2} q ^7 r^5} \times \frac{1p^{2} q^3 r^4}{2p^{-\frac{2}{5}} q ^7 r^5} \div \frac{1p^2 q^3 r^4}{2p^{-2} q ^{7} r^5}\)
+</h2>
+<input id='submit' type="submit" value="New Question" onclick='rand();'>
+<h2 id='divQn2' style='display:none'>
+\(\frac{1p^2 q^3 r^4}{\frac{2}{3}p^{-2} q ^7 r^5} \times \frac{1p^{2} q^3 r^4}{2p^{-\frac{2}{5}} q ^7 r^5} \div \frac{1p^2 q^3 r^4}{2p^{-2} q ^{7} r^5}\)
+</h2>
+</div>
+</body>
+</html>

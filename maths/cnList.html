@@ -1,0 +1,468 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>《新加坡小学中文字单》 Singapore Primary School Chinese Characters List (from MOE)</title>
+<script src="js/jquery.min.js"></script>
+<script src="js/popup.js"></script>
+<script src="js/cn-words.js"></script>
+<script src="js/cn-en-dic.js"></script>
+<script src="js/cn-loader.js"></script>
+<script src="js/strokes.js"></script>
+<style>
+svg {
+	width: 76px;
+	height: 76px;
+	border: 1px solid rgb(238, 238, 238);
+	margin-right: 3px;
+	margin-bottom: 3px;
+	background-color: rgb(255, 255, 255);
+}
+.char {
+	width: 180px;
+	height: 180px;
+}
+th {
+  background-color: #00dd00;
+}
+tr:nth-child(even) {
+  background-color: #ebcd4e;
+}
+.seen {
+  background-color: #00FF00;
+}
+.reset-a, .reset-a:hover, .reset-a:visited, .reset-a:focus, .reset-a:active {
+  text-decoration: none;
+  color: inherit;
+  outline: 0;
+  cursor: auto;
+}
+.resetb-a, .resetb-a:hover, .resetb-a:visited, .resetb-a:focus, .resetb-a:active {
+  text-decoration: none;
+}
+/*
+nounderline-a, .nounderline-a:hover, .nounderline-a:visited, .nounderline-a:focus, .nounderline-a:active {
+  text-decoration: none;
+}
+*/
+.td-def {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+</style>
+<script>
+
+function getFilename(word)
+{
+	let s = encodeURI(word);
+	return s.replaceAll('%', '_25');
+}
+
+let runningId = 0;
+function showDicForLevel(strLvl, lvl)
+{
+	const numLessons = dicByLevels[strLvl].length,
+		bod = $('#tableBody');
+	for (let l = 1; l < numLessons; ++l)
+	{
+		//let s = `<tr><td>(${strLvl}) ${l}</td><td>`;
+		let s = '';
+		if (l === 1)
+		{
+			s += `<tr><td colspan='3' style='background-color: #00dd00 !important'>(${strLvl.replace('P', '小').replace('A', '上').replace('B', '下')})`;
+			if (strLvl.endsWith('A'))
+			{
+				s += `&nbsp;&nbsp;(<input type='checkbox' id='optP${lvl}x' name='levels' checked value='P${lvl}' onclick='toggleLevel(${lvl}, "x");'>
+					<label for='optP${lvl}x'>藏起来/Hide</label>)`;
+			}
+			else
+			{
+				s += `&nbsp;&nbsp;(<input type='checkbox' id='optP${lvl}y' name='levels' checked value='P${lvl}' onclick='$("#optP${lvl}x").click();'>
+					<label for='optP${lvl}y'>藏起来/Hide</label>)`;
+			}
+			s += `</td></tr>`;
+		}
+		s += `<tr><td>${l}</td><td><div style='width:auto; display:table;'><div style='display:table-row'>`;
+		let words = dicByLevels[strLvl][l].read;
+		for (let i = 0; i < words.length; ++i)
+		{
+			++runningId;
+			const w = words.charAt(i),
+				cls = (seen.indexOf(w) >= 0)? 'seen':'';
+
+			s += `<div style='display:table-cell; text-align:center' id='${w}' class='${cls}'>
+				<span onclick='showPhrases("${w}"); setSeen("${w}"); return true;'>${w}</span>`;
+			s += `<a href="${URL_SEARCH}${w}" class='resetb-a' target='_blank' onclick='setSeen("${w}"); return true;'>&#x293B;</a>`;
+
+			if (showPinyin)
+			{
+				s += `<br><a href="${URL_SEARCH}${w}" class='reset-a' onclick='setSeen("${w}"); return false;'>&nbsp;${dic[w].pinyin}&nbsp;</a><a onclick='this.firstChild.play();'><audio preload='none' src='audio/${dic[w].soundsLike}${dic[w].accNum}.mp3'/>&#x1F50A;</a></div>`;
+			}
+			else
+			{
+				s += `</div>`;
+			}
+			/*
+			if ((i > 0) && ((i % 10) === 0))
+			{
+				s += `</div></div></td><td><div style='width:auto; display:table;'><div style='display:table-row'>`;
+			}
+			*/
+		}
+		s += `</div></div></td><td><div style='width:auto; display:table;'><div style='display:table-row'>`;
+		words = dicByLevels[strLvl][l].write;
+		for (let i = 0; i < words.length; ++i)
+		{
+			const w = words.charAt(i),
+				cls = (seen.indexOf(w) >= 0)? 'seen':'';
+			//s += `<span id='${w}' class='${cls}'><a href="${URL_SEARCH}${w}" target='_blank' onclick='setSeen("${w}"); return true;'>${w}</a></span>`;
+
+			s += `<div style='display:table-cell; text-align:center' id='${w}' class='${cls}'><span onclick='showPhrases("${w}")'>${w}</span>`;
+			s += `<a href="${URL_SEARCH}${w}" class='resetb-a' target='_blank' onclick='setSeen("${w}"); return true;'>&#x293B;	</a>`;
+			if (showPinyin)
+			{
+				s += `<br><a href="${URL_SEARCH}${w}" class='reset-a' onclick='setSeen("${w}"); return false;'>&nbsp;${dic[w].pinyin}&nbsp;</a><a onclick='this.firstChild.play();'><audio preload='none' src='audio/${dic[w].soundsLike}${dic[w].accNum}.mp3'/>&#x1F50A;</a></div>`;
+			}
+			else
+			{
+				s += `</div>`;
+			}
+		}
+		s += `</div></div></td></tr>`;
+		bod.append(s);
+	}
+}
+
+function showPhrases(word)
+{
+	if ((dic[word] === undefined)
+		|| (dic[word].phrases === undefined))
+	{
+		return;
+	}
+	$.getJSON(`strokes/${getFilename(word)}.json`, function(json) {
+	    createWordWriter('svgCnChar', word, json);
+	    createStrokesView(json, 'viewStrokes');
+	});
+	const arrPhrases = dic[word].phrases,
+		cnt = arrPhrases.length;
+	/*
+	style='transform: scale(0.56);' does Not work well, as div ends up with top & bottom, large gaps!?
+	*/
+	let s = `<div style='display: inline-block;'><label style='padding: 5px'>意思 / Definition:</label>
+		<span style='background: #d8efef; border-radius: 8px; padding: 5px'>${dic[word].en2}</span></div><br>
+		<div style='display: table; margin: 0 auto;'>
+		  <div style='display: table-cell;'><label style='padding: 5px'>笔画 / Strokes:</label></div>
+		  <div id='divSvg' style='display: table-cell;'>
+		  <label id='svgPlaceHolder'>准备中 / loading...</label>
+		  <svg id='svgCnChar' class='char' width="180" height="180"
+		    xmlns="http://www.w3.org/2000/svg" style="border: 1px solid rgb(221, 221, 221); background: rgb(255, 255, 255); margin: 0px 5px 5px 0px;">
+		  </svg>
+		  </div>
+		</div>
+		<div>
+		  <label style='padding: 5px'>笔画次序 / Strokes Order:</label>
+		  <label id='svgPlaceHolder2'>准备中 / loading...</label>
+		  <span id='viewStrokes'></span>
+	    </div>
+		<table><thead><tr><th colspan='3'>有“${word}”的词</th></tr></thead><tbody>`,
+		audio = '';
+	for (let i = 0; i < cnt; ++i)
+	{
+		const info = arrPhrases[i];
+		//format audio player string
+		const pinyin = info.pinyin;
+		let pinyins = pinyin.split(' ');
+		const playlist = [];
+		for (let j = 0; j < pinyins.length; ++j)
+		{
+			const [ group, accNum ] = pinyinParts(pinyins[j]);
+			playlist.push(`audio/${group}${accNum}.mp3`);
+		}
+		audio = `<a onclick='this.firstChild.play();'><audio id='audio${i}' preload='none' src='${playlist[0]}' index='0' playlist='${playlist.join(",")}'/>&#x1F50A;</a>`;
+		audio = '';
+		//add row
+		s += `<tr><td class='td-def' id='phrase${i}'>${audio}</td>
+			<td class='td-def'>${info.phrase}<br>${pinyin}</td>
+			<td class='td-def'>${info.en}</td></tr>`;
+	}
+	s += `</tbody></table><font size="0.8em">资料来自OmgChinese - 非常感谢贵站；但还未经过核查，可能出现不适当与本地的词语和奇怪/不准的翻译 - 敬请原谅。<br>以上发音为单字拼成，所以停顿太长，也可能不够标准;请到OmgChinese网页听较标准的发音。
+		<br><span style='display: inline-block; text-align: left'>
+		<ul>
+			<li><b>笔画动画</b></li>
+			<ul>
+				<li>单击: 停笔 / 继续写。</li>
+				<li>双击: 从新写起。</li>
+			</ul>
+			<li><b>笔画次序</b>: 点击以显示或藏起未写的笔画。</li>
+		</ul>
+		</span></font>`;
+	const popup = new Popup({
+		id: "popup",
+		title: `${word}`,
+		contentAsHtml: true,
+		content: `<div style='overflow: auto; font-size:1em; display: grid;'>${s}</div>`,
+		css: `.popup-content {
+					width: 90% !important;
+					height: 90% !important;
+				}
+				.popup-body{
+					overflow: auto;
+				}`,
+		hideCallback: (popup) => {
+			$('.popup').remove();
+			terminateAnim = true;
+		},
+		showCallback: () => {
+			$('.popup-title').append(`&nbsp;<a style='font-size: 0.5em' onclick='this.firstChild.play();'><audio preload='none' src='audio/${dic[word].soundsLike}${dic[word].accNum}.mp3'/>&#x1F50A;</a>
+				<a style='font-size: 0.5em' target='_blank' href='${URL_SEARCH}${word}'>&#x293B;</a>`);
+			for (let i = 0; i < cnt; ++i)
+			{
+				const info = arrPhrases[i];
+				//format audio player string
+				const pinyin = info.pinyin;
+				let pinyins = pinyin.split(' ');
+				const playlist = [];
+				for (let j = 0; j < pinyins.length; ++j)
+				{
+					const [ group, accNum ] = pinyinParts(pinyins[j]);
+					playlist.push(`audio/${group}${accNum}.mp3`);
+				}
+				const cell = $(`#phrase${i}`)[0];
+				if (cell.childElementCount > 0)
+					cell.removeChild(cell.children[0]);
+				const audio = `<a onclick='this.firstChild.play();'><audio id='audio${i}' preload='none' src='${playlist[0]}' index='0' playlist='${playlist.join(",")}'/>&#x1F50A;</a>`;
+				$(cell).append(audio);
+				const player = $(`#audio${i}`)[0];
+				player.onended = function(evt) {
+					const player = evt.target,
+						playlist = player.attributes.playlist.value.split(',');
+					let index = parseInt(player.attributes.index.value, 10);
+					let play = true;
+					if (++index >= playlist.length)
+					{
+						index = 0;
+						play = false;
+					}
+					player.attributes.index.value = '' + index;
+					player.src = playlist[index];
+					if (play)
+					{
+						player.attributes.preload.value = 'auto';
+						player.autoplay = true;
+					}
+					else
+					{
+						player.attributes.preload.value = 'none';
+						player.autoplay = false;
+					}
+					player.load();
+				};
+			}
+		}
+	});
+	popup.init();
+	popup.show();
+}
+
+function showDictionary()
+{
+	$('#table tbody').empty();
+	runningId = 0;
+	for (let i = 1; i <= 6; ++i)
+	{
+		if (!levels[i]) continue;
+		showDicForLevel(`P${i}A`, i);
+		showDicForLevel(`P${i}B`, i);
+	}
+}
+
+function setSeen(id)
+{
+	$(`#${id}`).addClass('seen');
+	if (seen.indexOf(id) < 0)
+	{
+		seen += id;
+		localStorage.seen = seen;
+	}
+}
+
+function resetSeen()
+{
+	seen = '';
+	localStorage.seen = seen;
+	$('div').removeClass('seen');
+}
+
+function checkHasAccent(data)
+{
+	if (!data) return true;
+	let j, m;
+	for (j = 0; j < REGEX_VOWELS.length; ++j)
+	{
+		REGEX_VOWELS[j].lastIndex = 0; //also reset before reuse!
+		m = REGEX_VOWELS[j].exec(data.pinyin);
+		if (m && m[1])
+		{
+			break;
+		}
+	}
+	return j < REGEX_VOWELS.length;
+}
+
+function updateTitle()
+{
+	//<h2 id='txtLevels'></h2>
+	let lvls = [];
+	for (let i = 1; i <= 6; ++i)
+	{
+		if (levels[i])
+			lvls.push(LEVELS[i]);
+	}
+	lvls = lvls.join(', ');
+	$('#txtLevels')[0].innerHTML = `&nbsp;&nbsp;&nbsp;(<a href='#config'>${lvls} (按这改变选择)</a>)`;
+}
+
+function updateLevelsCheckboxes()
+{
+	for (let i = 1; i <= 6; ++i)
+	{
+		let checked = levels[i];
+		if (checked === undefined) checked = false;
+		$(`#optP${i}`)[0].checked = checked;
+	}
+	updateTitle();
+}
+
+function readLevelsCheckboxes()
+{
+	levels = {};
+	for (let i = 1; i <= 6; ++i)
+	{
+		const checked = $(`#optP${i}`)[0].checked;
+		levels[i] = checked === true;
+	}
+	updateTitle();
+}
+
+function toggleLevel(level, alt)
+{
+	alt = alt || '';
+	let checked = $(`#optP${level}${alt}`)[0].checked;
+	levels[level] = checked;
+	if (!levels[1] && !levels[2] && !levels[3] && !levels[4] && !levels[5] && !levels[6])
+	{
+		//don't allow last remaining checked checkbox to be untoggled!
+		levels[level] = true; //revert!
+		$(`#optP${level}`)[0].checked = true;
+		if ($(`#optP${level}x`).length > 0)
+			$(`#optP${level}x`)[0].checked = true;
+		if ($(`#optP${level}y`).length > 0)
+			$(`#optP${level}y`)[0].checked = true;
+		return;
+	}
+	else
+	{
+		if (alt) $(`#optP${level}`)[0].checked = checked;
+		else
+		{
+			if ($(`#optP${level}x`).length > 0)
+				$(`#optP${level}x`)[0].checked = checked;
+			if ($(`#optP${level}y`).length > 0)
+				$(`#optP${level}y`)[0].checked = checked;
+		}
+	}
+	//else changed accept, so save settings and regenerate word list
+	localStorage.levels = JSON.stringify(levels);
+	updateTitle();
+	showDictionary();
+}
+
+function togglePinyin(alt)
+{
+	alt = alt || '';
+	showPinyin = $(`#optPinyin${alt}`)[0].checked;
+	if (alt) $(`#optPinyin`)[0].checked = showPinyin;
+	else $(`#optPinyinx`)[0].checked = showPinyin;
+	showDictionary();
+}
+
+function startup()
+{
+	//load difficulty settings if any
+	const l = localStorage.levels;
+	if (l)
+	{
+		levels = JSON.parse(l);
+		console.log('Restoring levels:', levels);
+		updateLevelsCheckboxes();
+	}
+	else
+	{
+		readLevelsCheckboxes();
+	}
+	seen = localStorage.seen || '';
+	showPinyin = $(`#optPinyin`)[0].checked;
+	$(`#optPinyinx`)[0].checked = showPinyin;
+	loadDictionary();
+	loadDictionary2();
+	showDictionary();
+}
+
+$(document).ready(startup);
+</script>
+</head>
+<body>
+<h1>《新加坡小学中文字单》 Singapore Primary School Chinese Characters List (from MOE)</h1>
+<h3 id='txtLevels'>&nbsp;&nbsp;&nbsp;(<a href='#config'>小一 至 小六 选项</a>)</h3>
+<input type='checkbox' id='optPinyinx' name='pinyin' checked value='Show Pinyin' onclick='togglePinyin("x");'>
+<label for='optPinyinx'>Show Pinyin 显示拼音</label>
+<font size='+2'>
+<table id='table'>
+<thead><tr><th>课次</th><th>识读字</th><th>识写字</th></tr></thead>
+<tbody id='tableBody'></tbody>
+</table>
+</font>
+<p><br><br><br><hr>
+<b>使用说明</b>：
+<ul>
+<li>点击任何<b>字</b>以页显示它的资料。</li>
+  <ul><li>点击字旁的<b>&#x293B;</b>可跳到OmgChinese网页（外）察看它的细节。</ul>
+<li>点击任何<b>拼音</b>以标记为‘看过/懂了’。</li>
+  <ul><li>背面青色的字是‘看多/懂了’（点过）的字。</li></ul>
+<li>使用以下设置藏或显示各年级的字。</li>
+</ul>
+<div id='divInfo'>
+<b>资料</b>:<br>
+<ul>
+<li><a href='https://www.omgchinese.com/tools/chinese-pinyin-chart'>汉语拼音"发音"表</a> - 点击拼音（如：ka）,'Pinyin Pronunciation'（拼音发音）盒子就出现。点击其中发音就能听见其发音。</li>
+<li><a href='https://www.moe.gov.sg/primary/curriculum/syllabus'>教育部小学资料</a> - 这网页有课程的资料(PDF)可下载参考。非常感谢教育部所提供的资料 - 此页最后在8/3/2024更新，PDF名字表示是2015的字表。</li>
+</ul>
+<hr>
+</div>
+<div id='config'>
+<b>设置</b>：<br><br>
+显示这些<u>年级</u>的文字：<br>
+<input type='checkbox' id='optP1' name='levels' checked value='P1' onclick='toggleLevel(1);'>
+<label for='optP1'>小一</label>
+<input type='checkbox' id='optP2' name='levels' checked value='P2' onclick='toggleLevel(2);'>
+<label for='optP2'>小二</label>
+<input type='checkbox' id='optP3' name='levels' checked value='P3' onclick='toggleLevel(3);'>
+<label for='optP3'>小三</label><br>
+<input type='checkbox' id='optP4' name='levels' checked value='P4' onclick='toggleLevel(4);'>
+<label for='optP4'>小四</label>
+<input type='checkbox' id='optP5' name='levels' checked value='P5' onclick='toggleLevel(5);'>
+<label for='optP5'>小五</label>
+<input type='checkbox' id='optP6' name='levels' checked value='P6' onclick='toggleLevel(6);'>
+<label for='optP6'>小六</label>
+<br><br>
+<input type='checkbox' id='optPinyin' name='pinyin' checked value='Show Pinyin' onclick='togglePinyin();'>
+<label for='optPinyin'>Show Pinyin 显示拼音</label>
+<br><br>清除‘看过/懂了/点过’的痕迹: <input style='font-size: 80%; margin-left: 50px' id='submit' type="submit" value="Reset/复原" onclick='resetSeen();'>
+<br><br>
+</div>
+<div id='divScore' style='display:none; background:#df24; float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
+<div>
+  <br><a href='maths.html'>(&#x221E; home)</a>
+</div>
+</body>
+</html>

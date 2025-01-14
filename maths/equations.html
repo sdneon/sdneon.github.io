@@ -1,0 +1,115 @@
+<html>
+	<head>
+		<title>Simple Linear Equations</title>
+<style  type="text/css">
+* {
+	/* font-family: comic sans ms,cursive, !important; */
+	font-family: sans-serif,cursive, !important;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+<!--
+<script src="/socket.io/socket.io.js"></script>
+-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="js/equations.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+function createChart()
+{
+	const labels = [
+		'-5',
+		'5'
+	];
+
+	const data = {
+		labels: labels,
+		datasets: [{
+			label: 'Line 1',
+			backgroundColor: 'rgb(255, 99, 132)',
+			borderColor: 'rgb(255, 99, 132)',
+			data: [0, 4],
+		},
+		{
+			label: 'Line 2',
+			backgroundColor: 'rgb(99, 99, 255)',
+			borderColor: 'rgb(99, 99, 255)',
+			data: [3, -1],
+		}]
+	};
+
+	const config = {
+		type: 'line',
+		data: data,
+		options: {
+			plugins:{
+				legend: false
+			}
+		}
+	};
+	const myChart = new Chart(
+		document.getElementById('myChart'),
+		config
+	);
+}
+
+function load()
+{
+	//randomly generate eqns for solving:
+	const eqs = randEqs(MAX);
+
+	//randomly generate eqns for determining if to use elimination:
+	//const eqs = randEqs(MAX, { style: 0, sameStyle: true, easyMultiples: true });
+
+	let i = 65,
+		n = 0;
+	const divText = $('#text'),
+		divAns = $('#ans');
+	let row = $("<tr></tr>");
+	divAns.append(row);
+	eqs.forEach((e) => {
+		//1. add qn
+		const ii = String.fromCharCode(i);
+		divText.append('<div><b>' + ii + '</b><br><pre>'
+			+ e[0].toString() + '&nbsp;&nbsp;&#9135;&#9135;&nbsp;&#9312;<br>'
+			+ e[1].toString() + '&nbsp;&nbsp;&#9135;&#9135;&nbsp;&#9313;</pre></div><p>'
+		);
+		//2. add ans
+		//row.append(`<td><b>${ii}</b>: x=${e[0].x}, y=${e[0].y}</td>`);
+		//3. add hint whether to use elimination method
+		const metd = e[1].isEasyForElimination();
+		row.append(`<td><b>${ii}</b>: x=${e[0].x}, y=${e[0].y}`
+			+ `${(metd.info === false)?'': ', e'}`
+			+ `</td>`);
+		if (++n >= 10)
+		{
+			n = 0;
+			row = $("<tr></tr>");
+			divAns.append(row);
+		}
+		++i;
+	});
+	//createChart();
+}
+</script>
+
+</head>
+<body onload='load();'>
+<div>
+<h1>Simple Linear Equations</h1>
+<h2>Solve these</h2>
+<div id='text'></div>
+<hr>
+<div><table id='ans'></table>
+If 'e' appears, it means that 'elimination method' can be somewhat easily used for that question.
+</div>
+</div>
+<div style='width:200px; height:400px'>
+  <canvas id="myChart"></canvas>
+</div>
+</body>
+</html>
