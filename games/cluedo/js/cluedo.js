@@ -249,6 +249,114 @@ function checkResetClueCounters()
     }
 }
 
+function whoHasCards()
+{
+    const whoHas = [];
+    playerCardDecks.forEach((deck, playerId) => {
+        if (playerId === who) return; //ignore self
+        if (deck.length > 0)
+        {
+            whoHas.push(playerId);
+        }
+    });
+    return whoHas;
+}
+
+function addCardToDetNotes(card)
+{
+    deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
+        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
+}
+
+function takeCardFromRandomPlayer()
+{
+    const whoHas = whoHasCards();
+    if (whoHas.length <= 0)
+    {
+        appendStatus('Sadly no one has any Murder cards for you &#x1F62D;');
+        return;
+    }
+
+    let playerId = (whoHas.length > 1)? randInt(whoHas.length): 0;
+    playerId = whoHas[playerId];
+
+    const deck = playerCardDecks[playerId]
+    if (deck.length <= 0) return;
+
+    const i = randInt(deck.length),
+        card = deck[i];
+    deck.splice(i, 1);
+    playerCardDecks[who].push(card);
+    addCardToDetNotes(card);
+
+    const newCardsCode = encodeCards([card]);
+    appendStatus(`You got 1 Murder card from ${PLAYERS[playerId]} &#x1F604; ${stringCardsCode(newCardsCode)}`);
+}
+
+function takeRandomCardFromPlayer(playerId, noChoiceOfPlayer)
+{
+    const name = PLAYERS[playerId];
+    if (!noChoiceOfPlayer)
+    {
+        $('#divChoiceOfPlayers').remove();
+        appendStatus(`You picked ${name}.`);
+    }
+    else
+    {
+        appendStatus(`Only ${name} has Murder card(s).`);
+    }
+    const deck = playerCardDecks[playerId];
+    if (deck.length <= 0) return;
+
+    const i = randInt(deck.length),
+        card = deck[i];
+    deck.splice(i, 1);
+    playerCardDecks[who].push(card);
+    addCardToDetNotes(card);
+
+    const newCardsCode = encodeCards([card]);
+    appendStatus(`You got 1 Murder card from ${name} &#x1F604; ${stringCardsCode(newCardsCode)}`);
+}
+
+//offer player choice of other players to take Murder card from
+function chooseCardFromPlayer()
+{
+    const whoHas = [];
+    playerCardDecks.forEach((deck, playerId) => {
+        if (playerId === who) return; //ignore self
+        if (deck.length > 0)
+        {
+            whoHas.push(playerId);
+        }
+    });
+    if (whoHas.length <= 0)
+    {
+        appendStatus('Sadly no one has any Murder cards for you &#x1F62D;');
+        return;
+    }
+    if (whoHas.length === 1)
+    {
+        const playerId = whoHas[0];
+        takeRandomCardFromPlayer(playerId, true);
+        return;
+    }
+
+    let s = `Choose a player a Murder card from to take from:<br><div id='divChoiceOfPlayers'>`;
+
+    whoHas.forEach((playerId) => {
+        const name = PLAYERS[playerId];
+        s += `<span data-tooltip='Take card from ${name}' data-tooltip-position='bottom'>
+            <button onclick='takeRandomCardFromPlayer(${playerId});'>${name}</button></span> `;
+    });
+
+    let randomPlayerId = whoHas[randInt(whoHas.length)]; //to take card from
+    s += `<span data-tooltip='Take card from random player' data-tooltip-position='bottom'>
+        <button onclick='takeRandomCardFromPlayer(${randomPlayerId});'>Random</button></span> `;
+
+    s += '</div>';
+    appendStatus(s);
+}
+
 function cellClicked(y, x)
 {
     //console.log(y, x);
@@ -355,38 +463,15 @@ function cellClicked(y, x)
                         myDeck.push(card);
                         takenCards.push(card);
                         takenFrom.push(playerId);
-                        deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-                            style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
+                        addCardToDetNotes(card);
                         ++numTaken;
                     }
                 });
             }
             else //from 1 player only
             {
-                const whoHas = [];
-                playerCardDecks.forEach((deck, playerId) => {
-                    if (playerId === who) return; //ignore self
-                    if (deck.length > 0)
-                    {
-                        whoHas.push(playerId);
-                    }
-                });
-                if (whoHas.length > 0)
-                {
-                    let playerId = (whoHas.length > 1)? randInt(whoHas.length): 0;
-                    playerId = whoHas[playerId];
-                    takenFrom.push(playerId);
-
-                    const deck = playerCardDecks[playerId],
-                        i = randInt(deck.length),
-                        card = deck[i];
-                    deck.splice(i, 1);
-                    myDeck.push(card);
-                    takenCards.push(card);
-                    deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-                        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
-                    ++numTaken;
-                }
+                chooseCardFromPlayer();
+                return;
             }
             if (numTaken <= 0)
             {
