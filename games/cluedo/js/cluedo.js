@@ -200,6 +200,43 @@ function claimCards()
     appendStatus(`&#x1F44C; Claimed ${cnt} card(s).`, undefined, true);
 }
 
+function removeCards()
+{
+    if (!remotePlay)
+    {
+        showStatus('&#9888;&#65039; You are not in remote play, but specified cards will still be removed.');
+    }
+    const cards = decodeCards($('#inClaimCards')[0].value);
+    if (cards.length <= 0)
+    {
+        appendStatus(`&#9888;&#65039; Invalid cards code ${code}?! No card removed.`);
+        return;
+    }
+    let cnt = 0;
+    createPlayerData(who);
+    const deck = playerCardDecks[who];
+    cards.forEach((card) => {
+        if ((card < 0) || (card >= CARD_NAMES.length))
+        {
+            appendStatus(`&#9888;&#65039; Tried to remove <i>invalid</i> card#${card}`);
+            return;
+        }
+        const i = deck.indexOf(card);
+        if (i < 0)
+        {
+            appendStatus(`&#x270B; You don't have card#${card}`, undefined, true);
+            return;
+        }
+        ++cnt;
+        deck.splice(i, 1);
+    });
+    appendStatus(`&#x1F44C; Removed ${cnt} card(s).`, undefined, true);
+    if (cnt > 0)
+    {
+        refreshCardsInDetNotes();
+    }
+}
+
 //@retval player ID if its token has been clicked
 function playerTokenClicked(cellId)
 {
@@ -638,6 +675,19 @@ function appendStatus(s, colour, silent)
         div.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
+function refreshCardsInDetNotes()
+{
+    deckPlayerMurderCards[0].innerHTML = ''; //remove all
+    const cardIds = playerCardDecks[who],
+        cnt = cardIds.length;
+    cardIds.sort(compareNumbers);
+    for (let i = 0; i < cnt; ++i)
+    {
+        const card = cardIds[i];
+        addCardToDetNotes(card);
+    }
+}
+
 function showWhoseTurn(freshStart)
 {
     const s = playerString(),
@@ -660,17 +710,7 @@ function showWhoseTurn(freshStart)
         return;
     }
 
-    deckPlayerMurderCards[0].innerHTML = ''; //remove all
-    const cardIds = playerCardDecks[who],
-        cnt = cardIds.length;
-    cardIds.sort(compareNumbers);
-    for (let i = 0; i < cnt; ++i)
-    {
-        const id = cardIds[i];
-        deckPlayerMurderCards.append(`<div id='player${who}_mur${id}' class='card_alone'
-            style='background-image: url(images/card-${CARD_IMAGES[id]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
-    }
-
+    refreshCardsInDetNotes();
     //saveLastPlayerDetNotes();
     restoreCurPlayerDetNotes();
     updateDetNotesClueStyle();
