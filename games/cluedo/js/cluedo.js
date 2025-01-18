@@ -139,14 +139,18 @@ function playerString(playerId)
     return `<font color='${PLAYER_COLORS[playerId]}'>${PLAYERS[playerId]}</font>`;
 }
 
+function stringCardsCode(newCardsCode)
+{
+    return `<span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
+            <button onclick='gotoNotes();'>(goto Notes)</button></span>
+        <span data-tooltip='Copy new cards codes to share for remote play' data-tooltip-position='bottom'>
+            <button onclick='navigator.clipboard.writeText("${newCardsCode}");'>Copy Cards Code: ${newCardsCode}</button></span>`;
+}
+
 function announceNewCardsRecv(info)
 {
     const { numCardsTaken, newCardsCode } = info;
-    appendStatus(`${playerString()} got ${numCardsTaken} Murder cards
-        <span data-tooltip='Jump to Detective Notes' data-tooltip-position='right'>
-            <button onclick='gotoNotes();'>(goto Notes)</button></span>
-        <span data-tooltip='Copy new cards codes to share for remote play' data-tooltip-position='bottom'>
-            <button onclick='navigator.clipboard.writeText("${newCardsCode}");'>Copy Cards Code: ${newCardsCode}</button></span>`);
+    appendStatus(`${playerString()} got ${numCardsTaken} Murder cards ${stringCardsCode(newCardsCode)}`);
 }
 
 function gimme5MurCards()
@@ -334,6 +338,7 @@ function cellClicked(y, x)
             const cnt = clue[2],
                 from = clue[3],
                 myDeck = playerCardDecks[who],
+                takenCards = [],
                 takenFrom = [];
             showStatus(clue[0]);
 
@@ -348,6 +353,7 @@ function cellClicked(y, x)
                             card = deck[i];
                         deck.splice(i, 1);
                         myDeck.push(card);
+                        takenCards.push(card);
                         takenFrom.push(playerId);
                         deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
                             style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
@@ -376,6 +382,7 @@ function cellClicked(y, x)
                         card = deck[i];
                     deck.splice(i, 1);
                     myDeck.push(card);
+                    takenCards.push(card);
                     deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
                         style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
                     ++numTaken;
@@ -390,7 +397,8 @@ function cellClicked(y, x)
                 takenFrom.forEach((playerId, i) => {
                     takenFrom[i] = PLAYERS[playerId];
                 });
-                appendStatus(`You got ${numTaken} Murder card${(numTaken > 1)?'s':''} from ${takenFrom.join(',')} &#x1F604;`);
+                const newCardsCode = encodeCards(takenCards);
+                appendStatus(`You got ${numTaken} Murder card${(numTaken > 1)?'s':''} from ${takenFrom.join(',')} &#x1F604; ${stringCardsCode(newCardsCode)}`);
             }
         }
         else
