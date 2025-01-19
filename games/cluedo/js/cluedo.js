@@ -1,6 +1,8 @@
 let NUM_PLAYERS = 2,
     //Specify whether to avoid placing weapons at room entrances and blocking entry/exit; Recommended: true for easier game
     AVOID_BLOCKING_ROOM_ENTRY = true,
+    //Specify whether to auto-pick Murder card when you are to get from 'player of your choice'
+    AUTOPICK_CARD = true,
     //Specify whether to allowing peeking at card holder flaps anytime, or enforce locks!
     ALLOW_PEEKING_ANYTIME = false,
     //do NOT reveal clue#!! //DEBUG only, or for super easy mode X)
@@ -70,7 +72,7 @@ function encodeCards(cards)
         code += toHexChars(cards[i] ^ 0xAA, 2);
     }
 
-    console.log(`masked cards code: 0x${code}`);
+    //console.log(`masked cards code: 0x${code}`);
     return code;
 }
 
@@ -286,6 +288,12 @@ function checkResetClueCounters()
     }
 }
 
+function addCardToDetNotes(card)
+{
+    deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
+        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
+}
+
 function whoHasCards()
 {
     const whoHas = [];
@@ -299,35 +307,36 @@ function whoHasCards()
     return whoHas;
 }
 
-function addCardToDetNotes(card)
+function randomPlayerWithCard()
 {
-    deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
-}
-
-function takeCardFromRandomPlayer()
-{
-    const whoHas = whoHasCards();
-    if (whoHas.length <= 0)
+    const whoHas = whoHasCards(),
+        cnt = whoHas.length;
+    if (cnt <= 0)
     {
-        appendStatus('Sadly no one has any Murder cards for you &#x1F62D;');
-        return;
+        return -1;
     }
 
-    let playerId = (whoHas.length > 1)? randInt(whoHas.length): 0;
-    playerId = whoHas[playerId];
+    const index = (cnt > 1)? randInt(cnt): 0;
+    return whoHas[index];
+}
 
-    const deck = playerCardDecks[playerId]
-    if (deck.length <= 0) return;
+/*
+Transfer card (at given index) from given player's deck to current player.
+@param index (int) which card to take.
+@param playerId (int) who card is from.
+*/
+function transferCard(cardIndex, playerId)
+{
+    const deck = playerCardDecks[playerId],
+        cardId = deck[cardIndex];
+    if (cardIndex >= deck.length) return;
 
-    const i = randInt(deck.length),
-        card = deck[i];
-    deck.splice(i, 1);
-    playerCardDecks[who].push(card);
-    addCardToDetNotes(card);
+    deck.splice(cardIndex, 1);
+    playerCardDecks[who].push(cardId);
+    addCardToDetNotes(cardId);
 
-    const newCardsCode = encodeCards([card]);
-    appendStatus(`You got 1 Murder card from ${PLAYERS[playerId]} &#x1F604; ${stringCardsCode(newCardsCode)}`);
+    const newCardsCode = stringCardsCode(encodeCards([cardId]));
+    appendStatus(`You got 1 Murder card from ${PLAYERS[playerId]} &#x1F604; ${newCardsCode}`);
 }
 
 function takeRandomCardFromPlayer(playerId, noChoiceOfPlayer)
@@ -345,48 +354,72 @@ function takeRandomCardFromPlayer(playerId, noChoiceOfPlayer)
     const deck = playerCardDecks[playerId];
     if (deck.length <= 0) return;
 
-    const i = randInt(deck.length),
-        card = deck[i];
-    deck.splice(i, 1);
-    playerCardDecks[who].push(card);
-    addCardToDetNotes(card);
-
-    const newCardsCode = encodeCards([card]);
-    appendStatus(`You got 1 Murder card from ${name} &#x1F604; ${stringCardsCode(newCardsCode)}`);
+    transferCard(randInt(deck.length), playerId);
 }
 
 //offer player choice of other players to take Murder card from
-function chooseCardFromPlayer()
+function chooseCardFromPlayer(playerId)
 {
-    const whoHas = [];
-    playerCardDecks.forEach((deck, playerId) => {
-        if (playerId === who) return; //ignore self
-        if (deck.length > 0)
-        {
-            whoHas.push(playerId);
-        }
+    $('#divChoiceOfPlayers').remove();
+    const deck = playerCardDecks[playerId],
+        cnt = deck.length,
+        name = PLAYERS[playerId];
+    if (cnt <= 0)
+    {
+        appendStatus(`${name} has NO cards!`);
+        return;
+    }
+    if (cnt === 1)
+    {
+        transferCard(0, playerId);
+        return;
+    }
+    let s = `Choose a Murder card from ${name}:<br><div id='divChoiceOfCards' style='display: flex; flex-direction: row; flex-wrap: wrap;'>`;
+
+    const choices = Array.from(Array(cnt).keys());;
+    shuffle(choices);
+    choices.forEach((cardIndex) => {
+        s += `<span data-tooltip='Take this card' data-tooltip-position='bottom'>
+            <a href='javascript:$("#divChoiceOfCards").remove(); transferCard(${cardIndex}, ${playerId});'>
+                <img style='width:60px; height:90px;' src='images/card-murder.webp'/></a></span> `;
     });
-    if (whoHas.length <= 0)
+
+    s += '</div>';
+    appendStatus(s);
+}
+
+function choosePlayerForCard()
+{
+    const whoHas = whoHasCards(),
+        cnt = whoHas.length;
+    if (cnt <= 0)
     {
         appendStatus('Sadly no one has any Murder cards for you &#x1F62D;');
         return;
     }
     if (whoHas.length === 1)
     {
-        const playerId = whoHas[0];
-        takeRandomCardFromPlayer(playerId, true);
+        chooseCardFromPlayer(whoHas[0]);
         return;
     }
 
-    let s = `Choose a player a Murder card from to take from:<br><div id='divChoiceOfPlayers'>`;
+    if (AUTOPICK_CARD)
+    {
+        const randomPlayerId = whoHas[randInt(whoHas.length)]; //to take card from
+        takeRandomCardFromPlayer(randomPlayerId);
+        return;
+    }
+
+    let s = `Choose a player to take a Murder card from:<br><div id='divChoiceOfPlayers' style='display: flex; flex-direction: row; flex-wrap: wrap;'>`;
 
     whoHas.forEach((playerId) => {
-        const name = PLAYERS[playerId];
+        const name = PLAYERS[playerId],
+            numCards = playerCardDecks[playerId].length;
         s += `<span data-tooltip='Take card from ${name}' data-tooltip-position='bottom'>
-            <button onclick='takeRandomCardFromPlayer(${playerId});'>${name}</button></span> `;
+            <button onclick='chooseCardFromPlayer(${playerId});'>${name}: ${numCards} card(s)</button></span> `;
     });
 
-    let randomPlayerId = whoHas[randInt(whoHas.length)]; //to take card from
+    const randomPlayerId = whoHas[randInt(whoHas.length)]; //to take card from
     s += `<span data-tooltip='Take card from random player' data-tooltip-position='bottom'>
         <button onclick='takeRandomCardFromPlayer(${randomPlayerId});'>Random</button></span> `;
 
@@ -507,7 +540,7 @@ function cellClicked(y, x)
             }
             else //from 1 player only
             {
-                chooseCardFromPlayer();
+                choosePlayerForCard();
                 return;
             }
             if (numTaken <= 0)
@@ -938,6 +971,14 @@ function setAvoidBlockingRoomEntry(choice)
     }
 }
 
+function setAutopickCard(choice)
+{
+    if (AUTOPICK_CARD !== choice)
+    {
+        AUTOPICK_CARD = choice;
+    }
+}
+
 function setAllowPeeks(choice)
 {
     if (ALLOW_PEEKING_ANYTIME !== choice)
@@ -957,6 +998,8 @@ function resetOptions()
 
     AVOID_BLOCKING_ROOM_ENTRY = true;
     $('#option_unblock_entry')[0].checked = true;
+    AUTOPICK_CARD = false;
+    $('#option_autopick_card')[0].checked = false;
     ALLOW_PEEKING_ANYTIME = false;
     $('#option_allow_peeks')[0].checked = false;
     SHOW_CLUE_NUM = false;
@@ -1842,7 +1885,7 @@ function identifyThis(codes, cardsSeen, exclCardTypes, handicap)
     //2d. type of card if uniquely identified
     result[3] = CARD_TYPES_MAP[result[3]];
 
-    console.log(result);
+    //console.log(result);
     resultRaw[4] = result;
     return resultRaw;
 }
@@ -1903,7 +1946,7 @@ function identifyAgain(results, clues, handicap)
                 exclTypes,
                 handicap);
         }
-        console.log('new analysis');
+        //console.log('new analysis');
         return newResults;
     }
     return results;
@@ -2360,6 +2403,8 @@ function restoreSavedGame()
 
     AVOID_BLOCKING_ROOM_ENTRY = gameData.AVOID_BLOCKING_ROOM_ENTRY;
     $('#option_unblock_entry')[0].checked = AVOID_BLOCKING_ROOM_ENTRY;
+    AUTOPICK_CARD = gameData.AUTOPICK_CARD;
+    $('#option_autopick_card')[0].checked = AUTOPICK_CARD;
     ALLOW_PEEKING_ANYTIME = gameData.ALLOW_PEEKING_ANYTIME;
     $('#option_allow_peeks')[0].checked = ALLOW_PEEKING_ANYTIME;
     SHOW_CLUE_NUM = gameData.SHOW_CLUE_NUM;
@@ -3711,6 +3756,7 @@ function showCluesList()
 $(document).ready(() => {
     const div = $('#divPlayingArea')[0];
     AVOID_BLOCKING_ROOM_ENTRY = $('#option_unblock_entry')[0].checked;
+    AUTOPICK_CARD = $('#option_autopick_card')[0].checked;
     ALLOW_PEEKING_ANYTIME = $('#option_allow_peeks')[0].checked;
 
     createDice();
