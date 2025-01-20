@@ -2922,7 +2922,7 @@ function createDice()
 //retrieve order for ordering Deck. Note that order is reversed
 function superCardsDeckOrder()
 {
-    const order = actionCardsDeck.map((c) => c[3]);
+    const order = actionCardsDeck.map((c) => c[4]);
     return [order.reverse()];
 }
 
