@@ -356,13 +356,13 @@ const CARD_HOLDER_COLOUR = [
 ];
 
 const ACTION_CARDS = {
-    "Look in 1 of the four corners of <i>any</i> card holder": [7, 'look', 1], //number of this card type, action, count for action
-    "Look in 2 of the four corners of <i>any</i> card holder": [5, 'look', 2],
-    "Take 1 Murder Card": [2, 'murderCardFromDeck', 1],
-    "Take 2 Murder Cards": [1, 'murderCardFromDeck', 2],
-    "Take 3 Murder Cards": [1, 'murderCardFromDeck', 3],
-    "Take 4 Murder Cards": [1, 'murderCardFromDeck', 4],
-    "False Alarm - No Clue &#x1f631;&#x1f622d;": [1, 'falseAlarm', 0]
+    "Look in 1 of the four corners of <i>any</i> card holder": [7, 'look', 1, 'card-look-1.webp'], //number of this card type, action, count for action
+    "Look in 2 of the four corners of <i>any</i> card holder": [5, 'look', 2, 'card-look-2.webp'],
+    "Take 1 Murder Card": [2, 'murderCardFromDeck', 1, 'card-take-1.webp'],
+    "Take 2 Murder Cards": [1, 'murderCardFromDeck', 2, 'card-take-2.webp'],
+    "Take 3 Murder Cards": [1, 'murderCardFromDeck', 3, 'card-take-3.webp'],
+    "Take 4 Murder Cards": [1, 'murderCardFromDeck', 4, 'card-take-4.webp'],
+    "False Alarm - No Clue &#x1f631;&#x1f622d;": [1, 'falseAlarm', 0, 'card-false-alarm.webp']
 };
 
 const CARD_IMAGES = [

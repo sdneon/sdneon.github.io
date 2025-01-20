@@ -26,6 +26,7 @@ let who = 0, //current player
     bumpMode = false,
     bumpingWho = 0,
     remotePlay = false,
+    curActionCard = false,
     status = 'New game';
 
 function randInt(max)
@@ -592,10 +593,8 @@ function cellClicked(y, x)
             activeClues.splice(i, 1);
             $(`#active-clue-${clueObjId}`).remove();
 
-            takeActionCard();
-            checkNoMoreActiveClue();
-
             movePlayerThere(who, cellId);
+            takeActionCard();
         }
         return;
     }
@@ -624,10 +623,8 @@ function cellClicked(y, x)
             activeClues.splice(i, 1);
             $(`#active-clue-${wpnId}`).remove();
 
-            takeActionCard();
-            checkNoMoreActiveClue();
-
             movePlayerThere(who, cellId);
+            takeActionCard();
         }
         return;
     }
@@ -1572,35 +1569,54 @@ function returnMurderCards()
     deckPlayerMurderCards[0].innerHTML = '';
 }
 
+function handleActionCard()
+{
+    if (!curActionCard) return;
+
+    $("#divOpenedActionCard").remove();
+
+    //handle card
+    const img = `<img style='width:120px; height:180px;' src='images/${curActionCard[3]}'/> `;
+    if (curActionCard[1] === 'murderCardFromDeck')
+    {
+        const cnt = curActionCard[2];
+        appendStatus(`You've obtained a Super Clue card: <h2>${img}Take ${cnt} murder cards from deck</h2>`);
+        announceNewCardsRecv(takeMurderCard(who, cnt));
+    }
+    else
+    {
+        appendStatus(`You've obtained a Super Clue card: <h2>${img}${curActionCard[0]}</h2>`);
+        if (curActionCard[1] === 'look')
+        {
+            unlockFlaps(curActionCard[2], -1, -1);
+        }
+    }
+    curActionCard = false;
+    checkNoMoreActiveClue();
+}
+
 function takeActionCard()
 {
     //open an action card
     const card = actionCardsDeck.splice(0, 1)[0]; //open top card
     actionCardsDeck.push(card); //put back below
-    deckSuperClues.showTopCard();
+    curActionCard = card;
 
-    setTimeout(() => {
-        deckSuperClues.flipAllToBack();
-        deckSuperClues.moveTopCardToBottom();
-    }, 3000);
-
-    //handle card
-    if (card[1] === 'murderCardFromDeck')
+    if (AUTOPICK_CARD)
     {
-        const cnt = card[2];
-        appendStatus(`Action card: <h2>Take ${cnt} murder cards from deck</h2>`);
-        announceNewCardsRecv(takeMurderCard(who, cnt));
-    }
-    else
-    {
-        appendStatus(`Action card: <h2>${card[0]}</h2>`);
-        if (card[1] === 'look')
-        {
-            unlockFlaps(card[2], -1, -1);
-        }
-    }
+        deckSuperClues.showTopCard();
 
-    return card;
+        setTimeout(() => {
+            deckSuperClues.flipAllToBack();
+            deckSuperClues.moveTopCardToBottom();
+        }, 3000);
+        handleActionCard();
+        return;
+    }
+    //else let player open the card themselves before handling its action
+    appendStatus(`<div id='divOpenedActionCard' You've obtained a Super Clue card; click to open:<br><span data-tooltip='Open action card' data-tooltip-position='bottom'>
+        <a href='javascript:handleActionCard();'>
+            <img id='imgActionCard' style='width:120px; height:180px;' src='images/card-super-clue.webp'/></a></span></div>`);
 }
 
 function addActiveClue(div, clueObjId, clueObjName)
@@ -2434,6 +2450,7 @@ function saveGame()
         playerCardDecks,
         playersData,
         AVOID_BLOCKING_ROOM_ENTRY,
+        AUTOPICK_CARD,
         ALLOW_PEEKING_ANYTIME,
         SHOW_CLUE_NUM
     };
@@ -2447,6 +2464,7 @@ function nextPlayer(freshStart, dontSave)
         saveLastPlayerDetNotes(who);
         saveGame();
     }
+    curActionCard = false;
     hideAllFlaps();
     lockAllFlaps();
     if (who >= 0) $(`#cell_played${playerPositions[who]}`)[0].innerHTML = '';
