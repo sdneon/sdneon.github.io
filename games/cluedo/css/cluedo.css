@@ -771,6 +771,24 @@ body {
     font-size: 3em;
 }
 
+.card_holder_0
+{
+	border: 10px groove #d0d09e;
+    background-color: #d0d09e;
+}
+
+.card_holder_1
+{
+	border: 10px groove darkgreen;
+    background-color: darkgreen;
+}
+
+.card_holder_2
+{
+	border: 10px groove darkgray;
+    background-color: black;
+}
+
 .player-murder-cards-deck
 {
   display: flex;

@@ -3284,7 +3284,7 @@ function showAllFlaps(showCard) //reveal answer
         const parent = $(`#card-holder-container-${i}`),
             cardId = cardHolders[i];
         parent[0].innerHTML = '';
-        parent.addClass(`card_${cardId}`);
+        parent.addClass(`card_${cardId} card_holder_${i}`);
         parent.css('width', '250px');
         //parent.css('height', '350px');
     }
