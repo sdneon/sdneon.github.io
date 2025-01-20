@@ -156,9 +156,9 @@ function announceNewCardsRecv(info)
     appendStatus(`${playerString()} got ${numCardsTaken} Murder cards ${stringCardsCode(newCardsCode)}`);
 }
 
-function gimme5MurCards()
+function gimme5MurCards(numCards)
 {
-    announceNewCardsRecv(takeMurderCard(who, 5));
+    announceNewCardsRecv(takeMurderCard(who, numCards ?? 5));
 }
 
 function claimCards()
@@ -289,10 +289,11 @@ function checkResetClueCounters()
     }
 }
 
-function addCardToDetNotes(card)
+function addCardToDetNotes(card, isNew)
 {
-    deckPlayerMurderCards.append(`<div id='player${who}_mur${card}' class='card_alone'
-        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div>`);
+    const strClass = isNew? " class='bg_gold'": '';
+    deckPlayerMurderCards.append(`<div ${strClass}><div id='player${who}_mur${card}' class='card_alone'
+        style='background-image: url(images/card-${CARD_IMAGES[card]}.webp); background-repeat: no-repeat;background-size: 100%;'></div></div>`);
 }
 
 function whoHasCards()
@@ -325,6 +326,7 @@ function randomPlayerWithCard()
 Transfer card (at given index) from given player's deck to current player.
 @param index (int) which card to take.
 @param playerId (int) who card is from.
+@return ID of card transferred.
 */
 function transferCard(cardIndex, playerId)
 {
@@ -334,10 +336,11 @@ function transferCard(cardIndex, playerId)
 
     deck.splice(cardIndex, 1);
     playerCardDecks[who].push(cardId);
-    addCardToDetNotes(cardId);
+    addCardToDetNotes(cardId, true);
 
     const newCardsCode = stringCardsCode(encodeCards([cardId]));
     appendStatus(`You got 1 Murder card from ${PLAYERS[playerId]} &#x1F604; ${newCardsCode}`);
+    return cardId;
 }
 
 function takeRandomCardFromPlayer(playerId, noChoiceOfPlayer)
@@ -386,6 +389,69 @@ function chooseCardFromPlayer(playerId)
     });
 
     s += '</div>';
+    appendStatus(s);
+}
+
+let cardsCollected = [],
+    numPlayersToCollectFrom = 0;
+
+function transferCard2(divId, cardIndex, playerId)
+{
+    $(`#${divId}`).remove();
+    const cardId = transferCard(cardIndex, playerId);
+    cardsCollected.push(cardId);
+    if (--numPlayersToCollectFrom <= 0)
+    {
+        announceNewCardsRecv({
+            numCardsTaken: cardsCollected.length,
+            newCardsCode: encodeCards(cardsCollected)
+        });
+    }
+}
+
+//offer cards from all other players to take Murder card (1 each) from
+function chooseCardFromPlayers()
+{
+    const whoHas = whoHasCards(),
+        cnt = whoHas.length;
+    if (cnt <= 0)
+    {
+        appendStatus('Sadly no one has any Murder cards for you &#x1F62D;');
+        return;
+    }
+    if (whoHas.length === 1)
+    {
+        chooseCardFromPlayer(whoHas[0]);
+        return;
+    }
+    numPlayersToCollectFrom = cnt;
+
+    let s = `Choose a Murder card from <b>each</b> player:<br><br>`;
+    whoHas.forEach((playerId) => {
+        const deck = playerCardDecks[playerId],
+            cnt = deck.length,
+            name = PLAYERS[playerId],
+            divId = `divChoiceOfCards${playerId}`;
+        if (cnt === 1)
+        {
+            --numPlayersToCollectFrom;
+            cardsCollected.push(deck[0]);
+            transferCard(0, playerId);
+            return;
+        }
+
+        s += `<div id='${divId}' style='display: flex; flex-direction: row; flex-wrap: wrap;'>${name}:<br>`;
+
+        const choices = Array.from(Array(cnt).keys());
+        shuffle(choices);
+        choices.forEach((cardIndex) => {
+            s += `<span data-tooltip='Take this card' data-tooltip-position='bottom'>
+                <a href='javascript:transferCard2("${divId}", ${cardIndex}, ${playerId});'>
+                    <img style='width:60px; height:90px;' src='images/card-murder.webp'/></a></span> `;
+        });
+
+        s += '</div>';
+    });
     appendStatus(s);
 }
 
@@ -524,20 +590,28 @@ function cellClicked(y, x)
             let numTaken = 0;
             if (from === 'everyone')
             {
-                playerCardDecks.forEach((deck, playerId) => {
-                    if (playerId === who) return; //ignore self
-                    if (deck.length > 0)
-                    {
-                        const i = randInt(deck.length),
-                            card = deck[i];
-                        deck.splice(i, 1);
-                        myDeck.push(card);
-                        takenCards.push(card);
-                        takenFrom.push(playerId);
-                        addCardToDetNotes(card);
-                        ++numTaken;
-                    }
-                });
+                if (AUTOPICK_CARD)
+                {
+                    playerCardDecks.forEach((deck, playerId) => {
+                        if (playerId === who) return; //ignore self
+                        if (deck.length > 0)
+                        {
+                            const i = randInt(deck.length),
+                                card = deck[i];
+                            deck.splice(i, 1);
+                            myDeck.push(card);
+                            takenCards.push(card);
+                            takenFrom.push(playerId);
+                            addCardToDetNotes(card, true);
+                            ++numTaken;
+                        }
+                    });
+                }
+                else
+                {
+                    chooseCardFromPlayers();
+                    return;
+                }
             }
             else //from 1 player only
             {
