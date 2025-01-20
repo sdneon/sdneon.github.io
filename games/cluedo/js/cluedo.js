@@ -27,7 +27,61 @@ let who = 0, //current player
     bumpingWho = 0,
     remotePlay = false,
     curActionCard = false,
+    cardsCollected = [],
+    numPlayersToCollectFrom = 0,
     status = 'New game';
+
+let cachedGameBoard = false,
+    cacheCardHolders = false,
+    cacheClueSpots,
+    cacheWeaponSlots,
+    cacheBadWeaponSlots,
+    cacheOrnamentSlots,
+    cacheInvalidSlots,
+    cacheStairSlots,
+    cachePlayerPositions,
+    allRoomSlots = {},
+    cacheActionCards;
+
+let clueSpots = {}, //to include ornamentSpots, after placing ornaments
+    /*
+    Can only have 1 weapon per room, so we need 'extra storage'.
+    Allowable weapon slots in rooms only; to include clueSpots after placing clues.
+    Format: { roomIdChar: { cellIds } }
+
+    badWeaponSpots format: { cellIds }
+    */
+    weaponSpots = {},
+    badWeaponSpots = {}, //spots that block room entrances
+    ornamentSpots = {}, ///allowable garden ornament spots
+    invalidSpots = {}, //outdoors
+    stairSpots = {},
+    placedOrns = {},
+    placedClues = {},
+    placedWeapons = {},
+    removedOrns = {};
+    removedClues = {};
+    removedWeapons = {},
+    playerPositions = [],
+    activeClues = [];
+
+let answers = [],
+    cardHolders = [],
+    //these 2 will Not be in saved game data; use it or lose it!
+    cardHoldersLocks = [], //false: locked, true: open/unlocked
+    numKeys = 0, //number of keys to unlock card holder flaps
+    unlockedCardHolderId = -1, //and these 2 flags for AI use
+    unlockedFlapId = -1,
+    numPeeks = 0,
+    cardsDeck = [],
+    actionCardsDeck = [], //i.e. Super Clue cards
+    playerCardDecks = []; //i.e. Murder cards
+
+let popupSuperClues,
+    popupSpareMurderCards,
+    popupPlayerMurderCards,
+    poupupCluesList,
+    popupRules;
 
 function randInt(max)
 {
@@ -384,16 +438,13 @@ function chooseCardFromPlayer(playerId)
     shuffle(choices);
     choices.forEach((cardIndex) => {
         s += `<span data-tooltip='Take this card' data-tooltip-position='bottom'>
-            <a href='javascript:$("#divChoiceOfCards").remove(); transferCard(${cardIndex}, ${playerId});'>
+            <a href='javascript:$("#divChoiceOfCards").remove(); transferCard(${cardIndex}, ${playerId}); void(0);'>
                 <img style='width:60px; height:90px;' src='images/card-murder.webp'/></a></span> `;
     });
 
     s += '</div>';
     appendStatus(s);
 }
-
-let cardsCollected = [],
-    numPlayersToCollectFrom = 0;
 
 function transferCard2(divId, cardIndex, playerId)
 {
@@ -446,7 +497,7 @@ function chooseCardFromPlayers()
         shuffle(choices);
         choices.forEach((cardIndex) => {
             s += `<span data-tooltip='Take this card' data-tooltip-position='bottom'>
-                <a href='javascript:transferCard2("${divId}", ${cardIndex}, ${playerId});'>
+                <a href='javascript:transferCard2("${divId}", ${cardIndex}, ${playerId}); void(0);'>
                     <img style='width:60px; height:90px;' src='images/card-murder.webp'/></a></span> `;
         });
 
@@ -1079,52 +1130,6 @@ function resetOptions()
     newGameBoard();
 }
 
-let cachedGameBoard = false,
-    cacheCardHolders = false,
-    cacheClueSpots,
-    cacheWeaponSlots,
-    cacheBadWeaponSlots,
-    cacheOrnamentSlots,
-    cacheInvalidSlots,
-    cacheStairSlots,
-    cachePlayerPositions,
-    allRoomSlots = {},
-    cacheActionCards;
-
-let clueSpots = {}, //to include ornamentSpots, after placing ornaments
-    /*
-    Can only have 1 weapon per room, so we need 'extra storage'.
-    Allowable weapon slots in rooms only; to include clueSpots after placing clues.
-    Format: { roomIdChar: { cellIds } }
-
-    badWeaponSpots format: { cellIds }
-    */
-    weaponSpots = {},
-    badWeaponSpots = {}, //spots that block room entrances
-    ornamentSpots = {}, ///allowable garden ornament spots
-    invalidSpots = {}, //outdoors
-    stairSpots = {},
-    placedOrns = {},
-    placedClues = {},
-    placedWeapons = {},
-    removedOrns = {};
-    removedClues = {};
-    removedWeapons = {},
-    playerPositions = [],
-    activeClues = [];
-
-let answers = [],
-    cardHolders = [],
-    //these 2 will Not be in saved game data; use it or lose it!
-    cardHoldersLocks = [], //false: locked, true: open/unlocked
-    numKeys = 0, //number of keys to unlock card holder flaps
-    unlockedCardHolderId = -1, //and these 2 flags for AI use
-    unlockedFlapId = -1,
-    numPeeks = 0,
-    cardsDeck = [],
-    actionCardsDeck = [], //i.e. Super Clue cards
-    playerCardDecks = []; //i.e. Murder cards
-
 function genActionCards()
 {
     if (!cacheActionCards)
@@ -1689,7 +1694,7 @@ function takeActionCard()
     }
     //else let player open the card themselves before handling its action
     appendStatus(`<div id='divOpenedActionCard' You've obtained a Super Clue card; click to open:<br><span data-tooltip='Open action card' data-tooltip-position='bottom'>
-        <a href='javascript:handleActionCard();'>
+        <a href='javascript:handleActionCard(); void(0);'>
             <img id='imgActionCard' style='width:120px; height:180px;' src='images/card-super-clue.webp'/></a></span></div>`);
 }
 
@@ -2926,11 +2931,6 @@ function spareMurderCardsDeckOrder()
     return [[...cardsDeck].reverse()];
 }
 
-let popupSuperClues,
-    popupSpareMurderCards,
-    popupPlayerMurderCards,
-    poupupCluesList,
-    popupRules;
 function createSuperClueDeck()
 {
     //if (popupSuperClues) popupSuperClues.close();
