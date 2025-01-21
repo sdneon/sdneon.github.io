@@ -880,7 +880,6 @@ body {
 .shimmer {
   color: grey;
   display: inline-block;
-  mask: linear-gradient(-60deg, #000 30%, #0005, #000 70%) right/350% 100%;
   animation: shimmer 6.5s infinite;
   font-size: 50px;
   max-width: 200px;
@@ -888,10 +887,10 @@ body {
 }
 
 @keyframes shimmer {
-  0% { mask-position: initial }
-  10% { mask-position: left }
-  50% { mask-position: initial }
-  60% { mask-position: left }
+  0%  { transform: rotate(-10deg) scale(1.2) }
+  10% { transform: rotate( 10deg) scale(1.2) }
+  50% { transform: rotate(-10deg) scale(1.2) }
+  60% { transform: rotate( 10deg) scale(1.2) }
 }
 
 input {
