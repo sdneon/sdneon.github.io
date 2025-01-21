@@ -2462,7 +2462,7 @@ function restoreSavedGame()
     cellIds = Object.keys(placedWeapons);
     cellIds.forEach((cellId) => {
         const itemId = placedWeapons[cellId];
-        $(`#cell${cellId}`).addClass(`cell_wpn_${WEAPONS[itemId]} cell_occupied`);
+        $(`#cell${cellId}`).addClass(`cell_wpn_${WEAPONS[itemId]} cell_occupied cell_has_weapon`);
     });
     removedOrns = gameData.removedOrns;
     removedClues = gameData.removedClues;
