@@ -3279,14 +3279,14 @@ function showAllFlaps(showCard) //reveal answer
         }
         return;
     }
+    let h;
     for (let i = 0; i < 3; ++i)
     {
         const parent = $(`#card-holder-container-${i}`),
             cardId = cardHolders[i];
-        parent[0].innerHTML = '';
-        parent.addClass(`card_${cardId} card_holder_${i}`);
-        parent.css('width', '250px');
-        //parent.css('height', '350px');
+        if (i === 0) h = parent[0].clientHeight;
+        parent[0].innerHTML = `<img style='height:${h}px' src='images/card-${CARD_IMAGES[cardId]}.webp'>`;
+        parent.addClass(`card_holder_${i}`);
     }
 }
 
