@@ -441,8 +441,9 @@ function chooseCardFromPlayer(playerId)
             <a href='javascript:$("#divChoiceOfCards").remove(); transferCard(${cardIndex}, ${playerId}); void(0);'>
                 <img style='width:60px; height:90px;' src='images/card-murder.webp'/></a></span> `;
     });
-
-    s += '</div>';
+    let cardIndex = randInt(cnt);
+    s += `<span data-tooltip='Take random card from ${PLAYERS[playerId]}' data-tooltip-position='bottom'>
+        <button onclick='$("#divChoiceOfCards").remove(); transferCard(${cardIndex}, ${playerId});'>Random</button></span></div>`;
     appendStatus(s);
 }
 
