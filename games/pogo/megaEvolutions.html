@@ -154,7 +154,7 @@ const MEGAS = {
     Absol: { id: 359, tier:3, types: ['Dark'] },
     Gardevoir: { id: 282, tier:3, types: ['Psychic', 'Fairy'] },
     Heracross: { id: 214, tier:3, types: ['Bug', 'Fighting'] },
-    Pidgeot: { id: 18, tier:3, types: ['Water', 'Ground'] },
+    Pidgeot: { id: 18, tier:3, types: ['Normal', 'Flying'] },
     Tyranitar: { id: 248, tier:3, types: ['Rock', 'Dark'] },
     Banette: { id: 354, tier:3, types: ['Ghost'] },
     //Tier 4: Situational / little use
@@ -329,8 +329,10 @@ function query(type)
            if (megasChosen.indexOf(name) < 0)
            {
                megasChosen.push(name);
-               //megasChosenImgs.push(`<img class='pokemon' src='${URL_IMG_PREFIX}/${id}.png' alt='${name}'/>`);
-               megasChosenImgs.push(`<td><img class='pokemon' src='${URL_IMG_PREFIX}/${id}.png' alt='${name}'/><br><a href='https://www.serebii.net/pokemongo/pokemon/${id}.shtml' target='_blank'> ${name}</a></td>`);
+               const typeImgs = MEGAS[name].types.map((typeId) => `<img src='${IMGS_DATA[typeId]}'/>`);
+               megasChosenImgs.push(`<td><img class='pokemon' src='${URL_IMG_PREFIX}/${id}.png' alt='${name}'/><br>
+                   <a href='https://www.serebii.net/pokemongo/pokemon/${id}.shtml' target='_blank'> ${name}</a><br>
+                   ${typeImgs.join('')}</td>`);
            }
         });
     });
