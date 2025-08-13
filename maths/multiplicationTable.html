@@ -1,32 +1,83 @@
+<!DOCTYPE html>
 <html>
-	<head>
-		<title>Simple Multiplication Table Tests</title>
-<style  type="text/css">
+    <head>
+        <title>Simple Multiplication Table Tests</title>
+<style>
 * {
-	/* font-family: comic sans ms,cursive, !important; */
-	font-family: sans-serif,cursive, !important;
+    /* font-family: comic sans ms,cursive, !important; */
+    font-family: sans-serif,cursive !important;
 }
 
 table, th, td {
   border: 1px solid black;
 }
+
+#ans {
+    height: 2em;
+    vertical-align: bottom;
+}
+
+.speed_great {
+  font-family: 'Roboto', Arial, sans-serif;
+  text-align: center;
+  background-color: #282c34;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  background-color: green !important;
+  font-color: white !important
+}
+
+.speed_average {
+  font-family: 'Roboto', Arial, sans-serif;
+  text-align: center;
+  background-color: #282c34;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  background-color: orange !important;
+  font-color: black !important;
+}
+
+.speed_vast_room_for_improvement {
+  font-family: 'Roboto', Arial, sans-serif;
+  text-align: center;
+  background-color: #282c34;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  background-color: red !important;
+  font-color: white !important;
+}
+
+#spanAvg
+{
+  margin: 5px 0;
+  padding: 10px;
+  background-color: #212529;
+  border-radius: 5px;
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.5);
+}
 </style>
+<link rel="stylesheet" href='css/stopwatch.css'>
 <!--
 <script src="/socket.io/socket.io.js"></script>
 -->
 <script src="js/jquery.min.js"></script>
+<script src="js/stopwatch.js"></script>
 <script>
 
 let q, ans = 0, lastQ = [0,0],
-	strQn = '',
-	correct = 0, wrong = 0, streak = 0,
-	curQnEverWrong = false;
+    strQn = '',
+    correct = 0, wrong = 0, streak = 0,
+    curQnEverWrong = false,
+    quizStarted = false;
 
 function giveUp()
 {
-	curQnEverWrong = true;
-	showAnswer();
-	newQn();
+    curQnEverWrong = true;
+    showAnswer();
+    newQn();
 }
 
 //Get random integer within (2, 10)
@@ -43,7 +94,7 @@ function randInt1to10()
     let n = ((Math.random() * 9) | 0) + 1;
     if ((streak < 10) || (Math.random < 0.5)) //chance to favour bigger numbers (5 to 9) when on a big streak!
     {
-    	return n;
+        return n;
     }
     n = ((Math.random() * 5) | 0) + 5;
     return n;
@@ -51,120 +102,191 @@ function randInt1to10()
 
 function showAnswer()
 {
-	const elemGuess = $('#ans')[0];
-	elemGuess.value = '';
-	//flag those answered wrongly or skipped with '*'
-	const answer = `${strQn} ${ans}`;
+    const elemGuess = $('#ans')[0];
+    elemGuess.value = '';
+    //flag those answered wrongly or skipped with '*'
+    const answer = `${strQn} ${ans}`;
 
-	$('#divAllOldAns')[0].innerHTML = `${answer}<br>${$('#divAllOldAns')[0].innerHTML}`;
+    $('#divAllOldAns')[0].innerHTML = `${answer}<br>${$('#divAllOldAns')[0].innerHTML}`;
 }
 
 function revise()
 {
-	const div = $('#divAllOldAns')[0];
-	let oldQns = div.innerHTML;
-	oldQns = oldQns.replaceAll(/= \d+/g, '=');
-	div.innerHTML = oldQns;
+    const div = $('#divAllOldAns')[0];
+    let oldQns = div.innerHTML;
+    oldQns = oldQns.replaceAll(/= \d+/g, '=');
+    div.innerHTML = oldQns;
 }
 
 const REGEX = /(\d{1,2})(?:[^0-9]+)(\d{1,2})\s+=/;
 function reveal()
 {
-	const div = $('#divAllOldAns')[0];
-	let oldQns = div.innerHTML.split('<br>');
-	const cnt = oldQns.length;
-	if (cnt <= 0)
-	{
-		return;
-	}
-	for (let i = 0; i < cnt; ++i)
-	{
-		const m = REGEX.exec(oldQns[i]);
-		if (m)
-		{
-			const a = parseInt(m[1], 10),
-				b = parseInt(m[2], 10);
-			oldQns[i] = `${m[1]} &times; ${m[2]} = ${a * b}`;
-		}
-	}
-	div.innerHTML = oldQns.join('<br>');
+    const div = $('#divAllOldAns')[0];
+    let oldQns = div.innerHTML.split('<br>');
+    const cnt = oldQns.length;
+    if (cnt <= 0)
+    {
+        return;
+    }
+    for (let i = 0; i < cnt; ++i)
+    {
+        const m = REGEX.exec(oldQns[i]);
+        if (m)
+        {
+            const a = parseInt(m[1], 10),
+                b = parseInt(m[2], 10);
+            oldQns[i] = `${m[1]} &times; ${m[2]} = ${a * b}`;
+        }
+    }
+    div.innerHTML = oldQns.join('<br>');
+}
+
+function updateAverage()
+{
+    let totalMs = laps.reduce(function(x, y) {
+        return x + y;
+    }, 0);
+    let avg = totalMs;
+    if (laps.length > 1)
+        avg = totalMs / (laps.length - 1);
+
+    $('#avg')[0].textContent = `${formatTime(avg)}`;
+    function updateStyle(e, avg)
+    {
+        e.classList = '';
+        if (avg < 10000)
+        {
+            e.classList.add('speed_great');
+        }
+        else if (avg < 30000)
+        {
+            e.classList.add('speed_average');
+        }
+        else
+        {
+            e.classList.add('speed_vast_room_for_improvement');
+        }
+    }
+    updateStyle($('#spanAvg')[0], avg);
+    function updateFastStyle(e, avg)
+    {
+        e.classList = '';
+        if (avg < 3000)
+        {
+            e.classList.add('speed_great');
+        }
+        else if (avg < 10000)
+        {
+            e.classList.add('speed_average');
+        }
+        else
+        {
+            e.classList.add('speed_vast_room_for_improvement');
+        }
+    }
+    if (laps.length >= 2)
+        updateFastStyle(lapTimes.firstChild, laps[laps.length - 1] - laps[laps.length - 2]);
+    else
+        updateFastStyle(lapTimes.firstChild, laps[0]);
+}
+
+function toggleStopwatch()
+{
+    const c = $('#cbShowStopwatch')[0];
+    $('#divStopwatch').css('display', c.checked? '': 'none');
 }
 
 function newQn()
 {
-	curQnEverWrong = false;
-	$('#ans')[0].textContent = '';
-	$('#divWrong')[0].textContent = '';
-	//randomly generate num for solving:
-	q = [randInt2to10(), randInt1to10()];
-	//randomly flip them around for variety
-	if (Math.random() < 0.5)
-	{
-		//console.log('flip');
-		q = [q[1], q[0]];
-	}
-	if ((q[0] === lastQ[0]) && (q[1] === lastQ[1]))
-	{
-		console.log('changing duplicate qn!');
-		++(q[0]);
-		if (q[0] > 10)
-			q[0] = 2;
-	}
-	ans = '' + (q[0] * q[1]);
-	$('#divQn')[0].innerHTML = strQn = `${q[0]} &times; ${q[1]} =`;
+    curQnEverWrong = false;
+    $('#ans')[0].textContent = '';
+    $('#divWrong')[0].textContent = '';
+    //randomly generate num for solving:
+    q = [randInt2to10(), randInt1to10()];
+    //randomly flip them around for variety
+    if (Math.random() < 0.5)
+    {
+        //console.log('flip');
+        q = [q[1], q[0]];
+    }
+    if ((q[0] === lastQ[0]) && (q[1] === lastQ[1]))
+    {
+        console.log('changing duplicate qn!');
+        ++(q[0]);
+        if (q[0] > 10)
+            q[0] = 2;
+    }
+    ans = '' + (q[0] * q[1]);
+    $('#divQn')[0].innerHTML = strQn = `${q[0]} &times; ${q[1]} =`;
 }
-
 
 function checkAnswer()
 {
-	const elemGuess = $('#ans')[0];
-	let guess = elemGuess.value;
+    if (!quizStarted)
+    {
+        startTimer();
+    }
 
-	if (typeof guess !== 'string') guess = '';
-	guess = guess.trim();
-	let right = ans === guess;
+    const elemGuess = $('#ans')[0];
+    let guess = elemGuess.value;
 
-	//1. Update score
-	if (right){
-		++correct;
-		++streak;
-	}
-	else
-	{
-		curQnEverWrong = true;
-		++wrong;
-		streak = 0;
-	}
-	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
-	if (streak > 1)
-	{
-		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
-		//if (streak >= 10) console.log('big streak!');
-	}
+    if (typeof guess !== 'string') guess = '';
+    guess = guess.trim();
+    let right = ans === guess;
 
-	//allow answering until correct
-	if (right)
-	{
-		showAnswer();
-		newQn();
-		return;
-	}
-	//else inform of mistake and let player try again
-	$('#divWrong')[0].innerHTML = `&#10060; ${q[0]} &times; ${q[1]} &ne; ${guess}. Try again`;
+    //1. Update score
+    if (right){
+        ++correct;
+        ++streak;
+        if (quizStarted)
+        {
+            recordLap();
+            updateAverage();
+        }
+    }
+    else
+    {
+        curQnEverWrong = true;
+        ++wrong;
+        streak = 0;
+
+        //erase guess anyway so that it's easier to fill in new answer
+        const elemGuess = $('#ans')[0];
+        elemGuess.value = '';
+    }
+    $('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+    if (streak > 1)
+    {
+        $('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+        //if (streak >= 10) console.log('big streak!');
+    }
+
+    quizStarted = true;
+    //allow answering until correct
+    if (right)
+    {
+        showAnswer();
+        newQn();
+        return;
+    }
+    //else inform of mistake and let player try again
+    $('#divWrong')[0].innerHTML = `&#10060; ${q[0]} &times; ${q[1]} &ne; ${guess}. Try again`;
 }
 
 function load()
 {
-	$('#ans')[0].addEventListener("keypress", function(event) {
-		// If the user presses the "Enter" key on the keyboard
-		if (event.key === "Enter") {
-			// Cancel the default action, if needed
-			event.preventDefault();
-			// Trigger the button element with a click
-			$('#submit').click();
-		}
-	});
-	newQn();
+    $('#ans')[0].addEventListener("keypress", function(event) {
+        // If the user presses the "Enter" key on the keyboard
+        if (event.key === "Enter") {
+            // Cancel the default action, if needed
+            event.preventDefault();
+            // Trigger the button element with a click
+            $('#submit').click();
+        }
+    });
+    toggleStopwatch();
+    initStopwatch();
+    newQn();
 }
 </script>
 
@@ -172,19 +294,44 @@ function load()
 <body onload='load();'>
 <div>
 <h1>Simple Multiplication Table Tests</h1>
-<h3>(2 times table to 10 times table)</h3>
-<h2>
-<span id='divQn'>\(1 \times 2 = \)</span>&nbsp;<input id='ans' type='text'></input>
-<input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
-<input id='skip' type="submit" value="Skip" onclick='giveUp();'>
-<div id='divWrong'></div>
-</h2>
+<div style='display: flex; flex-direction: row; justify-content: flex-start'>
+  <div style=''>
+    <h3>(2 times table to 10 times table)</h3>
+    <h2 style='padding: 10px'>
+    <span id='divQn'>\(1 \times 2 = \)</span>&nbsp;<input id='ans' type='text'></input>
+    <input id='submit' type="submit" value="Submit" onclick='checkAnswer();'/>
+    <input id='skip' type="submit" value="Skip" onclick='giveUp();'/>
+    <div id='divWrong'></div>
+    </h2>
+  </div>
+  <div class="stopwatch">
+    <div style='display:flex'>
+        <input type="checkbox" id="cbShowStopwatch" name="stopwatch" value=""
+            onchange='toggleStopwatch()'>&nbsp;
+        <h1 style='margin: 0px;'>Stopwatch</h1>
+    </div>
+    <div id='divStopwatch'>
+        <div id="time-display">00:00:00</div>
+        <div class="buttons">
+          <button id="start-btn" class='hidden'>Start</button>
+          <button id="pause-btn" class='hidden'>Pause</button>
+          <button id="reset-btn" class='hidden'>Reset</button>
+          <button id="lap-btn">Lap</button>
+          <span id='spanAvg'>Average:&nbsp;<span id='avg' class=''>?</span></span>
+        </div>
+        <div style='max-height: 200px; overflow: auto;'>
+          <ul id="lap-times"></ul>
+        </div>
+    </div>
+  </div>
+  <div style='flex-grow:1'/>
+</div>
 </div>
 <hr>
 <h3><u>Previous Qns</u></h3>
 <input id='revise' type="submit" value="Revise" onclick='revise();'>
 <input id='reveal' type="submit" value="Reveal" onclick='reveal();'>
-<h3 id='divAllOldAns'></h3>
+<h3 id='divAllOldAns' style='max-height: 300px; overflow: auto;'></h3>
 <div id='divScore' style='float:right; position:fixed; top: 30px; right:18px; font-size:300%'>Score: 0 &#9989; 0 &#10060;</div>
 <hr>
 <b>Tips</b><br>
