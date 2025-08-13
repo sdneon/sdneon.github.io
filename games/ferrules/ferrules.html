@@ -1,5 +1,6 @@
 <html lang="en"><head>
 <title>Ferrules board game</title>
+<meta name="description" content="Web version of Ferrules board game - a layered tic-tac-toe like game for 2 to 4 players, with more play options 😊">
 <style>
 html,
 body {
@@ -561,8 +562,8 @@ function choiceClicked(row, col, size)
 
     //Show possible winning moves for self and others?
     const upcomingPlayerColor = COLORS[who + 1]; //who == upcomingPlayer
-	const possWins = {};
-	let gonnaWin = false;
+    const possWins = {};
+    let gonnaWin = false;
     if (SHOW_OTHERS_WIN_HINTS)
     {
         //console.log('Calculating possible winning moves for other players...');
@@ -628,12 +629,12 @@ function choiceClicked(row, col, size)
     } //end SHOW_OWN_WIN_HINTS
     if (gonnaWin)
     {
-    	$('#divStatus')[0].innerHTML += " &#128521; Don't forget to win!";
+        $('#divStatus')[0].innerHTML += " &#128521; Don't forget to win!";
     }
     else if ((Object.keys(possWins)).length >= NUM_PLAYERS)
-	{
-		$('#divStatus')[0].innerHTML += ' ... Checkmate! &#128561;';
-	}
+    {
+        $('#divStatus')[0].innerHTML += ' ... Checkmate! &#128561;';
+    }
 }
 
 function showStatus(s, colour)
@@ -968,6 +969,8 @@ Number of players:
 <button onclick="resetOptions();">Reset Options</button><br>
 </div>
 <br><br><hr><div id='divRules'>
+<h2>Ferrules</h2>
+This is a layered tic-tac-toe like game for 2 to 4 players, with more play options 😊
 <h2>Win by:</h2>
 1. Concentric circles:<br>
 <table class="choices" style="color: green;">
