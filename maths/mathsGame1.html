@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>Maths Puzzle Game: &times; then +/-</title>
+		<title>Maths Puzzle Game (Trimatics): &times; then +/-</title>
 <style  type="text/css">
 * {
 	/* font-family: comic sans ms,cursive, !important; */
@@ -24,23 +24,28 @@ td {
   text-align: center;
   aspect-ratio: 1 / 1 ;
 }
-/*
-col:nth-child(odd) {
-  background: #7008;
+.noborder {
+  border: none;
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  text-align: right;
+  font-size: 150%;
+  width: 9.09%;
 }
-
-col:nth-child(even) {
-  background: $a008;
+.top_centre {
+  text-align: center !important;
+  vertical-align: top;
 }
-
-tr:nth-child(odd) {
-  background: #0078;
+.top_right {
+  text-align: right !important;
+  vertical-align: top;
 }
-
-tr:nth-child(even) {
-  background: $00a8;
+.top_left {
+  text-align: left !important;
+  vertical-align: top;
 }
-*/
 </style>
 <!--
 <script src="/socket.io/socket.io.js"></script>
@@ -60,8 +65,8 @@ let q, ans = 0, lastQ = [0,0],
 
 function next()
 {
-	$('#divWrong')[0].innerHTML = `Correct answer @ (${q[0]+1}, ${q[1]+1}). [PS: Top left corner is (0, 0)]`;
-	showAnswer();
+	const eq = showAnswer();
+	$('#divWrong')[0].innerHTML = `Correct answer (${eq} = ${ans}) @ (${String.fromCharCode(65+q[0])}${String.fromCharCode(65+q[1])})`;
 	newQn();
 }
 
@@ -70,8 +75,8 @@ function giveUp()
 	qnAvail = false;
 	$("#giveup").attr("disabled", true);
 	curQnEverWrong = true;
-	$('#divWrong')[0].innerHTML = `Correct answer @ (${q[0]+1}, ${q[1]+1}). [PS: Top left corner is (0, 0)]`;
-	showAnswer();
+	const eq = showAnswer();
+	$('#divWrong')[0].innerHTML = `Correct answer (${eq} = ${ans}) @ (${String.fromCharCode(65+q[0])}${String.fromCharCode(65+q[1])})`;
 }
 
 //Get random integer within (1, 9)
@@ -105,6 +110,16 @@ const OFFSETS = [
 	[ 1,  1,  2,  2], //SE
 	[-1,  1, -2,  2], //SW
 	[-1, -1, -2, -2] //NW
+];
+const DIRECTIONS = [
+	'&#x2191;', //N
+	'&#x2192;', //E
+	'&#x2193;', //S
+	'&#x2190;', //W
+	'&#x2197;', //NE
+	'&#x2198;', //SE
+	'&#x2199;', //SW
+	'&#x2196;' //NW
 ];
 /*
 Get random integer within game grid limits,
@@ -149,9 +164,16 @@ function showAnswer(dontResetGridColors)
 	if (!q) return;
 	let x = q[0], y = q[1], dir = q[2], plusminus = q[3];
 
-	$(`#c${x}r${y}`).css('background', '#060');
-	$(`#c${x + OFFSETS[dir][0]}r${y + OFFSETS[dir][1]}`).css('background', '#070');
-	$(`#c${x + OFFSETS[dir][2]}r${y + OFFSETS[dir][3]}`).css('background', plusminus > 0? '#0f0': '#f00'); //green: add, red: minus
+	let v1 = $(`#c${x}r${y}`),
+		v2 = $(`#c${x + OFFSETS[dir][0]}r${y + OFFSETS[dir][1]}`),
+		v3 = $(`#c${x + OFFSETS[dir][2]}r${y + OFFSETS[dir][3]}`);
+	v1.css('background', '#060');
+	v2.css('background', '#070');
+	v3.css('background', plusminus > 0? '#0f0': '#f00'); //green: add, red: minus
+	v1 = v1[0].textContent;
+	v2 = v2[0].textContent;
+	v3 = v3[0].textContent;
+	return `(${DIRECTIONS[dir]}) ${v1} x ${v2} ${plusminus > 0? '+':'-'} ${v3}`;
 }
 
 function revise()
@@ -272,7 +294,8 @@ function checkAnswer(x, y)
 
 	let guess = -1,
 		reset = true,
-		right = false;
+		right = false,
+		eq = '';
 	//1. Try all directions to see if answer can be found centred at given coordinates
 	for (let dir = 0; dir < 8; ++dir)
 	{
@@ -280,7 +303,9 @@ function checkAnswer(x, y)
 		{
 			right = true;
 			q = arrAns;
-			showAnswer(!reset);
+			if (eq.length > 0)
+				eq = eq + ' = ';
+			eq += showAnswer(!reset);
 			reset = false;
 			//break;
 		}
@@ -310,12 +335,12 @@ function checkAnswer(x, y)
 	{
 		qnAvail = false;
 		$("#giveup").attr("disabled", true);
-		$('#divWrong')[0].innerHTML = `&#9989; You've found it @ (${x+1}, ${y+1}) &#128513;`;
+		$('#divWrong')[0].innerHTML = `&#9989; You've found it (${eq} = ${ans}) @ ${String.fromCharCode(65+x)}${MAX-y} &#128513;`;
 		newQn();
 		return;
 	}
 	//else inform of mistake and let player try again
-	$('#divWrong')[0].innerHTML = `&#10060; Cannot find answer centred at (${x+1}, ${y+1}). Try again. [PS: Top left corner is (0, 0)]`;
+	$('#divWrong')[0].innerHTML = `&#10060; Cannot find answer (${ans}) at ${String.fromCharCode(65+x)}${MAX-y}. Try again. [PS: Top left corner is (0, 0)]`;
 }
 
 const GRID_COLOURS = ['#009de0', '#8c8c8c'];
@@ -374,7 +399,7 @@ function load()
 </head>
 <body onload='load();'>
 <div>
-<h1>Maths Puzzle Game: &times; then +/-</h1>
+<h1>Maths Puzzle Game (Trimatics): &times; then +/-</h1>
 <h3>Find the given number in the grid as a <b>trio</b> of 3 consecutive numbers
 <br>in the form <i>a &times; b +/- c</i>. Can be horizontal, vertical, diagonal, forward or reverse.</h3>
 E.g.: 45 &#8594; [5][8][5] &#8592; 5 * 8 + 5
@@ -384,7 +409,36 @@ Find: <span id='divQn'>88</span></span>
 &nbsp;&nbsp;<input id='giveup' type="submit" value="Give Up" onclick='giveUp();'></input>
 &nbsp;&nbsp;<input id='skip' type="submit" value="Skip/Next" onclick='next();'></input>(last number: <span id='lastAns'>NA</span>)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id='reset' type="submit" value="Reset Grid" onclick='newGrid();'></input>
-<span id='divGrid'>(grid of numbers here)</span>
+<table class="noborder" style="table-layout:auto">
+<tr>
+	<td class='noborder'>10</td>
+	<td class='noborder' colspan="10" rowspan="10">
+		<span id='divGrid'>(grid of numbers here)</span>
+	</td>
+</tr>
+			<tr><td class='noborder'>9</td></tr>
+			<tr><td class='noborder'>8</td></tr>
+			<tr><td class='noborder'>7</td></tr>
+			<tr><td class='noborder'>6</td></tr>
+			<tr><td class='noborder'>5</td></tr>
+			<tr><td class='noborder'>4</td></tr>
+			<tr><td class='noborder'>3</td></tr>
+			<tr><td class='noborder'>2</td></tr>
+			<tr><td class='noborder'>1</td></tr>
+<tr>
+	<td class='noborder top_right'></td>
+	<td class='noborder top_right'>A</td>
+	<td class='noborder top_right'>B</td>
+	<td class='noborder top_right'>C</td>
+	<td class='noborder top_centre'>D</td>
+	<td class='noborder top_centre'>E</td>
+	<td class='noborder top_centre'>F</td>
+	<td class='noborder top_left'>G</td>
+	<td class='noborder top_left'>H</td>
+	<td class='noborder top_left'>I</td>
+	<td class='noborder top_left'>J</td>
+</tr>
+</table>
 <!--
 <input id='ans' type='text'></input>
 <input id='submit' type="submit" value="Submit" onclick='checkAnswer();'>
