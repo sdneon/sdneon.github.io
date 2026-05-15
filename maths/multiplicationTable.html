@@ -298,7 +298,7 @@ function load()
   <div style=''>
     <h3>(2 times table to 10 times table)</h3>
     <h2 style='padding: 10px'>
-    <span id='divQn'>\(1 \times 2 = \)</span>&nbsp;<input id='ans' type='text'></input>
+    <span id='divQn'>\(1 \times 2 = \)</span>&nbsp;<input id='ans' type='text' type="number" inputmode="numeric" pattern="\d*" min="0" step="1"></input>
     <input id='submit' type="submit" value="Submit" onclick='checkAnswer();'/>
     <input id='skip' type="submit" value="Skip" onclick='giveUp();'/>
     <div id='divWrong'></div>
