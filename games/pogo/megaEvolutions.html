@@ -3,8 +3,7 @@
         <title>PoGo Mega Evolutions Lookup</title>
 <style  type="text/css">
 * {
-    /* font-family: comic sans ms,cursive, !important; */
-    font-family: sans-serif,cursive, !important;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 span {
@@ -95,7 +94,13 @@ table {
     border: none;
 }
 td, th {
-    border: none;
+    border: 1px solid #000;
+}
+
+.mega4
+{
+    background:#0f0;
+    border: 5px solid #080;
 }
 </style>
 <!-- <script src="/js/jquery.min.js"></script> -->
@@ -126,8 +131,22 @@ Fairy`.split(/\r?\n\r?/);
 const LEN_TYPES = TYPES.length;
 
 const MEGAS = {
+    //Tier -1: Super Max Mega
+    'Mewtwo Y': { id: 150, mega4: true, tier: 0, types: ['Psychic'] },
+    'Mewtwo X': { id: 150, mega4: true, tier: 1, types: ['Psychic', 'Fighting'] },
+    Dragonite: { id: 149, mega4: true, tier:1, types: ['Dragon', 'Flying'] },
+    Malamar: { id: 687, mega4: true, tier:1, types: ['Dark', 'Psychic'] },
+    'Raichu X': { id: 26, mega4: true, tier: 2, types: ['Electric'] },
+    'Raichu Y': { id: 26, mega4: true, tier: 2, types: ['Electric'] },
+    Victreebel: { id: 71, mega4: true, tier: 2, types: ['Grass', 'Poison'] },
+    Starmie: { id: 121, mega4: true, tier: 5, types: ['Water', 'Psychic'] },
+    Falinks: { id: 870, mega4: true, tier: 5, types: ['Fighting'] },
+    Skarmory: { id: 227, mega4: true, tier: 5, types: ['Steel', 'Flying'] },
+    'Chesnaught<br>(upcoming)': { id: 652, mega4: true, tier: 5, types: ['Grass', 'Fighting'] },
+    'Delphox<br>(upcoming)': { id: 655, mega4: true, tier: 5, types: ['Fire', 'Psychic'] },
+    'Greninja<br>(upcoming)': { id: 658, mega4: true, tier: 5, types: ['Water', 'Dark'] },
+
     //Tier 0: broken elites!
-    //'Mewtwo Y': { id: 150, tier: 0, types: ['Psychic'] },
     Rayquaza: { id: 384, tier: 0, types: ['Dragon', 'Flying'] },
     //Primal Reversion
     Kyogre: { id: 382, tier:0, types: ['Water', 'Electric', 'Bug'] },
@@ -139,14 +158,11 @@ const MEGAS = {
     Swampert: { id: 260, tier: 1, types: ['Water', 'Ground'] },
     Sceptile: { id: 254, tier:1, types: ['Grass', 'Dragon'] },
     Manectric: { id: 310, tier:1, types: ['Electric'] },
-    //'Mewtwo X': { id: 150, tier: 0, types: ['Psychic', 'Fighting'] },
     Lucario: { id: 448, tier:1, types: ['Fighting', 'Steel'] },
     Garchomp: { id: 445, tier:1, types: ['Dragon', 'Ground'] },
     Diancie: { id: 719, tier:1, types: ['Rock', 'Fairy'] },
     Metagross: { id: 376, tier:1, types: ['Steel', 'Psychic'] },
     Gengar: { id: 94, tier:1, types: ['Ghost', 'Poison'] },
-    Dragonite: { id: 149, tier:1, types: ['Dragon', 'Flying'] },
-    Malamar: { id: 687, tier:1, types: ['Dark', 'Psychic'] },
 
     //Tier 2: still worth building
     'Charizard Y': { id: 6, tier:2, types: ['Fire', 'Flying'] },
@@ -341,7 +357,7 @@ function query(type)
            {
                megasChosen.push(name);
                const typeImgs = MEGAS[name].types.map((typeId) => `<img src='${IMGS_DATA[typeId]}'/>`);
-               megasChosenImgs.push(`<td><img class='pokemon' src='${URL_IMG_PREFIX}/${id}.png' alt='${name}'/><br>
+               megasChosenImgs.push(`<td class='${MEGAS[name].mega4?'mega4':''}'><img class='pokemon' src='${URL_IMG_PREFIX}/${id}.png' alt='${name}'/><br>
                    <a href='https://www.serebii.net/pokemongo/pokemon/${id}.shtml' target='_blank'> ${name}</a><br>
                    ${typeImgs.join('')}</td>`);
            }
@@ -400,7 +416,6 @@ function startup()
             $('#divMain').append('<br>');
         }
     });
-    //$('#divChart').append(`<img src='${CHART}' class='normal_img'/>`);
 }
 </script>
 
@@ -410,9 +425,7 @@ function startup()
     <div id='rest'>
         <br>
         <button id='reset' onclick='reset();'>Reset</button>
+        <br>(Green highlight: Super Max Mega L4 available for greatest Catch Candy & XL bonuses)
     </div>
     <div id='divOutput'></div>
-    <br>
-    <div id='divChart'></div>
-    </body>
 </html>
