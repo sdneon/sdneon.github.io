@@ -1,10 +1,10 @@
 <html>
-	<head>
-		<title>Maths Puzzle Game (Trimatics): &times; then +/-</title>
+    <head>
+        <title>Maths Puzzle Game (Trimatics): &times; then +/-</title>
 <style  type="text/css">
 * {
-	/* font-family: comic sans ms,cursive, !important; */
-	font-family: sans-serif,cursive, !important;
+    /* font-family: comic sans ms,cursive, !important; */
+    font-family: sans-serif,cursive, !important;
 }
 
 table, th, td {
@@ -56,27 +56,27 @@ const MAX = 10; //size of each side of grid
 const VAL_MAX = 9 * 9 + 9;
 
 let q, ans = 0, lastQ = [0,0],
-	qnAvail = false,
-	isNewQn = true,
-	gridNums = [],
-	strQn = '',
-	correct = 0, wrong = 0, streak = 0,
-	curQnEverWrong = false;
+    qnAvail = false,
+    isNewQn = true,
+    gridNums = [],
+    strQn = '',
+    correct = 0, wrong = 0, streak = 0,
+    curQnEverWrong = false;
 
 function next()
 {
-	const eq = showAnswer();
-	$('#divWrong')[0].innerHTML = `Correct answer (${eq} = ${ans}) @ (${String.fromCharCode(65+q[0])}${String.fromCharCode(65+q[1])})`;
-	newQn();
+    const eq = showAnswer();
+    $('#divWrong')[0].innerHTML = `Correct answer (${eq} = ${ans}) @ (${String.fromCharCode(65+q[0])}${String.fromCharCode(65+q[1])})`;
+    newQn();
 }
 
 function giveUp()
 {
-	qnAvail = false;
-	$("#giveup").attr("disabled", true);
-	curQnEverWrong = true;
-	const eq = showAnswer();
-	$('#divWrong')[0].innerHTML = `Correct answer (${eq} = ${ans}) @ (${String.fromCharCode(65+q[0])}${String.fromCharCode(65+q[1])})`;
+    qnAvail = false;
+    $("#giveup").attr("disabled", true);
+    curQnEverWrong = true;
+    const eq = showAnswer();
+    $('#divWrong')[0].innerHTML = `Correct answer (${eq} = ${ans}) @ (${String.fromCharCode(65+q[0])}${String.fromCharCode(65+q[1])})`;
 }
 
 //Get random integer within (1, 9)
@@ -89,37 +89,37 @@ function randInt1to9()
 //Get random integer within game limits
 function randInt()
 {
-	let n = ((Math.random() * (VAL_MAX - 1)) | 0) + 1;
-	return n;
+    let n = ((Math.random() * (VAL_MAX - 1)) | 0) + 1;
+    return n;
 }
 const N = 0,
-	E = 1,
-	S = 2,
-	W = 3,
-	NE = 4,
-	SE = 5,
-	SW = 6,
-	NW = 7;
+    E = 1,
+    S = 2,
+    W = 3,
+    NE = 4,
+    SE = 5,
+    SW = 6,
+    NW = 7;
 const OFFSETS = [
-	//dx, dy, dx2, dy2
-	[ 0, -1,  0, -2], //N
-	[ 1,  0,  2,  0], //E
-	[ 0,  1,  0,  2], //S
-	[-1,  0, -2,  0], //W
-	[ 1, -1,  2, -2], //NE
-	[ 1,  1,  2,  2], //SE
-	[-1,  1, -2,  2], //SW
-	[-1, -1, -2, -2] //NW
+    //dx, dy, dx2, dy2
+    [ 0, -1,  0, -2], //N
+    [ 1,  0,  2,  0], //E
+    [ 0,  1,  0,  2], //S
+    [-1,  0, -2,  0], //W
+    [ 1, -1,  2, -2], //NE
+    [ 1,  1,  2,  2], //SE
+    [-1,  1, -2,  2], //SW
+    [-1, -1, -2, -2] //NW
 ];
 const DIRECTIONS = [
-	'&#x2191;', //N
-	'&#x2192;', //E
-	'&#x2193;', //S
-	'&#x2190;', //W
-	'&#x2197;', //NE
-	'&#x2198;', //SE
-	'&#x2199;', //SW
-	'&#x2196;' //NW
+    '&#x2191;', //N
+    '&#x2192;', //E
+    '&#x2193;', //S
+    '&#x2190;', //W
+    '&#x2197;', //NE
+    '&#x2198;', //SE
+    '&#x2199;', //SW
+    '&#x2196;' //NW
 ];
 /*
 Get random integer within game grid limits,
@@ -127,272 +127,272 @@ accounting for dir so as not to go out of grid!
 */
 function randIntGridX(dir)
 {
-	let max = MAX;
-	if ((dir !== N) && (dir !== S))
-		max = MAX - 2;
-	let n = ((Math.random() * max) | 0);
-	if ((dir === W) || (dir === SW) || (dir === NW))
-		n += 2;
-	return n;
+    let max = MAX;
+    if ((dir !== N) && (dir !== S))
+        max = MAX - 2;
+    let n = ((Math.random() * max) | 0);
+    if ((dir === W) || (dir === SW) || (dir === NW))
+        n += 2;
+    return n;
 }
 function randIntGridY(dir)
 {
-	let max = MAX;
-	if ((dir !== E) && (dir !== W))
-		max = MAX - 2;
-	let n = ((Math.random() * max) | 0);
-	if ((dir === N) || (dir === NE) || (dir === NW))
-		n += 2;
-	return n;
+    let max = MAX;
+    if ((dir !== E) && (dir !== W))
+        max = MAX - 2;
+    let n = ((Math.random() * max) | 0);
+    if ((dir === N) || (dir === NE) || (dir === NW))
+        n += 2;
+    return n;
 }
 
 /*
-	Get random compass direction.
-	0-3: NESW
-	4-7: NE, SE, SW, NW
+    Get random compass direction.
+    0-3: NESW
+    4-7: NE, SE, SW, NW
 */
 function randDir()
 {
-	let n = ((Math.random() * 8) | 0);
-	return n;
+    let n = ((Math.random() * 8) | 0);
+    return n;
 }
 
 function showAnswer(dontResetGridColors)
 {
-	if (!dontResetGridColors) resetGridColours();
-	$('#lastAns')[0].textContent = ans;
-	if (!q) return;
-	let x = q[0], y = q[1], dir = q[2], plusminus = q[3];
+    if (!dontResetGridColors) resetGridColours();
+    $('#lastAns')[0].textContent = ans;
+    if (!q) return;
+    let x = q[0], y = q[1], dir = q[2], plusminus = q[3];
 
-	let v1 = $(`#c${x}r${y}`),
-		v2 = $(`#c${x + OFFSETS[dir][0]}r${y + OFFSETS[dir][1]}`),
-		v3 = $(`#c${x + OFFSETS[dir][2]}r${y + OFFSETS[dir][3]}`);
-	v1.css('background', '#060');
-	v2.css('background', '#070');
-	v3.css('background', plusminus > 0? '#0f0': '#f00'); //green: add, red: minus
-	v1 = v1[0].textContent;
-	v2 = v2[0].textContent;
-	v3 = v3[0].textContent;
-	return `(${DIRECTIONS[dir]}) ${v1} x ${v2} ${plusminus > 0? '+':'-'} ${v3}`;
+    let v1 = $(`#c${x}r${y}`),
+        v2 = $(`#c${x + OFFSETS[dir][0]}r${y + OFFSETS[dir][1]}`),
+        v3 = $(`#c${x + OFFSETS[dir][2]}r${y + OFFSETS[dir][3]}`);
+    v1.css('background', '#060');
+    v2.css('background', '#070');
+    v3.css('background', plusminus > 0? '#0f0': '#f00'); //green: add, red: minus
+    v1 = v1[0].textContent;
+    v2 = v2[0].textContent;
+    v3 = v3[0].textContent;
+    return `(${DIRECTIONS[dir]}) ${v1} x ${v2} ${plusminus > 0? '+':'-'} ${v3}`;
 }
 
 function revise()
 {
-	const div = $('#divAllOldAns')[0];
-	let oldQns = div.innerHTML;
-	oldQns = oldQns.replaceAll(/= \d+/g, '=');
-	div.innerHTML = oldQns;
+    const div = $('#divAllOldAns')[0];
+    let oldQns = div.innerHTML;
+    oldQns = oldQns.replaceAll(/= \d+/g, '=');
+    div.innerHTML = oldQns;
 }
 
 const REGEX = /(\d{1,2})(?:[^0-9]+)(\d{1,2})\s+=/;
 function reveal()
 {
-	const div = $('#divAllOldAns')[0];
-	let oldQns = div.innerHTML.split('<br>');
-	const cnt = oldQns.length;
-	if (cnt <= 0)
-	{
-		return;
-	}
-	for (let i = 0; i < cnt; ++i)
-	{
-		const m = REGEX.exec(oldQns[i]);
-		if (m)
-		{
-			const a = parseInt(m[1], 10),
-				b = parseInt(m[2], 10);
-			oldQns[i] = `${m[1]} &times; ${m[2]} = ${a * b}`;
-		}
-	}
-	div.innerHTML = oldQns.join('<br>');
+    const div = $('#divAllOldAns')[0];
+    let oldQns = div.innerHTML.split('<br>');
+    const cnt = oldQns.length;
+    if (cnt <= 0)
+    {
+        return;
+    }
+    for (let i = 0; i < cnt; ++i)
+    {
+        const m = REGEX.exec(oldQns[i]);
+        if (m)
+        {
+            const a = parseInt(m[1], 10),
+                b = parseInt(m[2], 10);
+            oldQns[i] = `${m[1]} &times; ${m[2]} = ${a * b}`;
+        }
+    }
+    div.innerHTML = oldQns.join('<br>');
 }
 
 function newQn()
 {
-	qnAvail = true;
-	isNewQn = true;
-	$("#giveup").attr("disabled", false);
-	$("#skip").attr("disabled", false);
-	curQnEverWrong = false;
-	//$('#divWrong')[0].textContent = '';
-	//randomly generate desired solution as a grid position, direcion and plus/minus:
-	const dir = randDir(),
-		x = randIntGridX(dir), y = randIntGridY(dir);
-	q = [x, y, dir, Math.random() < 0.5? 1: -1];
-	//compute answer
-	const x1 = x + OFFSETS[dir][0],
-		y1 = y + OFFSETS[dir][1],
-		x2 = x + OFFSETS[dir][2],
-		y2 = y + OFFSETS[dir][3];
-	if (x1 < 0 || x1 > MAX)
-		console.log('bad x1', x1);
-	if (x2 < 0 || x2 > MAX)
-		console.log('bad x2', x2);
-	if (y1 < 0 || y1 > MAX)
-		console.log('bad y1', y1);
-	if (y2 < 0 || y2 > MAX)
-		console.log('bad y2', y2);
-	ans = ( (gridNums[y][x] * gridNums[y1][x1])
-		+ (q[3] * gridNums[y2][x2]) );
-	if (ans < 0)
-	{
-		console.log('Opps, negative answer, so find a given answer!');
-		newQn();
-		return;
-	}
-	//console.log(q, ans, '=', gridNums[y][x], 'x', gridNums[y1][x1], q[3]? '+':'-', gridNums[y2][x2]); //DEBUG
-	if (isNaN(ans))
-		console.log('Invalid ANS!?!?', q);
-	$('#divQn')[0].innerHTML = strQn = '' + ans;
+    qnAvail = true;
+    isNewQn = true;
+    $("#giveup").attr("disabled", false);
+    $("#skip").attr("disabled", false);
+    curQnEverWrong = false;
+    //$('#divWrong')[0].textContent = '';
+    //randomly generate desired solution as a grid position, direcion and plus/minus:
+    const dir = randDir(),
+        x = randIntGridX(dir), y = randIntGridY(dir);
+    q = [x, y, dir, Math.random() < 0.5? 1: -1];
+    //compute answer
+    const x1 = x + OFFSETS[dir][0],
+        y1 = y + OFFSETS[dir][1],
+        x2 = x + OFFSETS[dir][2],
+        y2 = y + OFFSETS[dir][3];
+    if (x1 < 0 || x1 > MAX)
+        console.log('bad x1', x1);
+    if (x2 < 0 || x2 > MAX)
+        console.log('bad x2', x2);
+    if (y1 < 0 || y1 > MAX)
+        console.log('bad y1', y1);
+    if (y2 < 0 || y2 > MAX)
+        console.log('bad y2', y2);
+    ans = ( (gridNums[y][x] * gridNums[y1][x1])
+        + (q[3] * gridNums[y2][x2]) );
+    if (ans < 0)
+    {
+        console.log('Opps, negative answer, so find a given answer!');
+        newQn();
+        return;
+    }
+    //console.log(q, ans, '=', gridNums[y][x], 'x', gridNums[y1][x1], q[3]? '+':'-', gridNums[y2][x2]); //DEBUG
+    if (isNaN(ans))
+        console.log('Invalid ANS!?!?', q);
+    $('#divQn')[0].innerHTML = strQn = '' + ans;
 
-	//$(`#c${x}r${y}`).css('background', 'red'); //DEBUG
+    //$(`#c${x}r${y}`).css('background', 'red'); //DEBUG
 }
 
 
 function checkOutOfBounds(x)
 {
-	return (x < 0) || (x >= MAX);
+    return (x < 0) || (x >= MAX);
 }
 
 function checkAnswer(x, y)
 {
-	if (!qnAvail) return;
-	if (isNewQn) resetGridColours();
-	isNewQn = false;
+    if (!qnAvail) return;
+    if (isNewQn) resetGridColours();
+    isNewQn = false;
 
-	$(`#c${x}r${y}`).css('background', 'pink');
-	if (checkOutOfBounds(x) || checkOutOfBounds(y)) return;
+    $(`#c${x}r${y}`).css('background', 'pink');
+    if (checkOutOfBounds(x) || checkOutOfBounds(y)) return;
 
-	let arrAns = [];
-	function foundAnswer(x, y, dir)
-	{
-		const x1 = x + OFFSETS[dir][0];
-		if (checkOutOfBounds(x1)) return false;
-		const y1 = y + OFFSETS[dir][1];
-		if (checkOutOfBounds(y1)) return false;
-		const x2 = x + OFFSETS[dir][2];
-		if (checkOutOfBounds(x2)) return false;
-		const y2 = y + OFFSETS[dir][3];
-		if (checkOutOfBounds(y2)) return false;
+    let arrAns = [];
+    function foundAnswer(x, y, dir)
+    {
+        const x1 = x + OFFSETS[dir][0];
+        if (checkOutOfBounds(x1)) return false;
+        const y1 = y + OFFSETS[dir][1];
+        if (checkOutOfBounds(y1)) return false;
+        const x2 = x + OFFSETS[dir][2];
+        if (checkOutOfBounds(x2)) return false;
+        const y2 = y + OFFSETS[dir][3];
+        if (checkOutOfBounds(y2)) return false;
 
-		let ansTemp = ( (gridNums[y][x] * gridNums[y1][x1])
-			+ gridNums[y2][x2] );
-		if (ansTemp === ans)
-		{
-			arrAns = [x, y, dir, 1];
-			return true;
-		}
-		ansTemp = ( (gridNums[y][x] * gridNums[y1][x1])
-			- gridNums[y2][x2] );
-		if (ansTemp === ans)
-		{
-			arrAns = [x, y, dir, -1];
-			return true;
-		}
-		return false;
-	}
+        let ansTemp = ( (gridNums[y][x] * gridNums[y1][x1])
+            + gridNums[y2][x2] );
+        if (ansTemp === ans)
+        {
+            arrAns = [x, y, dir, 1];
+            return true;
+        }
+        ansTemp = ( (gridNums[y][x] * gridNums[y1][x1])
+            - gridNums[y2][x2] );
+        if (ansTemp === ans)
+        {
+            arrAns = [x, y, dir, -1];
+            return true;
+        }
+        return false;
+    }
 
-	let guess = -1,
-		reset = true,
-		right = false,
-		eq = '';
-	//1. Try all directions to see if answer can be found centred at given coordinates
-	for (let dir = 0; dir < 8; ++dir)
-	{
-		if (foundAnswer(x, y, dir))
-		{
-			right = true;
-			q = arrAns;
-			if (eq.length > 0)
-				eq = eq + ' = ';
-			eq += showAnswer(!reset);
-			reset = false;
-			//break;
-		}
-	}
+    let guess = -1,
+        reset = true,
+        right = false,
+        eq = '';
+    //1. Try all directions to see if answer can be found centred at given coordinates
+    for (let dir = 0; dir < 8; ++dir)
+    {
+        if (foundAnswer(x, y, dir))
+        {
+            right = true;
+            q = arrAns;
+            if (eq.length > 0)
+                eq = eq + ' = ';
+            eq += showAnswer(!reset);
+            reset = false;
+            //break;
+        }
+    }
 
-	//1. Update score
-	if (right)
-	{
-		++correct;
-		++streak;
-	}
-	else
-	{
-		curQnEverWrong = true;
-		++wrong;
-		streak = 0;
-	}
-	$('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
-	if (streak > 1)
-	{
-		$('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
-		//if (streak >= 10) console.log('big streak!');
-	}
+    //1. Update score
+    if (right)
+    {
+        ++correct;
+        ++streak;
+    }
+    else
+    {
+        curQnEverWrong = true;
+        ++wrong;
+        streak = 0;
+    }
+    $('#divScore')[0].innerHTML = `Score: ${correct} &#9989; ${wrong} &#10060;`;
+    if (streak > 1)
+    {
+        $('#divScore')[0].innerHTML += `<br><span style='font-size:100%'>&#128513;Streak of ${streak}</span>`;
+        //if (streak >= 10) console.log('big streak!');
+    }
 
-	//allow answering until correct
-	if (right)
-	{
-		qnAvail = false;
-		$("#giveup").attr("disabled", true);
-		$('#divWrong')[0].innerHTML = `&#9989; You've found it (${eq} = ${ans}) @ ${String.fromCharCode(65+x)}${MAX-y} &#128513;`;
-		newQn();
-		return;
-	}
-	//else inform of mistake and let player try again
-	$('#divWrong')[0].innerHTML = `&#10060; Cannot find answer (${ans}) at ${String.fromCharCode(65+x)}${MAX-y}. Try again. [PS: Top left corner is (0, 0)]`;
+    //allow answering until correct
+    if (right)
+    {
+        qnAvail = false;
+        $("#giveup").attr("disabled", true);
+        $('#divWrong')[0].innerHTML = `&#9989; You've found it (${eq} = ${ans}) @ ${String.fromCharCode(65+x)}${MAX-y} &#128513;`;
+        newQn();
+        return;
+    }
+    //else inform of mistake and let player try again
+    $('#divWrong')[0].innerHTML = `&#10060; Cannot find answer (${ans}) at ${String.fromCharCode(65+x)}${MAX-y}. Try again.`;
 }
 
 const GRID_COLOURS = ['#009de0', '#8c8c8c'];
 
 function resetGridColours()
 {
-	let z = 0;
-	for (let r = 0; r < MAX; ++r)
-	{
-		for (let c = 0; c < MAX; ++c)
-		{
-			let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
-			$(`#c${c}r${r}`).css('background', colour);
-		}
-	}
+    let z = 0;
+    for (let r = 0; r < MAX; ++r)
+    {
+        for (let c = 0; c < MAX; ++c)
+        {
+            let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
+            $(`#c${c}r${r}`).css('background', colour);
+        }
+    }
 }
 
 function newGrid()
 {
-	const grid = $('#divGrid')[0];
-	grid.innerHTML = '';
-	let s = '<table><colgroup>',
-		row;
-	for (let c = 0; c < MAX; ++c)
-	{
-		s += '<col>';
-	}
-  	s += '</colgroup><tbody>';
-  	gridNums = [];
-  	let z = 0;
-	for (let r = 0; r < MAX; ++r)
-	{
-		s += '<tr>';
-		gridNums[r] = row = [];
-		for (let c = 0; c < MAX; ++c)
-		{
-			const v = randInt1to9();
-			row[c] = v;
-			let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
-			s += `<td id='c${c}r${r}' style='background:${colour}' onclick='checkAnswer(${c},${r}); return false;'><span href=''>${v}</span></td>`;
-		}
-		s += '</tr>\n';
-	}
-	s += '</tbody></table>';
-	grid.innerHTML = s;
-	newQn();
+    const grid = $('#divGrid')[0];
+    grid.innerHTML = '';
+    let s = '<table><colgroup>',
+        row;
+    for (let c = 0; c < MAX; ++c)
+    {
+        s += '<col>';
+    }
+    s += '</colgroup><tbody>';
+    gridNums = [];
+    let z = 0;
+    for (let r = 0; r < MAX; ++r)
+    {
+        s += '<tr>';
+        gridNums[r] = row = [];
+        for (let c = 0; c < MAX; ++c)
+        {
+            const v = randInt1to9();
+            row[c] = v;
+            let colour = GRID_COLOURS[(++z + (r % 2)) % 2];
+            s += `<td id='c${c}r${r}' style='background:${colour}' onclick='checkAnswer(${c},${r}); return false;'><span href=''>${v}</span></td>`;
+        }
+        s += '</tr>\n';
+    }
+    s += '</tbody></table>';
+    grid.innerHTML = s;
+    newQn();
 }
 
 function load()
 {
-	newGrid();
-	newQn();
+    newGrid();
+    newQn();
 }
 </script>
 
@@ -411,32 +411,32 @@ Find: <span id='divQn'>88</span></span>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id='reset' type="submit" value="Reset Grid" onclick='newGrid();'></input>
 <table class="noborder" style="table-layout:auto">
 <tr>
-	<td class='noborder'>10</td>
-	<td class='noborder' colspan="10" rowspan="10">
-		<span id='divGrid'>(grid of numbers here)</span>
-	</td>
+    <td class='noborder'>10</td>
+    <td class='noborder' colspan="10" rowspan="10">
+        <span id='divGrid'>(grid of numbers here)</span>
+    </td>
 </tr>
-			<tr><td class='noborder'>9</td></tr>
-			<tr><td class='noborder'>8</td></tr>
-			<tr><td class='noborder'>7</td></tr>
-			<tr><td class='noborder'>6</td></tr>
-			<tr><td class='noborder'>5</td></tr>
-			<tr><td class='noborder'>4</td></tr>
-			<tr><td class='noborder'>3</td></tr>
-			<tr><td class='noborder'>2</td></tr>
-			<tr><td class='noborder'>1</td></tr>
+            <tr><td class='noborder'>9</td></tr>
+            <tr><td class='noborder'>8</td></tr>
+            <tr><td class='noborder'>7</td></tr>
+            <tr><td class='noborder'>6</td></tr>
+            <tr><td class='noborder'>5</td></tr>
+            <tr><td class='noborder'>4</td></tr>
+            <tr><td class='noborder'>3</td></tr>
+            <tr><td class='noborder'>2</td></tr>
+            <tr><td class='noborder'>1</td></tr>
 <tr>
-	<td class='noborder top_right'></td>
-	<td class='noborder top_right'>A</td>
-	<td class='noborder top_right'>B</td>
-	<td class='noborder top_right'>C</td>
-	<td class='noborder top_centre'>D</td>
-	<td class='noborder top_centre'>E</td>
-	<td class='noborder top_centre'>F</td>
-	<td class='noborder top_left'>G</td>
-	<td class='noborder top_left'>H</td>
-	<td class='noborder top_left'>I</td>
-	<td class='noborder top_left'>J</td>
+    <td class='noborder top_right'></td>
+    <td class='noborder top_right'>A</td>
+    <td class='noborder top_right'>B</td>
+    <td class='noborder top_right'>C</td>
+    <td class='noborder top_centre'>D</td>
+    <td class='noborder top_centre'>E</td>
+    <td class='noborder top_centre'>F</td>
+    <td class='noborder top_left'>G</td>
+    <td class='noborder top_left'>H</td>
+    <td class='noborder top_left'>I</td>
+    <td class='noborder top_left'>J</td>
 </tr>
 </table>
 <!--
