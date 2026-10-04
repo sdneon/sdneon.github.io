@@ -193,7 +193,7 @@ function copyGameCode()
 function playerString(playerId)
 {
     playerId ??= who;
-    return `<font color='${PLAYER_COLORS[playerId]}'>${movePlayerIcon()}&nbsp;${PLAYERS[playerId]}</font>`;
+    return `<font color='${PLAYER_COLORS[playerId]}'>${movePlayerIcon(playerId)}&nbsp;${PLAYERS[playerId]}</font>`;
 }
 
 function stringCardsCode(newCardsCode)
@@ -1529,6 +1529,7 @@ function newGameBoard()
     updateGameCode();
 
     //5c. Place remaining cards in cardsDeck
+    cardsDeck = []; //start afresh! else cards of the last game stay on, even those that are now the answers
     for (i = 0; i < CARD_NAMES.length; ++i)
     {
         if ((i === answers[0]) || (i === answers[1]) || (i === answers[2]))
@@ -2380,10 +2381,225 @@ function createPlayerData(i)
     }
 }
 
+/*
+Check a saved game for things that cannot be, and fix them where possible (in the given gameData itself).
+Checks:
+  1. Answers are 1 person, 1 weapon & 1 room; and the 3 card holders hold those very cards. Cannot be fixed.
+  2. Players' hands: no card that is in a card holder, no unknown card, no card held twice.
+     A player who held (or noted as seen) a card that is in a card holder was misled by it;
+     so that 'seen' note and the conclusions drawn are forgotten.
+  3. Spare Murder cards deck: only cards that are nowhere else, each once; cards that are nowhere are put back in.
+     I.e. each card is in exactly 1 place: a card holder, a player's hand, or the spare deck.
+  4. Flaps that players have noted as seen, are what is really under those flaps.
+  5. The player whose turn it is, is in the game.
+Note: fixes & errors name cards, so they are for the console only; never show them on the page.
+@param gameData (object) saved game, as parsed from localStorage.savedGame
+@retval {
+    ok: false if the game cannot be restored (see errors),
+    fixes: [string] what was wrong and has been fixed,
+    errors: [string] what is wrong and cannot be fixed
+  }
+*/
+function checkSavedGameIntegrity(gameData)
+{
+    const fixes = [],
+        errors = [],
+        numCards = CARD_NAMES.length,
+        num = (numCards / 3) | 0,
+        HOLDERS = ['Beige', 'Green', 'Black'];
+    let i;
+
+    //1. Answers & card holders
+    const { answers, cardHolders } = gameData;
+    if (!Array.isArray(answers) || (answers.length !== 3) || !Array.isArray(cardHolders) || (cardHolders.length !== 3))
+    {
+        errors.push('The answers, or the cards in the card holders, are missing.');
+    }
+    else
+    {
+        for (i = 0; i < 3; ++i)
+        {
+            if ((CARD_NAMES[answers[i]] === undefined) || (((answers[i] / num) | 0) !== i))
+            {
+                errors.push(`Answer #${i + 1} is not a ${CARD_TYPES[i]} card.`);
+            }
+            else if (cardHolders.indexOf(answers[i]) < 0)
+            {
+                errors.push(`${CARD_NAMES[answers[i]]} is an answer, but is not in any card holder.`);
+            }
+        }
+    }
+    if (errors.length > 0)
+    {
+        return { ok: false, fixes, errors };
+    }
+
+    if (!Array.isArray(gameData.playersData))
+    {
+        gameData.playersData = [];
+        fixes.push(`Players' notes were missing; started afresh.`);
+    }
+    for (i = 0; i < PLAYERS.length; ++i)
+    {
+        const data = gameData.playersData[i] || {};
+        data.notepad ??= {};
+        data.clues ??= {};
+        data.clues.cardHolders ??= [ [-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1] ];
+        data.clues.cardsSeen ??= {};
+        gameData.playersData[i] = data;
+    }
+
+    //player was misled by a card that is actually in a card holder: forget it, and what was concluded
+    function forget(playerId, card)
+    {
+        const { notepad, clues } = gameData.playersData[playerId];
+        delete clues.cardsSeen[card];
+        delete clues.lastResults;
+        notepad[`#p1${(card / num) | 0}${card % num}`] = false;
+        for (let j = 0; j < 3; ++j)
+        {
+            notepad[`#detNoteCardHolder${j}`] = 'Unknown';
+            notepad[`#select${j}`] = 'Unknown';
+        }
+    }
+
+    //2. Players' hands
+    const where = {}; //cardId: 'holder', 'deck', or ID of player holding it
+    answers.forEach((card) => {
+        where[card] = 'holder';
+    });
+    if (!Array.isArray(gameData.playerCardDecks))
+    {
+        gameData.playerCardDecks = [];
+        fixes.push(`Players' Murder cards were missing; all are put back in the spare deck.`);
+    }
+    for (i = 0; i < PLAYERS.length; ++i)
+    {
+        const hand = Array.isArray(gameData.playerCardDecks[i])? gameData.playerCardDecks[i]: [],
+            kept = [],
+            name = PLAYERS[i];
+        hand.forEach((card) => {
+            if (CARD_NAMES[card] === undefined)
+            {
+                fixes.push(`${name} held an unknown card (#${card}); removed.`);
+            }
+            else if (where[card] === 'holder')
+            {
+                fixes.push(`${name} held the Murder card <b>${CARD_NAMES[card]}</b>, which is in a card holder! Removed; and what ${name} concluded from it is forgotten.`);
+                forget(i, card);
+            }
+            else if (where[card] !== undefined)
+            {
+                fixes.push(`${CARD_NAMES[card]} was held twice; removed from ${name}.`);
+            }
+            else
+            {
+                where[card] = i;
+                kept.push(card);
+            }
+        });
+        gameData.playerCardDecks[i] = kept;
+
+        //may have had such a card before, and passed it on
+        Object.keys(gameData.playersData[i].clues.cardsSeen).forEach((card) => {
+            card = parseInt(card, 10);
+            if (where[card] === 'holder')
+            {
+                fixes.push(`${name} had noted the Murder card <b>${CARD_NAMES[card]}</b> as seen, but it is in a card holder! Forgotten, with what was concluded from it.`);
+                forget(i, card);
+            }
+        });
+    }
+
+    //3. Spare Murder cards deck
+    const deck = [],
+        missing = [];
+    let numRemoved = 0;
+    (Array.isArray(gameData.cardsDeck)? gameData.cardsDeck: []).forEach((card) => {
+        if ((CARD_NAMES[card] === undefined) || (where[card] !== undefined))
+        {
+            ++numRemoved;
+            return;
+        }
+        where[card] = 'deck';
+        deck.push(card);
+    });
+    if (numRemoved > 0)
+    {
+        fixes.push(`Spare Murder cards deck had ${numRemoved} card(s) too many: copies of cards, or cards that are in a card holder or a player's hand. Removed.`);
+    }
+    for (i = 0; i < numCards; ++i)
+    {
+        if (where[i] === undefined)
+        {
+            missing.push(i);
+        }
+    }
+    if (missing.length > 0)
+    {
+        shuffle(missing);
+        deck.push(...missing);
+        fixes.push(`${missing.length} Murder card(s) were nowhere to be found; put back in the spare deck.`);
+    }
+    gameData.cardsDeck = deck;
+
+    //4. Flaps seen by players
+    for (i = 0; i < PLAYERS.length; ++i)
+    {
+        const { notepad, clues } = gameData.playersData[i];
+        for (let h = 0; h < 3; ++h)
+        {
+            const flaps = Array.isArray(clues.cardHolders[h])? clues.cardHolders[h]: [-1,-1,-1,-1];
+            clues.cardHolders[h] = flaps;
+            for (let f = 0; f < 4; ++f)
+            {
+                const actual = (CARD_CODES[cardHolders[h]] >> (24 - (f * 8))) & 0xff;
+                if ((flaps[f] > 0) && (flaps[f] !== actual))
+                {
+                    flaps[f] = actual;
+                    delete clues.lastResults;
+                    notepad[`#select_${h}_${f}`] = ELEMENT_MAP2[actual];
+                    fixes.push(`${PLAYERS[i]}'s note of the ${CARD_HOLDER_FLAP[f]} flap of the ${HOLDERS[h]} card holder was wrong; corrected.`);
+                }
+            }
+        }
+    }
+
+    //5. Whose turn
+    gameData.ignoredPlayers ??= {};
+    if ((PLAYERS[gameData.who] === undefined) || gameData.ignoredPlayers[gameData.who])
+    {
+        for (i = 0; (i < PLAYERS.length) && gameData.ignoredPlayers[i]; ++i);
+        if (i >= PLAYERS.length)
+        {
+            errors.push('There are no players in the game.');
+            return { ok: false, fixes, errors };
+        }
+        gameData.who = i;
+        fixes.push(`It was the turn of a player who is not in the game; ${PLAYERS[i]} is to go instead.`);
+    }
+
+    return { ok: true, fixes, errors };
+}
+
 function restoreSavedGame()
 {
     const gameData = JSON.parse(localStorage.savedGame);
     let i;
+
+    const integrity = checkSavedGameIntegrity(gameData);
+    //details of faults go to the console only: they name cards, so would give away answers or clues on the page!
+    if (!integrity.ok)
+    {
+        console.log('Saved game is damaged and cannot be restored:', integrity.errors);
+        showStatus('&#9888;&#65039; Saved game is damaged and cannot be restored');
+        return;
+    }
+    if (integrity.fixes.length > 0)
+    {
+        localStorage.savedGame = JSON.stringify(gameData); //keep it fixed
+        console.log('Saved game had faults, now fixed:', integrity.fixes);
+    }
 
     //remove all items
     $('td').removeClass('cell_occupied cell_clue_counter cell_clue_counter_dummy pulsate cell_has_weapon');
@@ -2509,7 +2725,7 @@ function restoreSavedGame()
 
     //showWhoseTurn(true);
     nextPlayer(false, true);
-    showStatus('Game restored');
+    showStatus((integrity.fixes.length > 0)? 'Game fixed and restored': 'Game restored');
 }
 
 function saveGame()

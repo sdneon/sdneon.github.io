@@ -779,10 +779,11 @@ function moveShowPanel(s)
     $('#divMovePlan')[0].innerHTML = s;
 }
 
-//@retval HTML of current player's token at half size; heads the messages about the player
-function movePlayerIcon()
+//@param playerId (number) optional; default: current player
+//@retval HTML of the player's token at half size; heads the messages about the player
+function movePlayerIcon(playerId)
 {
-    return `<span class='move_player_icon cell_player_${who}'></span>`;
+    return `<span class='move_player_icon cell_player_${playerId ?? who}'></span>`;
 }
 
 //@retval e.g. 'Mrs White (Weak AI)'
@@ -1739,6 +1740,12 @@ function moveInstallHooks()
         clearMovePlan();
         moveSetAiPlayers(JSON.parse(localStorage.savedGame).aiPlayers || {});
         gameRestoreSavedGame();
+        //no rolling by itself right after a restore: the next message would wipe what the game says of the restore
+        //(e.g. faults fixed in the saved game) before human player has read it
+        if (moveAiLevel(who))
+        {
+            moveAutoInterrupt();
+        }
         moveUpdateSparkles();
         moveUpdateSwirl();
     };
