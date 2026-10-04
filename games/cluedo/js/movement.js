@@ -1554,7 +1554,7 @@ function moveSetupPlayersTable()
         td.empty();
         td.append(`<div class='player_pick'>
                 <div class='player_pick_opts'>
-                    <span data-tooltip-position='${(i!==0)?'top':'right'}' data-tooltip='Computer makes the moves of this player'>
+                    <span data-tooltip-position='${(i!==0)?'top':'top-right'}' data-tooltip='Computer makes the moves of this player'>
                         <input type='checkbox' class='big_checkbox checkbox_ai' id='cb_ai_${i}' name='cb_ai_${i}' onclick='updateAiSelection(${i});'>
                         <label for='cb_ai_${i}' class='player_pick_ai'>AI</label></span>
                 </div>

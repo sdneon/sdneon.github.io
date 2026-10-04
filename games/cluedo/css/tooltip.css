@@ -101,3 +101,18 @@
     display: block;
     z-index: 50;
 }
+
+[data-tooltip-position="top-right"]:before {
+    bottom: 100%;
+    margin-bottom: 6px;
+    left: 50%;
+    margin-left: 6px;
+}
+
+[data-tooltip-position="top-right"]:after {
+    bottom: 100%;
+    left: 70%;
+    border-width: 0 6px 6px 0;
+    border-top-color: #000;
+    border-right-color: #000;
+}

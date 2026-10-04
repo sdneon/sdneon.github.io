@@ -193,7 +193,7 @@ function copyGameCode()
 function playerString(playerId)
 {
     playerId ??= who;
-    return `<font color='${PLAYER_COLORS[playerId]}'>${PLAYERS[playerId]}</font>`;
+    return `<font color='${PLAYER_COLORS[playerId]}'>${movePlayerIcon()}&nbsp;${PLAYERS[playerId]}</font>`;
 }
 
 function stringCardsCode(newCardsCode)
@@ -3518,11 +3518,11 @@ function createDetectiveCard()
             <tr>
             </tr>
             <tr>
-                <td><span data-tooltip-position='top' data-tooltip='maybe this?'>&#10004;</span></td>
-                <td><span data-tooltip-position='top' data-tooltip='I have this card'>&#x270B;</span></td>
-                <td style='background:#d0d09e; border-left: 2px solid black;'><span data-tooltip-position='top' data-tooltip='maybe in Beige card holder'>Be</span></td>
-                <td style='background:green; color:white;'><span data-tooltip-position='top' data-tooltip='maybe in Green card holder'>G</span></td>
-                <td style='background:black; color:white; border-right: 2px solid black;'><span data-tooltip-position='top' data-tooltip='maybe in Black card holder'>Bk</span></td>
+                <td><span data-tooltip-position='top-right' data-tooltip='maybe this?'>&#10004;</span></td>
+                <td><span data-tooltip-position='top-right' data-tooltip='I have this card'>&#x270B;</span></td>
+                <td style='background:#d0d09e; border-left: 2px solid black;'><span data-tooltip-position='top-right' data-tooltip='maybe in Beige card holder'>Be</span></td>
+                <td style='background:green; color:white;'><span data-tooltip-position='top-right' data-tooltip='maybe in Green card holder'>G</span></td>
+                <td style='background:black; color:white; border-right: 2px solid black;'><span data-tooltip-position='top-right' data-tooltip='maybe in Black card holder'>Bk</span></td>
                 <td colspan='3'>
                     Most likely: <select id='detNoteSheet${i}'>
                         <option value="Unknown">(Unknown)</option>

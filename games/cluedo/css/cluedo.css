@@ -961,7 +961,7 @@ button:hover, button:active {
 .player_pick_ai
 {
     position: relative;
-    top: -16px;
+    top: 10px;
 }
 
 .checkbox_ai

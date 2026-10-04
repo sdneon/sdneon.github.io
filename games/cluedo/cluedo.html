@@ -188,15 +188,15 @@
         <tr>
             <td style='border:solid 0 #000; border-left-width:2px; border-bottom-width:2px' colspan='2'>
                 <input id='radDetectiveSmartEasy' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);' checked>
-                <label for='radDetectiveSmartEasy'><span data-tooltip-position='left' data-tooltip='clues in 4 corners like card'>Smart Easy</span></label>
+                <label for='radDetectiveSmartEasy'><span data-tooltip-position='top-right' data-tooltip='clues in 4 corners like card'>Smart Easy</span></label>
             </td>
             <td style='border:solid 0 #000; border-bottom-width:2px;' colspan='2'>
                 <input id='radDetectiveSmart' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
-                <label for='radDetectiveSmart'><span data-tooltip-position='left' data-tooltip='clues in a row: top left clue, bottom-right clue, top-right, bottom-left'>Smart</span></label>
+                <label for='radDetectiveSmart'><span data-tooltip-position='top-right' data-tooltip='clues in a row: top left clue, bottom-right clue, top-right, bottom-left'>Smart</span></label>
             </td>
             <td style='border:solid 0 #000; border-bottom-width:2px; border-right-width:2px;' colspan='2'>
                 <input id='radDetectiveHardwork' type='radio' class='chngRadio' name='radDetective' onclick='refreshDetNotes(true);'>
-                <label for='radDetectiveHardwork'><span data-tooltip-position='left' data-tooltip='clues in a row, without tallying to card corners at all'>Hard</span></label>
+                <label for='radDetectiveHardwork'><span data-tooltip-position='top-right' data-tooltip='clues in a row, without tallying to card corners at all'>Hard</span></label>
             </td>
         </tr>
     </table>
@@ -272,34 +272,43 @@
 <input type="checkbox" id="option_hint_clue_num" name="option_hint_clue_num" value="option_hint_clue_num"
      onclick='setShowClueNum(this.checked);'>
 <label for="option_hint_clue_num"> Reveal clue counters' numbers</label><br>
-<span data-tooltip-position='bottom' data-tooltip='Players will be added/removed live. Tick AI for computer to make the moves of a player.'><b>Players</b></span>:
+<span data-tooltip-position='top-right' data-tooltip='Players will be added/removed live. Tick AI for computer to make the moves of a player.'><b>Players</b></span>:
   <table><tr><td style='background:yellow'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_0" name="cb_player_0" value="0" onclick='updatePlayersSelection(0);'>
-    <label for='cb_player_0'><img src='images/token-yellow.png' alt='Player 1: Col Mustard' style='width: 100px;'></label>
+    <span data-tooltip-position='top-right' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_0" name="cb_player_0" value="0" onclick='updatePlayersSelection(0);'>
+      <label for='cb_player_0'><img src='images/token-yellow.png' alt='Player 1: Col Mustard' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:red'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_1" name="cb_player_1" value="1" onclick='updatePlayersSelection(1);'>
-    <label for='cb_player_1'><img src='images/token-red.png' alt='Player 2: Ms Scarlett' style='width: 100px;'></label>
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_1" name="cb_player_1" value="1" onclick='updatePlayersSelection(1);'>
+      <label for='cb_player_1'><img src='images/token-red.png' alt='Player 2: Ms Scarlett' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:brown'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_2" name="cb_player_2" value="2" onclick='updatePlayersSelection(2);'>
-    <label for='cb_player_2'><img src='images/token-brown.png' alt='Player 3: Capt Brown' style='width: 100px;'></label>&nbsp;
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_2" name="cb_player_2" value="2" onclick='updatePlayersSelection(2);'>
+      <label for='cb_player_2'><img src='images/token-brown.png' alt='Player 3: Capt Brown' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:white'>
-    <input type="checkbox" class='big_checkbox' checked id="cb_player_3" name="cb_player_3" value="3" onclick='updatePlayersSelection(3);'>
-    <label for='cb_player_3'><img src='images/token-white.png' alt='Player 4: Mrs White' style='width: 100px;'></label>&nbsp;
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' checked id="cb_player_3" name="cb_player_3" value="3" onclick='updatePlayersSelection(3);'>
+      <label for='cb_player_3'><img src='images/token-white.png' alt='Player 4: Mrs White' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:gray'>
-    <input type="checkbox" class='big_checkbox' checked id="cb_player_4" name="cb_player_4" value="4" onclick='updatePlayersSelection(4);'>
-    <label for='cb_player_4'><img src='images/token-gray.png' alt='Player 5: Mr Slate-Gray' style='width: 100px;'></label>&nbsp;
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' checked id="cb_player_4" name="cb_player_4" value="4" onclick='updatePlayersSelection(4);'>
+      <label for='cb_player_4'><img src='images/token-gray.png' alt='Player 5: Mr Slate-Gray' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:green'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_5" name="cb_player_5" value="5" onclick='updatePlayersSelection(5);'>
-    <label for='cb_player_5'><img src='images/token-green.png' alt='Player 6: Reverend Green' style='width: 100px;'></label>&nbsp;
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_5" name="cb_player_5" value="5" onclick='updatePlayersSelection(5);'>
+      <label for='cb_player_5'><img src='images/token-green.png' alt='Player 6: Reverend Green' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:purple'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_6" name="cb_player_6" value="6" onclick='updatePlayersSelection(6);'>
-    <label for='cb_player_6'><img src='images/token-purple.png' alt='Player 7: Professor Plum' style='width: 100px;'></label>&nbsp;
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_6" name="cb_player_6" value="6" onclick='updatePlayersSelection(6);'>
+      <label for='cb_player_6'><img src='images/token-purple.png' alt='Player 7: Professor Plum' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:blue'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_7" name="cb_player_7" value="7" onclick='updatePlayersSelection(7);'>
-    <label for='cb_player_7'><img src='images/token-blue.png' alt='Player 8: Mrs Peacock' style='width: 100px;'></label>
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_7" name="cb_player_7" value="7" onclick='updatePlayersSelection(7);'>
+      <label for='cb_player_7'><img src='images/token-blue.png' alt='Player 8: Mrs Peacock' style='width: 100px;'></label>&nbsp;</span>
   </td><td style='background:pink'>
-    <input type="checkbox" class='big_checkbox' id="cb_player_8" name="cb_player_8" value="8" onclick='updatePlayersSelection(8);'>
-    <label for='cb_player_8'><img src='images/token-pink.png' alt='Player 9: Ms Peach' style='width: 100px;'></label>
+    <span data-tooltip-position='top' data-tooltip='Add this player'>
+      <input type="checkbox" class='big_checkbox' id="cb_player_8" name="cb_player_8" value="8" onclick='updatePlayersSelection(8);'>
+      <label for='cb_player_8'><img src='images/token-pink.png' alt='Player 9: Ms Peach' style='width: 100px;'></label>&nbsp;</span>
   </td></tr></table>
 <br>
 <button onclick="resetOptions();" class='button_final'>Reset Options</button>
