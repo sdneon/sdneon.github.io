@@ -3667,6 +3667,7 @@ const RULES = `
 </li>
 </ul>
 </li>
+<li class="toclevel-1 tocsection-3"><a href="#Credits"><span class="tocnumber">3</span> <span class="toctext">Credits</span></a>
 </ul>
 </div>
 <h2><span class="mw-headline" id="Set_up">Set up</span></h2>
@@ -3762,7 +3763,7 @@ const RULES = `
 <h3><span class="mw-headline" id="Secret_Passages">Secret Passages</span></h3>
 <p>Underneath Tudor Close there is a maze of secret passages enabling players to take short cuts around the house. The secret passages can be entered or left through any of the ten staircases (one in the centre of the board and one in each room of the house). Moves can be made in one of the following ways:
 </p>
-<ol><li>Players may move from one staircase to another during the course of one turn (the distance between two staircases is one space). <b>Recommend:</b> Count each move onto a stair as 1 space. Stairs in the middle of the board count as 3 separate stairs/spaces. Tip: use up excess dice throw points by jumping stairs a few times.</li>
+<ol><li>Players may move from one staircase to another during the course of one turn (the distance between two staircases is one space). <b>Recommend:</b> Count each move onto a stair as 1 space. Stairs in the middle of the board count as 2 separate stairs/spaces. Tip: use up excess dice throw points by jumping stairs a few times.</li>
 <li>Players may move onto a staircase and stop there until their next turn. (An exact throw is not needed to do this). This staircase is then blocked until that player's next turn.</li>
 <li>Players may move from one staircase to another and stop on the second staircase until their next turn. Again, an exact throw is not needed and the staircase is then blocked until that player's next turn.</li></ol>
 <p>If at the start of any players turn they are occupying a staircase space they must state where they are moving to before throwing the dice. Players moving from the cellar staircase have the choice of starting from either of the two adjacent spaces. <b>Recommend:</b> For easier gameplay, let players go anywhere from the stairs, without prior declaration.
@@ -3778,6 +3779,10 @@ const RULES = `
 </p>
 <h4><span class="mw-headline" id="In_web_based_game">In a web-based game</span></h4>
 <p><i><b>Recommend</b></i>: The computer checks the player's accusation instead of of the player themselves. Thus, if the accusation is wrong, that player may be allowed to resume play and to try to solve the mystery. Game then continue as normal.
+</p>
+<h4><span class="mw-headline" id="Credits">Credits</span></h4>
+<p>Thanks to Anthony E. Pratt for inventing the original game, and publishers: Waddingtons & Hasbro =)<br>
+Sleuthing logic and digitization by David (Neon) =D and movement AI by Claude Code.
 </p>
 </div>`;
 

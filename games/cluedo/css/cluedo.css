@@ -773,19 +773,19 @@ body {
 
 .card_holder_0
 {
-	border: 10px groove #d0d09e;
+    border: 10px groove #d0d09e;
     background-color: #d0d09e;
 }
 
 .card_holder_1
 {
-	border: 10px groove darkgreen;
+    border: 10px groove darkgreen;
     background-color: darkgreen;
 }
 
 .card_holder_2
 {
-	border: 10px groove darkgray;
+    border: 10px groove darkgray;
     background-color: black;
 }
 
@@ -956,4 +956,15 @@ button:hover, button:active {
 .button_final
 {
     background: pink;
+}
+
+.player_pick_ai
+{
+    position: relative;
+    top: -16px;
+}
+
+.checkbox_ai
+{
+    margin-left: 0px;
 }

@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="css/dice.css">
 <link rel="stylesheet" href="css/deck.css">
 <link rel="stylesheet" href="css/tooltip.css">
+<link rel="stylesheet" href="css/movement.css">
 <script src="js/jquery.min.js"></script>
 <script src="js/winbox.bundle.min.js"></script>
 <script src="js/dice.js"></script>
@@ -13,10 +14,12 @@
 <script src="js/shuffle.js"></script>
 <script src="js/board.js"></script>
 <script src='js/cluedo.min.js'></script>
+<script src="js/movement.js"></script>
 </head>
 <body>
 <h1>Super Cluedo Challenge board game <span data-tooltip-position='bottom' data-tooltip='Who smashed my birthday cake? 谁砸了我的生日蛋糕？'>妙探寻凶 超级版 (beta)</span></h1>
 <div id='divStatus'></div>
+<div id='divMovePlan'></div>
 <!--
 <div style='display:flex'>
     <div class="dice-container"></div>
@@ -48,6 +51,8 @@
                             <button onclick='gotoNotes();'>(goto Notes)</button></span>
                         <span data-tooltip='Cheat!: Give 5 free Murder Cards' data-tooltip-position='bottom'>
                             <button onclick='gimme5MurCards();' class='button_final'>Gimme 5!</button></span>
+                        <span data-tooltip='Let computer work out a move for the dice rolled, and show it in shoeprints for you to accept' data-tooltip-position='bottom'>
+                            <button onclick='suggestMove();' class='button_ai'>Suggest Move</button></span>
                     </td>
                 </tr>
             </table>
@@ -251,7 +256,15 @@
 <span data-tooltip-position='right' data-tooltip='Auto-pick/open cards. E.g. when getting Murder Cards from other players, and getting Super Clue card.'>
 <input type="checkbox" id="option_autopick_card" name="option_autopick_card" value="option_autopick_card"
      onclick='setAutopickCard(this.checked);'>
-<label for="option_autopick_card"> Auto-pick card</label><br></span><br>
+<label for="option_autopick_card"> Auto-pick card</label><br></span>
+<span data-tooltip-position='right' data-tooltip='Computer player movement: rules let players move over clue counters. Untick to have clue counters block the way.'>
+<input type="checkbox" id="option_move_pass_counters" name="option_move_pass_counters" value="option_move_pass_counters"
+     checked onclick='setMovePassOverClueCounters(this.checked);'>
+<label for="option_move_pass_counters"> Suggested moves may pass over clue counters</label><br></span>
+<span data-tooltip-position='right' data-tooltip='Debug: show all the route options of a computer player, to pick from. Untick to be shown only the route it chose, to accept.'>
+<input type="checkbox" id="option_move_show_all" name="option_move_show_all" value="option_move_show_all"
+     checked onclick='setMoveShowAllRoutes(this.checked);'>
+<label for="option_move_show_all"> Show all route options of AI players (debug)</label><br></span><br>
 <b>Cheats</b>:<br>
 <input type="checkbox" id="option_allow_peeks" name="option_allow_peeks" value="option_allow_peeks"
      onclick='setAllowPeeks(this.checked);'>
@@ -259,7 +272,7 @@
 <input type="checkbox" id="option_hint_clue_num" name="option_hint_clue_num" value="option_hint_clue_num"
      onclick='setShowClueNum(this.checked);'>
 <label for="option_hint_clue_num"> Reveal clue counters' numbers</label><br>
-<span data-tooltip-position='bottom' data-tooltip='Players will be added/removed live'><b>Players</b></span>:
+<span data-tooltip-position='bottom' data-tooltip='Players will be added/removed live. Tick AI for computer to make the moves of a player.'><b>Players</b></span>:
   <table><tr><td style='background:yellow'>
     <input type="checkbox" class='big_checkbox' id="cb_player_0" name="cb_player_0" value="0" onclick='updatePlayersSelection(0);'>
     <label for='cb_player_0'><img src='images/token-yellow.png' alt='Player 1: Col Mustard' style='width: 100px;'></label>

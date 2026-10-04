@@ -59,7 +59,17 @@ const PLAYERS = [
     'Rev Green', //Reverend Green
     'Prof Plum', //Professor Plum
     'Mrs Peacock',
-    'Ms Peach'];
+    'Ms Peach'],
+    PLAYER_PRONOUNS = [
+    'his',
+    'her',
+    'his',
+    'her',
+    'his',
+    'his',
+    'his',
+    'her',
+    'her'];
 const PLAYER_COLORS = [
     '#aa0', 'red', 'brown',
     'black', '#333', 'green',
