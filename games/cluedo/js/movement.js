@@ -31,7 +31,10 @@ let MOVE_PASS_OVER_CLUE_COUNTERS = true,
     MOVE_AUTO_ROLL_AGAIN = true,
     //Auto-mode: AI player rolls the dice by itself at the start of its turn (after 'Next Player'), unless interrupted.
     //If false, it waits for the human player to roll for it.
-    MOVE_AUTO_ROLL_START = true;
+    MOVE_AUTO_ROLL_START = true,
+    //Auto-mode: AI player that enters a room and stops next to another player, bumps that player elsewhere (rule #13).
+    //Smart AI also goes out of its way to do so, when a weapon/ornament clue is to be had but is out of its reach.
+    MOVE_AI_BUMP = true;
 
 const MOVE_AUTO_VIEWS = 4, //auto-mode: number of routes that AI looks over before choosing
     MOVE_AUTO_VIEW_MS = 900, //time on each route looked over
@@ -69,7 +72,13 @@ const MOVE_SEARCH_BUDGET = 50000, //max spaces to try, in looking for 1 exact pa
     MOVE_REROLL_MS = 2000, //auto-mode: time its reason for re-rolling is shown, before the dice are rolled
     MOVE_ROLL_START_MS = 3000, //auto-mode: time AI player 'looks for the dice' at the start of its turn, in which it can be interrupted (see MOVE_AUTO_ROLL_START)
     MOVE_ROLL_AGAIN_MS = 2000, //auto-mode: pause before AI rolls for the other turn it got (see MOVE_AUTO_ROLL_AGAIN)
+    MOVE_SMART_BUMP_VALUE = 3, //Smart AI: worth of a space from which it can bump another player, when it is out to bump (1 more if it is a Smart AI player it is after)
+    MOVE_SMART_BUMP_SMART_CHANCE = 0.5, //Smart AI: chance (0 to 1) that it is after a Smart AI player to bump; else any player will do
+    MOVE_WEAK_BUMP_SPREAD = 4, //Weak AI: puts a bumped player on any free space outside the room, within this many steps of the nearest such
+    MOVE_AUTO_BUMP_MS = 1500, //auto-mode: time for the bumped token to fly off
     MOVE_MAX_WAIT_OPTIONS = 5; //number of 'go wait at a good space' options to offer, besides all the clues in reach
+const MOVE_ROOM_NAMES = { K: 'Kitchen', B: 'Ballroom', C: 'Conservatory', D: 'Dining Room', I: 'Billiard Room',
+    L: 'Library', O: 'Lounge', H: 'Hall', S: 'Study' }; //by the room keys of board.js
 const MOVE_AI_LEVELS = { //1st is the default
     weak: 'Weak AI',
     smart: 'Smart AI'
@@ -95,7 +104,8 @@ let moveGraph = false, //static map of which spaces connect; built once from BOA
     moveAutoLocked = false, //true once it has chosen its route
     moveAccusation = false, //'right'/'wrong' once an accusation is made; reset before each auto-play move
     moveStairsNote = '', //remarks on the AI's lapses (stairs forgotten, dummy not noticed) in the routes worked out; for the panel
-    moveGameDiceClicked; //the game's own onDiceClicked()
+    moveGameDiceClicked, //the game's own onDiceClicked()
+    moveBumpPreferSmart; //Smart AI out to bump this throw: true if it is after a Smart AI player; false if any; undefined if not out to bump
 
 //----------------------------------------------------------------------------
 // Planning (no UI in this part)
@@ -438,11 +448,40 @@ function moveSmartScorer(state)
     return (option) => {
         const look = moveOutlook(option.cell, state),
             land = option.target? option.target.value: 0;
-        return {
-            score: land + MOVE_SMART_NEXT_WEIGHT * look.next + MOVE_SMART_NEARBY_WEIGHT * look.nearby,
-            why: `land ${land} + next roll ${look.next.toFixed(1)} x ${MOVE_SMART_NEXT_WEIGHT} + nearby ${look.nearby.toFixed(1)} x ${MOVE_SMART_NEARBY_WEIGHT}`
-        };
+        let score = land + MOVE_SMART_NEXT_WEIGHT * look.next + MOVE_SMART_NEARBY_WEIGHT * look.nearby,
+            why = `land ${land} + next roll ${look.next.toFixed(1)} x ${MOVE_SMART_NEXT_WEIGHT} + nearby ${look.nearby.toFixed(1)} x ${MOVE_SMART_NEARBY_WEIGHT}`;
+        if (state.bump) //it is out to bump someone: a space to do that from is worth something
+        {
+            const others = moveBumpable(state, option.cell);
+            if (others.length > 0)
+            {
+                //a bit more, if it is after Smart AI players and one is there
+                const bump = MOVE_SMART_BUMP_VALUE + ((state.bump.preferSmart && others.some((other) => other.smart))? 1: 0);
+                score += bump;
+                why += ` + bump ${others.map((other) => PLAYERS[other.id]).join('/')} ${bump}`;
+            }
+        }
+        return { score, why };
     };
+}
+
+/*
+@retval the other players [{ id, cell, smart }] that current player could bump (rule #13) if its move ends on given space:
+those in the same room on a space next to it (diagonals count, as in the game's own check),
+and only if the move brings current player into that room. [] if none.
+*/
+function moveBumpable(state, cellId)
+{
+    const room = state.roomOf[cellId];
+    if (!room || (room === state.roomOf[state.startCell]))
+    {
+        return [];
+    }
+    const at = moveCellCoords(cellId);
+    return state.others.filter((other) => {
+        const coords = moveCellCoords(other.cell);
+        return (state.roomOf[other.cell] === room) && (Math.abs(coords[0] - at[0]) <= 1) && (Math.abs(coords[1] - at[1]) <= 1);
+    });
 }
 
 /*
@@ -606,14 +645,24 @@ function moveGatherState(fooledByDummy)
             targets[cellId] = { kind: 'counter', name: 'clue counter', value: MOVE_VALUE_COUNTER };
         }
     });
-    const start = moveSpaceOf(playerPositions[who]);
+    const start = moveSpaceOf(playerPositions[who]),
+        others = []; //the other players in the game
+    playerPositions.forEach((cellId, playerId) => {
+        if ((playerId !== who) && !ignoredPlayers[playerId])
+        {
+            others.push({ id: playerId, cell: cellId, smart: (moveAiLevel(playerId) === 'smart') });
+        }
+    });
     delete blocked[start]; //whatever player is standing on is not in own way
     return {
         start,
+        startCell: playerPositions[who],
         dice: [diceOne.val, diceTwo.val],
         blocked,
         noStop,
-        targets
+        targets,
+        others,
+        roomOf: allRoomSlots //cellId: key of the room it is in
     };
 }
 
@@ -911,9 +960,20 @@ function suggestMove()
         };
     let options;
     moveStairsNote = '';
+    moveBumpPreferSmart = undefined;
     if (level !== 'weak')
     {
         options = plan(Infinity);
+        //Smart AI: with a weapon/ornament clue to be had but out of reach this throw, it looks to bump someone instead
+        const hasSuperClue = Object.keys(state.targets).some((cell) => state.targets[cell].kind !== 'counter');
+        if (MOVE_AI_BUMP && (moveAiLevel(who) === 'smart') && hasSuperClue
+            && !options.some((option) => option.tier === MOVE_TIER_SUPER_CLUE))
+        {
+            moveBumpPreferSmart = (Math.random() < MOVE_SMART_BUMP_SMART_CHANCE);
+            state.bump = { preferSmart: moveBumpPreferSmart };
+            options = plan(Infinity);
+            moveStairsNote += ` Cannot reach the weapon/ornament clue, so out to bump ${moveBumpPreferSmart? 'a Smart AI player': 'any player'}.`;
+        }
     }
     else if (Math.random() < MOVE_WEAK_FORGET_STAIRS) //Weak AI forgets the stairs now and then, and walks instead
     {
@@ -1099,11 +1159,197 @@ function moveAutoStop()
     ++moveAutoRun;
     moveAutoBusy = false;
     moveAutoLocked = false;
-    $('#divMoveWalker, .move_take').remove();
+    $('#divMoveWalker, #divMoveBumped, .move_take, .move_cell_bubble').remove();
     $('.move_token_hidden').removeClass('move_token_hidden');
     $('.move_item_taken').removeClass('move_item_taken');
     $('.move_button_pressed').removeClass('move_button_pressed');
     moveUpdateSwirl();
+}
+
+//----------------------------------------------------------------------------
+// Bumping (rule #13): AI player that has just entered a room and stopped next to another player,
+// may put that player somewhere else on the board
+//----------------------------------------------------------------------------
+
+//@retval true if nothing is on given cell: no player, weapon, ornament nor clue counter
+function moveIsFreeCell(cellId)
+{
+    if ((placedClues[cellId] !== undefined) || (placedWeapons[cellId] !== undefined) || (placedOrns[cellId] !== undefined))
+    {
+        return false;
+    }
+    return !playerPositions.some((pos, playerId) => !ignoredPlayers[playerId] && (pos === cellId));
+}
+
+//@retval { cellId: steps } on foot (no stair jumps; only walls in the way) from the nearest of the given cells
+function moveWalkDistances(sources)
+{
+    const g = getMoveGraph(),
+        dist = {},
+        queue = [];
+    sources.forEach((cellId) => {
+        const space = moveSpaceOf(cellId);
+        if (dist[space] === undefined)
+        {
+            dist[space] = 0;
+            queue.push(space);
+        }
+    });
+    for (let i = 0; i < queue.length; ++i)
+    {
+        g.walk[queue[i]].forEach((c) => {
+            if (dist[c] === undefined)
+            {
+                dist[c] = dist[queue[i]] + 1;
+                queue.push(c);
+            }
+        });
+    }
+    return dist;
+}
+
+//@retval IDs of the other players in the same room as given player, on a space next to it (diagonals count, as in the game's check)
+function moveNextTo(playerId)
+{
+    const own = playerPositions[playerId],
+        at = moveCellCoords(own),
+        list = [];
+    playerPositions.forEach((pos, otherId) => {
+        if ((otherId === playerId) || ignoredPlayers[otherId] || !allRoomSlots[own] || (allRoomSlots[pos] !== allRoomSlots[own])) return;
+        const coords = moveCellCoords(pos);
+        if ((Math.abs(coords[0] - at[0]) <= 1) && (Math.abs(coords[1] - at[1]) <= 1))
+        {
+            list.push(otherId);
+        }
+    });
+    return list;
+}
+
+//Weak AI just puts the bumped player out of the room: any free space of the corridors & garden that is
+//within a few steps of the nearest one; be it towards the middle of the board or outwards.
+//@retval cellId; or false if there is none
+function moveBumpSpotWeak(bumpedId)
+{
+    const g = getMoveGraph(),
+        dist = moveWalkDistances([playerPositions[bumpedId]]),
+        spots = Object.keys(dist).filter((c) => !allRoomSlots[c] && !g.isStair[c] && moveIsFreeCell(c));
+    if (spots.length <= 0)
+    {
+        return false;
+    }
+    const nearest = Math.min(...spots.map((c) => dist[c])),
+        near = spots.filter((c) => dist[c] <= nearest + MOVE_WEAK_BUMP_SPREAD);
+    return near[randInt(near.length)];
+}
+
+//Smart AI puts the bumped player where it is of least use: a free space in a room with no players, or in the
+//corridors & garden, that is the most steps (on foot) from any stairs, weapon/ornament clue and clue counter.
+//@retval cellId; or false if there is none
+function moveBumpSpotSmart(bumpedId)
+{
+    const g = getMoveGraph(),
+        useful = [...g.stairs, ...Object.keys(placedClues)],
+        roomsInUse = {}; //key of room: true if a player (other than the bumped one) is in it
+    Object.keys(placedWeapons).forEach((c) => {
+        if (activeClues.indexOf(placedWeapons[c]) >= 0) useful.push(c);
+    });
+    Object.keys(placedOrns).forEach((c) => {
+        if (activeClues.indexOf(placedOrns[c] + WEAPONS.length) >= 0) useful.push(c);
+    });
+    playerPositions.forEach((pos, playerId) => {
+        if (!ignoredPlayers[playerId] && (playerId !== bumpedId) && allRoomSlots[pos])
+        {
+            roomsInUse[allRoomSlots[pos]] = true;
+        }
+    });
+    const dist = moveWalkDistances(useful),
+        spots = Object.keys(dist).filter((c) => !g.isStair[c] && !roomsInUse[allRoomSlots[c]] && moveIsFreeCell(c));
+    if (spots.length <= 0)
+    {
+        return false;
+    }
+    const furthest = Math.max(...spots.map((c) => dist[c])),
+        far = spots.filter((c) => dist[c] === furthest);
+    return far[randInt(far.length)];
+}
+
+/*
+If AI player has, by the move just made, entered a room and stopped next to other player(s), it bumps one of them:
+  > Weak AI: any one of them, to just outside the room.
+  > Smart AI: half the time any one of them, half the time a Smart AI player among them (if any); to a useless place.
+Shown on the board (bumped token flies off), then done by the game's own bumping.
+@param stopped (function) true if auto-play has been stopped
+*/
+async function moveAutoBump(player, level, stopped)
+{
+    if (!MOVE_AI_BUMP || !enteredRoom)
+    {
+        return;
+    }
+    const others = moveNextTo(player);
+    if (others.length <= 0)
+    {
+        return;
+    }
+    let pool = others;
+    if (level === 'smart')
+    {
+        const smart = others.filter((playerId) => moveAiLevel(playerId) === 'smart'),
+            preferSmart = moveBumpPreferSmart ?? (Math.random() < MOVE_SMART_BUMP_SMART_CHANCE);
+        if (preferSmart && (smart.length > 0))
+        {
+            pool = smart;
+        }
+    }
+    const bumped = pool[randInt(pool.length)],
+        spot = (level === 'weak')? moveBumpSpotWeak(bumped): moveBumpSpotSmart(bumped);
+    if (!spot)
+    {
+        return;
+    }
+
+    //show it on the board: a wicked grin from the one bumping; the bumped token flies off, dizzy
+    const own = playerPositions[player],
+        from = playerPositions[bumped],
+        at = moveCellCentre(own),
+        start = moveCellCentre(from),
+        flyer = $(`<div id='divMoveBumped' class='cell_player_${bumped}'><div class='move_bubble'>&#x1F635;</div></div>`);
+    $(`#cell${own}_container`)[0].scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    $('#divPlayingArea').append(`<div class='move_cell_bubble' style='left: ${at[0]}px; top: ${at[1]}px;'>
+        <div class='move_bubble'>&#x1F608;</div></div>`);
+    flyer.css({ left: `${start[0]}px`, top: `${start[1]}px` });
+    $('#divPlayingArea').append(flyer);
+    $(`#cell_played${from}`).addClass('move_token_hidden');
+    await moveSleep(MOVE_AUTO_BUMP_MS / 2);
+    if (stopped()) return;
+    const end = moveCellCentre(spot);
+    flyer.addClass('move_walker_jump');
+    flyer.css({ 'transition-duration': `${Math.round(MOVE_AUTO_BUMP_MS * 0.85)}ms`, left: `${end[0]}px`, top: `${end[1]}px` });
+    $(`#cell${spot}_container`)[0].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    await moveSleep(MOVE_AUTO_BUMP_MS * 1.5);
+    if (stopped()) return;
+
+    //do it by the game's own bumping: click on the player, then on where to. That replaces what the game
+    //has said of the move just made, so put that back after
+    const said = $('#divStatus')[0].innerHTML,
+        a = moveCellCoords(from),
+        b = moveCellCoords(spot);
+    $('#divMoveBumped, .move_cell_bubble').remove();
+    $('.move_token_hidden').removeClass('move_token_hidden');
+    moveGameCellClicked(a[0], a[1]);
+    if (bumpMode)
+    {
+        moveGameCellClicked(b[0], b[1]);
+    }
+    bumpMode = false;
+    $('#divStatus')[0].innerHTML = said;
+    if (playerPositions[bumped] === spot)
+    {
+        appendStatus(`${movePlayerIcon(player)} <b>${PLAYERS[player]}</b> entered the ${MOVE_ROOM_NAMES[allRoomSlots[own]]}
+            and bumped ${movePlayerIcon(bumped)} <b>${PLAYERS[bumped]}</b> out, to @ ${b[1]}, ${b[0]}.`, undefined, true);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await moveSleep(MOVE_AUTO_BUTTON_MS);
 }
 
 //Click a button of the page on behalf of the AI player, showing it as pressed for a moment
@@ -1324,6 +1570,8 @@ async function moveAutoPlay()
         if (stopped()) return;
         if (!moveAutoAnswer()) break;
     }
+    await moveAutoBump(player, level, stopped); //if it has entered a room and stopped next to another player
+    if (stopped()) return;
     if ((playerCardDecks[player].length > numCards) || (numKeys > 0)) //got Murder cards to study, or flaps to look under
     {
         const buttons = MOVE_AUTO_BUTTONS[level];

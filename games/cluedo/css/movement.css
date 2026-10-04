@@ -286,21 +286,33 @@
     transform: none;
 }
 
-/* auto-play: token walking its route */
-#divMoveWalker
+/* auto-play: token walking its route; and token of a bumped player flying off */
+#divMoveWalker, #divMoveBumped
 {
     position: absolute;
     width: 76px; height: 76px;
     margin: -38px 0 0 -38px;
     z-index: 8;
     pointer-events: none;
+    background-repeat: no-repeat;
+    background-size: 100%;
     transition: left 0.3s linear, top 0.3s linear, transform 0.3s;
 }
 
-#divMoveWalker.move_walker_jump
+#divMoveWalker.move_walker_jump, #divMoveBumped.move_walker_jump
 {
     transition: left 0.65s ease-in-out, top 0.65s ease-in-out, transform 0.3s;
     transform: scale(1.5);
+}
+
+/* auto-play: speech bubble over a space, for a token that is not out walking (the one doing the bumping) */
+.move_cell_bubble
+{
+    position: absolute;
+    width: 76px; height: 76px;
+    margin: -38px 0 0 -38px;
+    z-index: 10;
+    pointer-events: none;
 }
 
 /* auto-play: speech bubble that goes along with the walking token, saying what it is going for */

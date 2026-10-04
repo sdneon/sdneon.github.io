@@ -25,6 +25,10 @@ let who = 0, //current player
     lastPlayer = 0,
     bumpMode = false,
     bumpingWho = 0,
+    //Rule #13: true if current player has, by the move just made, entered a room and stopped in it;
+    //only then may 1 player on a space next to it be bumped. Held to for AI players only:
+    //a human player may get there by several clicks, the last of which are within the room
+    enteredRoom = false,
     remotePlay = false,
     curActionCard = false,
     cardsCollected = [],
@@ -82,6 +86,11 @@ let popupSuperClues,
     popupPlayerMurderCards,
     poupupCluesList,
     popupRules;
+
+function scrollToTop()
+{
+    $('h1')[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+}
 
 function randInt(max)
 {
@@ -330,6 +339,7 @@ function movePlayerThere(playerId, cellId)
     $(`#cell${cellId}`).addClass('cell_occupied');
     if (playerId === who)
     {
+        enteredRoom = !!allRoomSlots[cellId] && (allRoomSlots[cellId] !== allRoomSlots[lastPos]);
         $('td').removeClass('shimmer pulsate');
         cell.addClass('shimmer');
     }
@@ -561,13 +571,14 @@ function cellClicked(y, x)
         const cell = $(`#cell${cellId}`);
         if (cell.hasClass('cell_occupied'))
         {
-            showStatus(`Cannot move other player (${PLAYERS[bumpingWho]}) to occupied space @ ${x}, ${y}! Try else where!`);
+            showStatus(`Cannot move other player (${movePlayerIcon(bumpingWho)}&nbsp;${PLAYERS[bumpingWho]}) to occupied space @ ${x}, ${y}! Try else where!`);
         }
         else
         {
             movePlayerThere(bumpingWho, cellId);
-            showStatus(`Other player (${PLAYERS[bumpingWho]}) has been bumped to @ ${x}, ${y}`);
+            showStatus(`Other player (${movePlayerIcon(bumpingWho)}&nbsp;${PLAYERS[bumpingWho]}) has been bumped to @ ${x}, ${y}`);
             bumpMode = false;
+            enteredRoom = false; //only 1 player may be bumped
         }
         return;
     }
@@ -771,6 +782,12 @@ function cellClicked(y, x)
                 ownY = parseInt(coords[0], 10),
                 ownX = parseInt(coords[1], 10);
             allowBump = (Math.abs(ownX - x) <= 1) && (Math.abs(ownY - y) <= 1);
+            //AI player makes its move in 1 go, so it is known if that brought it into the room (rule #13); hold it to that.
+            //Human player may walk via multiple clicks, so `enteredRoom` flag can be wrong for them => just trust them and allow bump.
+            if ((typeof moveAiLevel === 'function') && moveAiLevel(who) && !enteredRoom)
+            {
+                allowBump = false;
+            }
         }
         if (!allowBump)
         {
@@ -785,7 +802,7 @@ function cellClicked(y, x)
                     bumpingWho = playerId;
                 }
             });
-            showStatus(`You can now bump the other player (${PLAYERS[bumpingWho]}) @ ${x}, ${y} away! Choose a new space to place them!`);
+            showStatus(`You can now bump the other player (${movePlayerIcon(bumpingWho)}&nbsp;${PLAYERS[bumpingWho]}) @ ${x}, ${y} away! Choose a new space to place them!`);
         }
         return;
     }
@@ -1217,6 +1234,7 @@ function updatePlayersSelection(playerId)
             $(`#cell_played${cellId}`).removeClass(`cell_player_${playerId}`);
             $(`#cell${cellId}`).removeClass('cell_occupied');
             showStatus(`${playerString(playerId)} has left the game.`, undefined, true);
+            scrollToTop();
         }
     }
 }
@@ -2761,6 +2779,8 @@ function nextPlayer(freshStart, dontSave)
         saveGame();
     }
     curActionCard = false;
+    bumpMode = false;
+    enteredRoom = false;
     hideAllFlaps();
     lockAllFlaps();
     if (who >= 0) $(`#cell_played${playerPositions[who]}`)[0].innerHTML = '';
@@ -2873,7 +2893,7 @@ function hidePlayer()
     $(`#cell_played${lastPos}`).removeClass(`cell_player_${who}`);
     $(`#cell${lastPos}`).removeClass('cell_occupied');
     nextPlayer();
-    showStatus(`<font color="${PLAYER_COLORS[left]}"><b>${PLAYERS[left]}</b></font> is No longer playing.`);
+    showStatus(`<font color="${PLAYER_COLORS[left]}"><b>${playerString(left)}</b></font> is No longer playing.`);
 
     if (cnt === 6)
     {
@@ -3868,8 +3888,12 @@ const RULES = `
 <ul>
 <li class="toclevel-1 tocsection-1"><a href="#Set_up"><span class="tocnumber">1</span> <span class="toctext">Set up</span></a></li>
 <ul>
-<li class="toclevel-2 tocsection-8"><a href="#Webpage_Play"><span class="tocnumber">1.2</span> <span class="toctext">Webpage Play</span></a></li>
-<li class="toclevel-2 tocsection-9"><a href="#Partial_AI"><span class="tocnumber">1.2</span> <span class="toctext">Partial AI</span></a></li>
+<li class="toclevel-2 tocsection-8"><a href="#Webpage_Play"><span class="tocnumber">1.2</span> <span class="toctext">Webpage Play</span></a>
+  <ul>
+  <li class="toclevel-3 tocsection-10"><a href="#AI_Assistance"><span class="tocnumber">1.2.1</span> <span class="toctext">AI Assistance</span></a></li>
+  </ul>
+</li>
+<li class="toclevel-2 tocsection-9"><a href="#Computer_Players"><span class="tocnumber">1.2</span> <span class="toctext">Computer Players</span></a></li>
 </ul>
 <li class="toclevel-1 tocsection-2"><a href="#Gameplay"><span class="tocnumber">2</span> <span class="toctext">Gameplay</span></a>
 <ul>
@@ -3929,24 +3953,48 @@ const RULES = `
 <li>Click '(goto Notes)' button to jump to Detective Notes section to record your findings. When finished, click the '(back to top)' button to hide your Notes and jump back to the top of the page.</li>
 <li>Click 'Next Player' button to save game and pass the turn to the next player.</li>
 </ol>
-<h3><span class="mw-headline" id="Partial_AI">Partial AI</span></h3>
-<p>To play against partial Computer Players, help it to:
+<h4><span class="mw-headline" id="AI_Assistance">AI Assistance</span></h4>
+<p>If you require assistance, you may:
+<ul>
+<li>Click 'Suggest Move' to get movement recommendations.
+  <ol>
+     <li>Game jumps to your player token and shows a few AI-recommended routes. 1st recommended route is highligted. Tooltip shows any item at destination.</li>
+     <li>Either (a) click your token, or (b) click 'Next Route', to cycle through the recommended routes.</li>
+     <li>Either (a) right-click your token, or (b) click 'Clear' to close the selection of recommended routes.</li>
+     <li>Either (a) click 'Accept Move' to take current route shown, or (b) click any spot as usual to move to that spot.</li>
+  </ol>
+</li>
+<li>Click the 'Analyze' button to get recommendations.</li>
+<li>If more help is required, you may further click on the 'Act' button to automatically select the best flaps to view, study all your clues and form accusations!</li>
+</ul></p>
+<h3><span class="mw-headline" id="Computer_Players">Computer Players</span></h3>
+<p>Computer Players are now complete and able to auto-move and play against you!
+There're intentional 'pause' points for you to take a breath before letting the game proceed.
+</p>
+<p>To play against Computer Players:
 </p>
 <ol>
-<li>Roll dice and move player token to find clue counters or active Super Clue items.</li>
-<ul>
-<li>If you want a 'weaker' AI, simply move its token 'more aimlessly' or take bigger detours. E.g.: Go after clues one or two turns later, so as to let human players go after the clues first! Send AI's token outside and go round the garden, LOL!</li>
-</ul>
-<li>When an action is available (Murder cards received or flaps available for peeking), click the 'Act Secretly' button to let the AI automatically select flaps to view, study available Murder cards and even make an accusation!</li>
-<li>Click 'Next Player' to pass.</li>
+<li>Select "AI-enabled" Computer Players at the bottom of the page.
+<ol>
+<li>Tick the top left checkbox of a character to have that character in play.</li>
+<li>Tick the 'AI' checkbox to make it a Computer Player.</li>
+<li>Select how smart it is from the dropdown. 'Weak AI' is easier than 'Smart AI' to play against.</li>
 </ol>
-<p>If you require assistance, you may click the 'Analyze' button to get recommendations. If more help is required, you may further click on the 'Act' button to automatically select the best flaps to view, study all your clues and form accusations!
-</p>
+</li>
+<li>Rolling dice will initiate Computer Player's thinking and auto-moves.</li>
+<li>Whenever you click 'Next Player' and the new player is a Computer Player, it will wait a while before auto-rolling dice.</li>
+<ul>
+  <li>You can click the 'Interrupt' button to cancel. To resume, roll dice, and it will auto-move subsequently.</li>
+  <li>Or, you can also roll dice to immediately let it continue with auto-move.</li>
+</ul>
+<li>Computer Player will make moves and use 'Act Secretly', until it has no more moves to make.
+Game will then suggest to click 'Next Player' to continue.</li>
+</ol>
 <h2><span class="mw-headline" id="Gameplay">Gameplay</span></h2>
 <ol><li>Each player chooses a character and moves this piece throughout the game.</li>
 <li>Choose a starting player. The first player throws both dice and then moves their character EITHER the sum of the two dice OR the number on any single dice.</li>
 <li>Play continues in a clockwise direction with the next player in the same way.</li>
-<li>Character pieces may be moved vertically of horizontally but not diagonally. They cannot retrace their step by going over the same space more than once during one turn. They cannot move through walls and can only enter the room through the Doors, French Windows (arrowed), or Secret Passages. (See #8 - #12).</li>
+<li>Character pieces may be moved vertically or horizontally but not diagonally. They cannot retrace their step by going over the same space more than once during one turn. They cannot move through walls and can only enter the room through the Doors, French Windows (arrowed), or Secret Passages. (See #8 - #12).</li>
 <li>If a player lands on a Clue Counter (by an exact throw only) the number is called out and the counter placed face up on the title space in the centre of the board. The player must now follow instructions given on the Detective Note as follows:    a) If the Clue involves taking a murder card from the pack or from another player this is done, taking care not to show other players any cards held. These cards are now kept by that player. The Clue Counter is then placed face down by the side of the board.       b) If the Clue involves looking under a flap (or flaps) then the player should do this so other players can see their actions but NOT the information concealed under the flap. The Clue Counter is then placed face down by the side of the board.       c) If the clue involves a clue being situated on a Weapon or in the Garden then all players must race towards the Clue. (The player who LANDED on the clue counter throws first). The first player to land on the space occupied by the Weapon or Garden Ornament in question removes it from the board and takes the top SUPER CLUE Card. The instructions are followed and the card replaced on the bottom of the pack. The Clue Counter is then placed face down by the side of the board.
     <ol>
         <li><i><b>Extra rule clarifications/recommended</b></i>:
@@ -3996,9 +4044,9 @@ const RULES = `
 <h4><span class="mw-headline" id="In_web_based_game">In a web-based game</span></h4>
 <p><i><b>Recommend</b></i>: The computer checks the player's accusation instead of of the player themselves. Thus, if the accusation is wrong, that player may be allowed to resume play and to try to solve the mystery. Game then continue as normal.
 </p>
-<h4><span class="mw-headline" id="Credits">Credits</span></h4>
+<h2><span class="mw-headline" id="Credits">Credits</span></h2>
 <p>Thanks to Anthony E. Pratt for inventing the original game, and publishers: Waddingtons & Hasbro =)<br>
-Sleuthing logic and digitization by David (Neon) =D and movement AI by Claude Code.
+Sleuthing logic+AI and digitization by David (Neon) =D and movement AI by Claude Code.
 </p>
 </div>`;
 
