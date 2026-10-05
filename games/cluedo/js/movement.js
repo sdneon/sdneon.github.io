@@ -88,6 +88,7 @@ const MOVE_AI_LEVELS = { //1st is the default
     smart: 'Smart AI'
 };
 const MOVE_ROUTE_COLOURS = ['#0a0', '#06c', '#c0c', '#e80', '#088', '#850', '#c04', '#55f'];
+const MOVE_ROUTE_START_GAP = 42; //pixels from the centre of the player token at which the dotted routes start, so as not to cover its face (2 dots of the current route)
 const MOVE_DIRS = [ //dy, dx, wall side of this space, wall side of the neighbour
     [-1, 0, 't', 'b'],
     [1, 0, 'b', 't'],
@@ -766,13 +767,15 @@ function moveCellCentre(cellId)
 }
 
 //@retval SVG path data of a wavy line from p to q ([x, y] each); starts with a 'move to' if 1st of its path
-function moveWavyLine(p, q, amplitude, wavelength, isFirst)
+//@param gap (pixels) optional; if 1st of its path: how far out from p the line starts, so as not to cover what is at p
+function moveWavyLine(p, q, amplitude, wavelength, isFirst, gap)
 {
     const dx = q[0] - p[0],
         dy = q[1] - p[1],
         len = Math.sqrt(dx * dx + dy * dy),
         waves = Math.max(1, Math.round(len / wavelength)), //whole waves, so that line meets both ends
-        numPts = waves * 8;
+        numPts = waves * 8,
+        skip = isFirst? Math.min(gap || 0, len / 2): 0;
     let d = '';
     for (let i = isFirst? 0: 1; i <= numPts; ++i)
     {
@@ -780,7 +783,8 @@ function moveWavyLine(p, q, amplitude, wavelength, isFirst)
             off = amplitude * Math.sin(t * waves * 2 * Math.PI),
             x = p[0] + dx * t - (dy / len) * off,
             y = p[1] + dy * t + (dx / len) * off;
-        d += `${(isFirst && (i === 0))? 'M': 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+        if (t * len < skip) continue;
+        d += `${(d === '')? 'M': 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
     }
     return d;
 }
@@ -810,7 +814,8 @@ function moveShowRoutes()
             d = '';
         option.path.forEach((step, j) => {
             const to = moveCellCentre(step.show);
-            d += step.jump? moveWavyLine(from, to, 8, 44, j === 0): moveWavyLine(from, to, 4, 27, j === 0);
+            d += step.jump? moveWavyLine(from, to, 8, 44, j === 0, MOVE_ROUTE_START_GAP):
+                moveWavyLine(from, to, 4, 27, j === 0, MOVE_ROUTE_START_GAP);
             from = to;
         });
         //route number in a rectangle at top right of its last space; shoeprint is top left, step number bottom right
