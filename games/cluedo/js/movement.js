@@ -1025,7 +1025,7 @@ function acceptMove()
     {
         return;
     }
-    moveMakeMove(moveCurrent.path[moveCurrent.path.length - 1].show);
+    moveMakeMove(moveCurrent.path[moveCurrent.path.length - 1].show, moveCurrent.path);
 }
 
 //Move current player to given cell at once, by the game's own click handling, so that whatever is there gets triggered
@@ -1042,40 +1042,69 @@ function moveMakeMoveNow(cellId)
     }
 }
 
-//Move current player (human or AI) to given cell.
-//If that takes a clue counter/weapon/ornament: the token goes over to it first, then the item pops off the board,
-//and only then is the move made in the game.
-async function moveMakeMove(cellId)
+//Walk the walking token along given route, step by step; a stair jump takes longer
+//@retval false if stopped meanwhile
+async function moveWalkPath(walker, path, stopped)
 {
-    clearMovePlan();
-    if (!moveTakesItemAt(cellId))
+    for (const step of path)
     {
-        moveMakeMoveNow(cellId);
-        return;
+        const to = moveCellCentre(step.show);
+        await moveSleep(30); //let walker be drawn where it is, before it is sent on
+        if (stopped()) return false;
+        walker.toggleClass('move_walker_jump', !!step.jump);
+        //takes most of the step's time to get there, then stands a moment
+        walker.css({
+            'transition-duration': `${Math.round((step.jump? MOVE_AUTO_JUMP_MS: MOVE_AUTO_STEP_MS) * 0.85)}ms`,
+            left: `${to[0]}px`,
+            top: `${to[1]}px`
+        });
+        $(`#cell${step.show}_container`)[0].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+        await moveSleep(step.jump? MOVE_AUTO_JUMP_MS: MOVE_AUTO_STEP_MS);
+    }
+    if (stopped()) return false;
+    walker.removeClass('move_walker_jump');
+    return true;
+}
+
+//Move current player (human or AI) to given cell.
+//If a route is given (the one shown, on 'Accept Move'): the token walks it step by step, as in auto-mode.
+//If the move takes a clue counter/weapon/ornament: the token goes over to it first, then the item pops off the board,
+//and only then is the move made in the game.
+//@param path (array) optional; steps of the route to walk, that ends on given cell
+async function moveMakeMove(cellId, path)
+{
+    const takesItem = moveTakesItemAt(cellId);
+    if (!path)
+    {
+        clearMovePlan();
+        if (!takesItem)
+        {
+            moveMakeMoveNow(cellId);
+            return;
+        }
     }
     moveAutoStop();
     const run = moveAutoRun,
         stopped = () => (run !== moveAutoRun),
         start = playerPositions[who],
         from = moveCellCentre(start),
-        to = moveCellCentre(cellId),
         walker = $(`<div id='divMoveWalker' class='cell_player_${who}'><div class='move_swirl'></div></div>`);
     moveAutoBusy = true; //no clicks nor rolls meanwhile
     walker.css({ left: `${from[0]}px`, top: `${from[1]}px` });
     $('#divPlayingArea').append(walker);
     $(`#cell_played${start}`).addClass('move_token_hidden');
     moveUpdateSwirl(); //swirl is with the walking token now
-    await moveSleep(30); //let walker be drawn where it is, before it is sent on
-    if (stopped()) return;
-    walker.css({
-        'transition-duration': `${Math.round(MOVE_AUTO_STEP_MS * 0.85)}ms`,
-        left: `${to[0]}px`,
-        top: `${to[1]}px`
-    });
-    await moveSleep(MOVE_AUTO_STEP_MS);
-    if (stopped()) return;
-    await moveTakeItem(cellId);
-    if (stopped()) return;
+    if (path) //route stays on show while it is walked
+    {
+        moveAutoLocked = true;
+        showMoveOption(moveOptionNum);
+    }
+    if (!await moveWalkPath(walker, path || [{ show: cellId }], stopped)) return;
+    if (takesItem)
+    {
+        await moveTakeItem(cellId);
+        if (stopped()) return;
+    }
     moveAutoStop();
     moveMakeMoveNow(cellId);
 }
@@ -1527,24 +1556,7 @@ async function moveAutoPlay()
     if (stopped()) return;
 
     //3. walk the token there
-    for (let i = 0; i < option.path.length; ++i)
-    {
-        const step = option.path[i],
-            to = moveCellCentre(step.show);
-        await moveSleep(30); //let walker be drawn where it is, before it is sent on
-        if (stopped()) return;
-        walker.toggleClass('move_walker_jump', step.jump);
-        //takes most of the step's time to get there, then stands a moment
-        walker.css({
-            'transition-duration': `${Math.round((step.jump? MOVE_AUTO_JUMP_MS: MOVE_AUTO_STEP_MS) * 0.85)}ms`,
-            left: `${to[0]}px`,
-            top: `${to[1]}px`
-        });
-        $(`#cell${step.show}_container`)[0].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-        await moveSleep(step.jump? MOVE_AUTO_JUMP_MS: MOVE_AUTO_STEP_MS);
-    }
-    if (stopped()) return;
-    walker.removeClass('move_walker_jump');
+    if (!await moveWalkPath(walker, option.path, stopped)) return;
     if (option.target) //take the clue counter/weapon/ornament: pop it off the board
     {
         await moveTakeItem(dest);
@@ -1888,7 +1900,7 @@ function moveInstallHooks()
             else if (optionNum > 0)
             {
                 showMoveOption(optionNum);
-                acceptMove();
+                moveMakeMove(moveCurrent.path[moveCurrent.path.length - 1].show); //at once, as a click does
             }
             else
             {
