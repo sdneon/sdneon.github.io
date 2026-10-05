@@ -320,7 +320,9 @@
 {
     position: absolute;
     bottom: 100%; left: 50%;
-    transform: translateX(-50%);
+    /* shifted sideways by script (moveFitBubble) when it would go off the edge of the page */
+    transform: translateX(calc(-50% + var(--move-bubble-shift, 0px)));
+    transition: transform 0.3s;
     margin-bottom: 8px;
     padding: 3px 8px;
     white-space: nowrap;
@@ -337,9 +339,28 @@
     content: '';
     position: absolute;
     top: 100%; left: 50%;
-    margin-left: -8px;
+    margin-left: calc(-8px - var(--move-bubble-shift, 0px)); /* stays over the token */
     border: 8px solid transparent;
     border-top-color: #333;
+}
+
+/* picture of where the route ends (room/garden, stairs), before the item in the bubble */
+.move_bubble_place
+{
+    width: 44px; height: 44px;
+    margin-right: 4px;
+    vertical-align: top;
+}
+
+/* token with a speech bubble over it (route on show): its tooltip opens above the bubble */
+#divPlayingArea .move_has_bubble [data-tooltip]:before
+{
+    margin-bottom: var(--move-tip-lift, 80px);
+}
+
+#divPlayingArea .move_has_bubble [data-tooltip]:after
+{
+    margin-bottom: calc(var(--move-tip-lift, 80px) - 6px);
 }
 
 #divPlayingArea .move_bubble_item

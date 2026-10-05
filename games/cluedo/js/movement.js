@@ -34,7 +34,10 @@ let MOVE_PASS_OVER_CLUE_COUNTERS = true,
     MOVE_AUTO_ROLL_START = true,
     //Auto-mode: AI player that enters a room and stops next to another player, bumps that player elsewhere (rule #13).
     //Smart AI also goes out of its way to do so, when a weapon/ornament clue is to be had but is out of its reach.
-    MOVE_AI_BUMP = true;
+    MOVE_AI_BUMP = true,
+    //Auto-mode: time (ms) given to the dice to tumble and come to rest, once thrown for an AI player,
+    //before the page goes to its token and its move is worked out. 0 for no wait.
+    MOVE_DICE_ROLL_MS = 2000;
 
 const MOVE_AUTO_VIEWS = 4, //auto-mode: number of routes that AI looks over before choosing
     MOVE_AUTO_VIEW_MS = 900, //time on each route looked over
@@ -79,6 +82,7 @@ const MOVE_SEARCH_BUDGET = 50000, //max spaces to try, in looking for 1 exact pa
     MOVE_MAX_WAIT_OPTIONS = 5; //number of 'go wait at a good space' options to offer, besides all the clues in reach
 const MOVE_ROOM_NAMES = { K: 'Kitchen', B: 'Ballroom', C: 'Conservatory', D: 'Dining Room', I: 'Billiard Room',
     L: 'Library', O: 'Lounge', H: 'Hall', S: 'Study' }; //by the room keys of board.js
+const MOVE_ROOM_CARDS = { H: 18, C: 19, S: 20, L: 21, O: 22, K: 23, I: 24, D: 25, B: 26 }; //room key: its card in CARD_IMAGES, whose name is that of the room's picture too
 const MOVE_AI_LEVELS = { //1st is the default
     weak: 'Weak AI',
     smart: 'Smart AI'
@@ -103,6 +107,7 @@ let moveGraph = false, //static map of which spaces connect; built once from BOA
     moveAutoBusy = false, //true while computer is making a move by itself
     moveAutoLocked = false, //true once it has chosen its route
     moveAccusation = false, //'right'/'wrong' once an accusation is made; reset before each auto-play move
+    moveFinishedPlayers = {}, //playerId: true for AI players that have solved the mystery and left the game; back in for the next game
     moveStairsNote = '', //remarks on the AI's lapses (stairs forgotten, dummy not noticed) in the routes worked out; for the panel
     moveGameDiceClicked, //the game's own onDiceClicked()
     moveBumpPreferSmart; //Smart AI out to bump this throw: true if it is after a Smart AI player; false if any; undefined if not out to bump
@@ -872,6 +877,7 @@ function showMoveOption(optionNum)
     moveShowPrints(playerPositions[who], option.path);
     moveShowRoutes();
     moveShowTokenTip();
+    moveShowPlanBubble();
     //buttons 1st, so that they are not pushed under the card decks' popups on the right
     let buttons = `<button onclick='acceptMove();' class='button_ai'>Accept Move</button>`;
     if (!moveConfirmOnly())
@@ -938,6 +944,10 @@ or just the chosen route, if human player is only to confirm it.
 */
 function suggestMove()
 {
+    if (ignoredPlayers[who]) //has left the game
+    {
+        return;
+    }
     clearMovePlan();
     const start = playerPositions[who],
         level = moveAiLevel(who) || 'smart',
@@ -1052,6 +1062,7 @@ async function moveWalkPath(walker, path, stopped)
         await moveSleep(30); //let walker be drawn where it is, before it is sent on
         if (stopped()) return false;
         walker.toggleClass('move_walker_jump', !!step.jump);
+        moveFitBubble(walker.children('.move_bubble'), to[0]);
         //takes most of the step's time to get there, then stands a moment
         walker.css({
             'transition-duration': `${Math.round((step.jump? MOVE_AUTO_JUMP_MS: MOVE_AUTO_STEP_MS) * 0.85)}ms`,
@@ -1098,6 +1109,9 @@ async function moveMakeMove(cellId, path)
     {
         moveAutoLocked = true;
         showMoveOption(moveOptionNum);
+        const bubble = $(`<div class='move_bubble'>${moveBubbleHtml(moveCurrent, moveCurrent.target? '&#x1F603;': '&#x1F605;')}</div>`);
+        walker.append(bubble);
+        moveFitBubble(bubble, from[0]);
     }
     if (!await moveWalkPath(walker, path || [{ show: cellId }], stopped)) return;
     if (takesItem)
@@ -1137,6 +1151,93 @@ function moveItemClass(cellId)
     return $(`#cell${cellId}`)[0].className.split(' ').filter((c) => /^cell_(clue_counter|wpn_|orn_)/.test(c)).join(' ');
 }
 
+//@retval HTML of the pictures of where given cell is: its room, or the garden (the outer 2 rings of the board);
+//none for the corridors. Then that of the stairs, if it is one.
+function movePlaceIcons(cellId)
+{
+    const coords = moveCellCoords(cellId),
+        numRows = BOARD.length,
+        numCols = BOARD[0].length / 2,
+        room = allRoomSlots[cellId],
+        icon = (name) => `<img class='move_bubble_place' src='images/${name}.png'>`;
+    let icons = '';
+    if (room)
+    {
+        icons = icon(CARD_IMAGES[MOVE_ROOM_CARDS[room]]);
+    }
+    else if ((coords[0] < 2) || (coords[1] < 2) || (coords[0] >= numRows - 2) || (coords[1] >= numCols - 2))
+    {
+        icons = icon('room-garden');
+    }
+    if (getMoveGraph().isStair[moveSpaceOf(cellId)])
+    {
+        icons += icon('stair');
+    }
+    return icons;
+}
+
+//@retval HTML for a speech bubble about given route: where it ends, what it gets there (if anything), and given emoji
+function moveBubbleHtml(option, emoji)
+{
+    const end = option.path[option.path.length - 1].show,
+        item = option.target? `<span class='move_bubble_item ${moveItemClass(end)}'></span>`: '';
+    return movePlaceIcons(end) + item + emoji;
+}
+
+//Keep a speech bubble within the page when its token is near the left/right edge: it is shifted sideways,
+//while its tail stays over the token
+//@param x (pixels) centre of the token, from left of the playing area
+function moveFitBubble(bubble, x)
+{
+    if (bubble.length <= 0)
+    {
+        return;
+    }
+    const half = bubble[0].offsetWidth / 2,
+        centre = $('#divPlayingArea').offset().left + x,
+        pageWidth = document.documentElement.scrollWidth,
+        margin = 4;
+    let shift = 0;
+    if (centre - half < margin)
+    {
+        shift = margin - (centre - half);
+    }
+    else if (centre + half > pageWidth - margin)
+    {
+        shift = pageWidth - margin - (centre + half);
+    }
+    shift = Math.max(20 - half, Math.min(half - 20, shift)); //tail stays on the bubble
+    bubble[0].style.setProperty('--move-bubble-shift', `${Math.round(shift)}px`);
+}
+
+//Speech bubble over the token of current player, about the route on show: a suggestion for a human player,
+//or an AI player's choice that is to be accepted. The token's tooltip (dice rolled etc.) then opens above the bubble.
+//None while the token is out walking: its stand-in has the bubble then.
+function moveShowPlanBubble()
+{
+    $('.move_plan_bubble').remove();
+    $('.move_has_bubble').removeClass('move_has_bubble');
+    if (!moveCurrent || moveAutoBusy)
+    {
+        return;
+    }
+    const start = playerPositions[who],
+        at = moveCellCentre(start),
+        cell = $(`#cell_played${start}`),
+        holder = $(`<div class='move_cell_bubble move_plan_bubble' style='left: ${at[0]}px; top: ${at[1]}px;'>
+            <div class='move_bubble'>${moveBubbleHtml(moveCurrent, '&#x1F914;')}</div></div>`),
+        bubble = holder.children('.move_bubble');
+    $('#divPlayingArea').append(holder);
+    moveFitBubble(bubble, at[0]);
+    const tip = cell.children('span')[0];
+    if (tip)
+    {
+        const lift = tip.getBoundingClientRect().top - bubble[0].getBoundingClientRect().top + 6;
+        cell.addClass('move_has_bubble');
+        cell[0].style.setProperty('--move-tip-lift', `${Math.round(lift)}px`);
+    }
+}
+
 /*
 Pop the clue counter/weapon/ornament on given cell off the board, with a triumphant speech bubble
 over the walking token. For when that token has arrived on the cell.
@@ -1154,13 +1255,13 @@ function moveTakeItem(cellId)
     {
         walker.append(`<div class='move_bubble'></div>`);
     }
-    let says = `<span class='move_bubble_item ${itemClass}'></span>&#x1F973;`;
+    let says = `${movePlaceIcons(cellId)}<span class='move_bubble_item ${itemClass}'></span>&#x1F973;`;
     const clueId = placedClues[cellId];
     if (clueId !== undefined)
     {
         //clue counter flips over to show its number; then triumph, or tears if it is the dummy
         const ms = (part) => `${Math.round(MOVE_AUTO_TAKE_MS * part)}ms`;
-        says = `<span class='move_flip'>
+        says = `${movePlaceIcons(cellId)}<span class='move_flip'>
                 <span class='move_flip_inner' style='animation-delay: ${ms(0.1)}; animation-duration: ${ms(0.3)};'>
                     <span class='move_flip_front ${itemClass}'></span>
                     <span class='move_flip_back'>${clueId}</span>
@@ -1168,6 +1269,7 @@ function moveTakeItem(cellId)
             </span><span class='move_flip_emoji' style='animation-delay: ${ms(0.45)};'>${(clueId === 0)? '&#x1F62D;': '&#x1F973;'}</span>`;
     }
     walker.children('.move_bubble')[0].innerHTML = says;
+    moveFitBubble(walker.children('.move_bubble'), at[0]);
     return moveSleep(MOVE_AUTO_TAKE_MS);
 }
 
@@ -1410,6 +1512,31 @@ async function moveAutoRollStart()
     moveGameDiceClicked('dice1');
 }
 
+//Auto-mode: dice have just been thrown for an AI player. The dice are left in view until they have come to rest;
+//only then is its move worked out (which goes to its token), and made or re-rolled.
+async function moveAutoAfterRoll()
+{
+    moveAutoStop();
+    clearMovePlan();
+    const run = moveAutoRun;
+    if (MOVE_DICE_ROLL_MS > 0)
+    {
+        moveAutoBusy = true; //no clicks nor rolls meanwhile
+        await moveSleep(MOVE_DICE_ROLL_MS);
+        if (run !== moveAutoRun) return; //stopped
+        moveAutoBusy = false;
+    }
+    suggestMove();
+    if (moveAutoWantsReroll())
+    {
+        moveAutoReroll();
+    }
+    else if (moveOptions)
+    {
+        moveAutoPlay();
+    }
+}
+
 //Human player stops the AI player from rolling the dice by itself; it is then for the human to roll for it
 function moveAutoInterrupt()
 {
@@ -1518,9 +1645,8 @@ async function moveAutoPlay()
         walker = $(`<div id='divMoveWalker' class='cell_player_${player}'><div class='move_swirl'></div><div class='move_bubble'></div></div>`),
         //put in the bubble: what the route being shown is for (clue counter/weapon/ornament, if any), and given emoji
         say = (emoji) => {
-            const end = moveCurrent.path[moveCurrent.path.length - 1].show,
-                item = moveCurrent.target? `<span class='move_bubble_item ${moveItemClass(end)}'></span>`: '';
-            walker.children('.move_bubble')[0].innerHTML = item + emoji;
+            walker.children('.move_bubble')[0].innerHTML = moveBubbleHtml(moveCurrent, emoji);
+            moveFitBubble(walker.children('.move_bubble'), centre[0]);
         };
     walker.css({ left: `${centre[0]}px`, top: `${centre[1]}px` });
     $('#divPlayingArea').append(walker);
@@ -1613,6 +1739,10 @@ async function moveAutoPlay()
     }
     moveAutoBusy = false;
     let outcome = `has ended ${PLAYER_PRONOUNS[player]} turn: click <b>Next Player</b>.${moveTurnEndSmile(player)}`;
+    if ((moveAccusation === 'right') && moveFinishedPlayers[player]) //has left the game, and that has been told
+    {
+        return;
+    }
     if (moveAccusation === 'right')
     {
         outcome = 'has solved the mystery &#x1F3C6; Game over.';
@@ -1626,6 +1756,39 @@ async function moveAutoPlay()
         outcome = `found that there is a clue on the <b>${clueObj.name}</b>, so has <b>another turn</b>: roll the dice for it.`;
     }
     appendStatus(`${movePlayerIcon()} ${movePlayerString()} ${outcome}`, undefined, true);
+}
+
+/*
+AI player that has solved the mystery (current player) leaves the game, and the rest play on:
+its token is taken off the board, and its turns are skipped from now on, as for a player taken out of the game.
+What the game shows of the accusation (hidden, with its reveal buttons) and its accusation boxes are left as they are.
+Not done if it is the only player left: then the game is over.
+*/
+function moveSolverLeaves()
+{
+    const player = who;
+    if (!PLAYERS.some((name, playerId) => (playerId !== player) && !ignoredPlayers[playerId]))
+    {
+        return;
+    }
+    const cellId = playerPositions[player],
+        cell = $(`#cell_played${cellId}`);
+    ignoredPlayers[player] = true;
+    moveFinishedPlayers[player] = true;
+    $(`#cb_player_${player}`)[0].checked = false; //the game makes out who is playing from these
+    NUM_PLAYERS = 9 - Object.keys(ignoredPlayers).length;
+    cell.removeClass(`cell_player_${player} shimmer pulsate`);
+    cell[0].innerHTML = '';
+    $(`#cell${cellId}`).removeClass('cell_occupied');
+    moveUpdateSwirl();
+    appendStatus(`<span id='spanMoveSolved'>${movePlayerIcon()} ${movePlayerString()} has solved the mystery &#x1F3C6; and leaves the game.
+        The others play on: click <b>Next Player</b>.</span>`, undefined, true);
+}
+
+//@retval true if current player has left the game, so can do nothing but have 'Next Player' clicked
+function moveHasLeft()
+{
+    return !!ignoredPlayers[who];
 }
 
 //@retval true if given player has looked under at least 1 flap of each of the 3 card holders
@@ -1692,6 +1855,7 @@ function clearMovePlan()
     moveClearPrints();
     moveClearRoutes();
     moveShowTokenTip();
+    moveShowPlanBubble();
     const div = $('#divMovePlan')[0];
     if (div)
     {
@@ -1844,27 +2008,24 @@ function moveInstallHooks()
     diceOne.rollHandler = (diceId, val) => {
         rollHandler(diceId, val);
         moveUpdateSparkles(); //6+6 puts everything back on the board, elsewhere
-        if (moveAiLevel(who))
+        if (!moveAiLevel(who))
         {
-            suggestMove();
-            if (MOVE_AI_AUTO_PLAY && moveAutoWantsReroll())
-            {
-                moveAutoReroll();
-            }
-            else if (MOVE_AI_AUTO_PLAY && moveOptions)
-            {
-                moveAutoPlay();
-            }
+            clearMovePlan();
+        }
+        else if (MOVE_AI_AUTO_PLAY)
+        {
+            moveAutoAfterRoll();
         }
         else
         {
-            clearMovePlan();
+            suggestMove();
         }
     };
     moveGameDiceClicked = gameDiceClicked;
     onDiceClicked = function(id)
     {
         if (moveAutoBusy) return; //no rolling while computer is making its move
+        if (moveHasLeft()) return;
         gameDiceClicked(id);
     };
     moveGameCellClicked = function(y, x)
@@ -1876,7 +2037,7 @@ function moveInstallHooks()
     {
         const cellId = `${y}_${x}`,
             onOwnToken = (cellId === playerPositions[who]);
-        if (moveAutoBusy) //computer is making its move
+        if (moveAutoBusy || moveHasLeft()) //computer is making its move; or current player has left the game
         {
             return;
         }
@@ -1944,6 +2105,11 @@ function moveInstallHooks()
     {
         moveAutoStop();
         clearMovePlan();
+        //AI players that solved the last game and left it, are back in
+        Object.keys(moveFinishedPlayers).forEach((playerId) => {
+            $(`#cb_player_${playerId}`)[0].checked = true;
+        });
+        moveFinishedPlayers = {};
         gameNewGameBoard();
         moveUpdateSparkles();
         moveUpdateSwirl();
@@ -1980,6 +2146,10 @@ function moveInstallHooks()
         {
             moveAccusation = 'right';
             moveThrowConfetti();
+            if (moveAiLevel(who))
+            {
+                moveSolverLeaves();
+            }
         }
         else if (said.indexOf('You are Wrong') >= 0)
         {
@@ -1992,6 +2162,7 @@ function moveInstallHooks()
         gameSaveGame();
         const gameData = JSON.parse(localStorage.savedGame);
         gameData.aiPlayers = moveAiPlayers;
+        gameData.finishedPlayers = moveFinishedPlayers; //{ playerId: true }
         localStorage.savedGame = JSON.stringify(gameData);
     };
     restoreSavedGame = function()
@@ -2000,6 +2171,7 @@ function moveInstallHooks()
         clearMovePlan();
         moveSetAiPlayers(JSON.parse(localStorage.savedGame).aiPlayers || {});
         gameRestoreSavedGame();
+        moveFinishedPlayers = JSON.parse(localStorage.savedGame).finishedPlayers || {};
         //no rolling by itself right after a restore: the next message would wipe what the game says of the restore
         //(e.g. faults fixed in the saved game) before human player has read it
         if (moveAiLevel(who))
@@ -2014,6 +2186,7 @@ function moveInstallHooks()
     resetOptions = function()
     {
         moveSetAiPlayers({});
+        moveFinishedPlayers = {};
         gameResetOptions();
     };
     moveUpdateSparkles();
