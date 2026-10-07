@@ -1,0 +1,32 @@
+.dot_big {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background-color: green;
+    box-shadow: inset 2px 2px darkgreen;
+}
+
+.dot_big_red {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background-color: #f25f5c;
+    box-shadow: inset 2px 2px #d90429;
+}
+
+.dot_none {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    font-size: 4em;
+    text-align: center;
+    align-content: center;
+    top: 10%;
+    left: 10%;
+}

@@ -1,0 +1,19 @@
+<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+
+ <g>
+  <title>Layer 1</title>
+  <rect id="svg_1" stroke-width="2" stroke="#2e7d32" fill="#d5f2d0" rx="6" height="98" width="198" y="1" x="1"/>
+  <rect id="svg_2" stroke-dasharray="3 2" stroke="#2e7d32" fill="none" rx="3" height="84" width="184" y="8" x="8"/>
+  <ellipse id="svg_3" stroke-width="1.5" stroke="#2e7d32" fill-opacity="0.55" fill="#ffffff" ry="30" rx="46" cy="50" cx="100"/>
+  <path id="svg_4" fill-opacity="0.18" fill="#2e7d32" d="m84,62l0,-22l8,0l0,-8l16,0l0,8l8,0l0,22l-32,0z"/>
+  <text id="svg_5" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-size="46" font-family="Georgia, serif" y="60" x="100">1000</text>
+  <text font-weight="bold" id="svg_6" fill="#2e7d32" text-anchor="middle" letter-spacing="3" font-size="9" font-family="'Catamaran'" y="17" x="100">BANK OF HOTELS</text>
+  <text id="svg_7" fill="#2e7d32" text-anchor="middle" letter-spacing="2" font-size="8" font-family="Georgia, serif" y="88" x="100">HOTEL DOLLARS</text>
+  <text id="svg_8" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-size="14" font-family="Georgia, serif" y="30" x="27.49019">1000</text>
+  <text id="svg_9" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-size="14" font-family="Georgia, serif" y="80" x="172.90196">1000</text>
+  <circle id="svg_10" stroke-width="1.5" stroke="#2e7d32" fill="none" r="9" cy="74" cx="22"/>
+  <text id="svg_11" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-size="11" font-family="Georgia, serif" y="78" x="22">$</text>
+  <circle id="svg_12" stroke-width="1.5" stroke="#2e7d32" fill="none" r="9" cy="26" cx="178"/>
+  <text id="svg_13" fill="#2e7d32" text-anchor="middle" font-weight="bold" font-size="11" font-family="Georgia, serif" y="30" x="178">$</text>
+ </g>
+</svg>

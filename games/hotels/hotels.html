@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<title>Hotels board game</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/hotels.css">
+<link rel="stylesheet" href="../cluedo/css/dice.css">
+<link rel="stylesheet" href="css/dice_hotels.css">
+<link rel="stylesheet" href="../cluedo/css/tooltip.css">
+<script src="../cluedo/js/jquery.min.js"></script>
+<script src="../cluedo/js/winbox.bundle.min.js"></script>
+<script src="../cluedo/js/dice.js"></script>
+<script src="js/dice_hotels.js"></script>
+<script src="js/board.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/buildings.js"></script>
+<script src='js/hotels.js'></script>
+<script src='js/ai.js'></script>
+</head>
+<body>
+<h1>Hotels board game <span data-tooltip-position='bottom' data-tooltip='Who is the dominating Hotels tycoon? 谁旅游界的亿万富翁？'>酒店大亨 (beta)</span></h1>
+<!-- stays in view while the page is scrolled over the map -->
+<div id='divTop'>
+    <div id='divDice'>
+        <span data-tooltip='Left: move, and number of nights. Right: planning permission (green: granted, red: denied, 2x: double price, H: free). Click the glowing one when it is your throw.' data-tooltip-position='bottom'>
+            <div class='dice-container'></div></span>
+        <div>
+            <span data-tooltip-position='right' data-tooltip='Scroll to current player token'>
+                <button onclick='whereAmI();'>Find Me!</button></span>
+            <span data-tooltip-position='right' data-tooltip='End your turn (save game and pass to the next player)'>
+                <button onclick='nextPlayer();' class='button_final'>Next Player</button></span>
+            <span data-tooltip-position='right' data-tooltip='Hold the computer players, e.g. to read what they did'>
+                <button id='buttPause' onclick='toggleAiPause();' class='button_ai'>Pause AI &#x23F8;</button></span>
+            <span data-tooltip-position='right' data-tooltip='The game is saved at the start of every turn. This saves it now, with what you have done so far on this turn'>
+                <button onclick='saveNow();'>Save</button></span>
+            <span data-tooltip-position='right' data-tooltip='Show the History window: all that has happened'>
+                <button onclick='showHistory();'>History</button></span>
+            <span data-tooltip-position='right' data-tooltip='Give up all your hotels and title deeds, and either start afresh from the car park with the starting money, or leave the game. On your own turn, after moving'>
+                <button onclick='declareBankruptClicked();' class='button_minor'>Bankrupt...</button></span>
+        </div>
+    </div>
+    <div id='divMid'>
+        <div id='divWho'></div>
+        <div id='divPrompt'></div>
+        <!-- what the player whose turn it is has done on it, an icon each: mouse over (or click) for details; a click shows it again on the map -->
+        <div id='divFoot'>
+            <div id='divTurnActions'></div>
+            <!-- news of hotels opening and growing, scrolling by -->
+            <div id='divNews'></div>
+        </div>
+    </div>
+    <div id='divMyAssets'></div>
+</div>
+<div id='divPromptDeeds'></div>
+<div id='divStatus'></div><!-- goes into the History window -->
+<div>
+    <div id='divPlayingArea'></div>
+</div>
+<h2>Tycoons <button onclick="showDeeds();">All Title Deeds</button>
+    <span data-tooltip-position='top' data-tooltip="Everyone's net worth: cash, and hotels at what they cost. With a way to end the game by agreement: the richest wins">
+        <button onclick="showBalanceSheet();">Balance sheet</button></span>
+    &nbsp;<button onclick="goTop();">(back to top)</button></h2>
+<div id='divBalances'></div>
+<hr>
+<br>Refresh page to restart, or click: <button onclick="newGameBoard(true);" class='button_final'>New Game</button>
+<span data-tooltip-position='top' data-tooltip='Save the game being played as a file, to keep or pass on. Before a throw, or while choosing what to do on a space'>
+<button onclick="exportGame();">Export game</button></span>
+<span data-tooltip-position='top' data-tooltip='Put on a game from a file made by Export game, in place of the one being played'>
+<button onclick="$('#fileGame')[0].click();">Load game</button></span>
+<input type="file" id="fileGame" accept=".json,application/json" style="display: none;" onchange="importGameFile(this);">
+<div>
+<b>Options</b>:<br>
+<span data-tooltip-position='right' data-tooltip='Official rule. When unticked (friendlier), the full price of the land is paid to its owner'>
+<input type="checkbox" id="option_half_price" name="option_half_price" onclick='setHalfPriceCompulsory(this.checked);'>
+<label for="option_half_price"> Compulsory purchase of another player's bare land at half price</label></span><br>
+<input type="checkbox" id="option_follow_token" name="option_follow_token" checked onclick='setFollowToken(this.checked);'>
+<label for="option_follow_token"> Scroll to the token of the player whose turn it is</label><br>
+<span data-tooltip-position='right' data-tooltip="When unticked ('keep your eyes open'), the owner must click Claim fee before the guest's turn passes, or the stay is free">
+<input type="checkbox" id="option_auto_claim" name="option_auto_claim" onclick='setAutoClaim(this.checked);'>
+<label for="option_auto_claim"> Claim hotel fees automatically for human owners</label></span><br>
+<span data-tooltip-position='right' data-tooltip='The empty land is washed out; its colours come back around every building and facility that goes up'>
+<input type="checkbox" id="option_pale_map" name="option_pale_map" checked onclick='setPaleMap(this.checked);'>
+<label for="option_pale_map"> Pale map: colour comes with the buildings</label></span><br>
+<span data-tooltip-position='right' data-tooltip="Before your throw, on the next 6 spaces: a dark swirl on entrances of other players' hotels, and (if there are any) a green one on your own, where you are safe. Free things ahead always sparkle">
+<input type="checkbox" id="option_show_risks" name="option_show_risks" checked onclick='setShowRisks(this.checked);'>
+<label for="option_show_risks"> Before a throw, show the dangerous and the safe spaces ahead</label></span><br>
+<input type="checkbox" id="option_sound" name="option_sound" checked onclick='setSound(this.checked);'>
+<label for="option_sound"> Sound: cars honk as they pass the Bank and the Town Hall</label><br><br>
+<span data-tooltip-position='right' data-tooltip='Players are added/removed live. Tick AI for a computer player'><b>Players</b></span>:
+<div id='divPlayers'></div>
+<br>
+<button onclick="resetOptions();" class='button_final'>Reset Options</button>
+</div>
+<br><br><hr><div id='divWinning'>
+<h2>Win by accumulating the most Hotels and hence Moolah! <button id='buttShowRules' onclick="showRules();">Show Rules</button></h2></div>
+</body>
+</html>

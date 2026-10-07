@@ -1,0 +1,2060 @@
+html,
+body {
+  font-family: Century Gothic,CenturyGothic,AppleGothic,sans-serif;
+}
+
+/* Top panel: dice, prompt, status printout and assets. Stays in view over the map */
+#divTop
+{
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    gap: 10px;
+    height: 265px;
+    padding: 4px 8px;
+    background: #fffdf5f2;
+    border-bottom: 4px solid #c9a227;
+    box-shadow: 0 4px 8px #0005;
+}
+
+#divDice
+{
+    flex: 0 0 350px;
+}
+
+#divDice button
+{
+    padding: 6px 9px;
+    margin: 2px 1px;
+    font-size: 16px;
+    height: 35px;
+}
+
+#divDice .dice-container
+{
+	margin-top: 0px;
+}
+
+#divMid
+{
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#divWho
+{
+    font-size: 1.5em;
+}
+
+#divPrompt
+{
+    min-height: 46px;
+}
+
+#divPrompt button
+{
+    padding: 8px 12px;
+    font-size: 16px;
+}
+
+.prompt_box /* choices about one hotel, under its name */
+{
+    display: inline-block;
+    margin: 2px 0;
+    padding: 0 6px 4px 6px;
+    border: 4px solid;
+    border-radius: 10px;
+    background: #fffef7;
+    box-shadow: 2px 2px 4px #0005;
+}
+
+.prompt_box_title
+{
+    margin: 0 -6px 4px -6px;
+    padding: 2px 12px;
+    color: #fff;
+    font-size: 1.6em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-shadow: 0 0 3px #000;
+}
+
+/* Choices that each take in the ones before (buildings of a hotel): each button comes out from under the one before it */
+.stack_item
+{
+    position: relative;
+    padding: 4px 0 !important;
+}
+
+.stack_item button
+{
+    margin: 3px 0;
+    box-shadow: 3px 3px 0 #3f404e;
+}
+
+.stack_under
+{
+    margin-left: -24px;
+}
+
+.stack_under button
+{
+    padding-left: 34px !important;
+    background-color: #f7bd8a;
+}
+
+.stack_under + .stack_under button
+{
+    background-color: #fad3b0;
+}
+
+.stack_item + :not(.stack_item)
+{
+    margin-left: 10px;
+}
+
+.prompt_text
+{
+    font-size: 1.1em;
+    margin: 2px 0;
+}
+
+#divStatus /* inside the History popup */
+{
+    box-sizing: border-box;
+    height: 100%;
+    overflow-y: auto;
+    background: #fff;
+    color: #000;
+    padding: 2px 6px;
+    font-size: 0.95em;
+}
+
+.log_line { padding: 1px 0; }
+.log_turn { margin-top: 4px; border-top: 2px solid #c9a227; font-weight: bold; background: #fff8e1; }
+.log_good { color: #1b5e20; }
+.log_bad { color: #b71c1c; }
+.log_auction { background: #ede7f6; }
+.log_info { color: #555; font-style: italic; }
+.log_changed { color: #000; background: #fff59d; font-style: normal; }
+.money_gain { color: green; font-weight: bold; }
+.money_loss { color: red; font-weight: bold; }
+.stars { color: #e6a700; text-shadow: 0 0 1px #000; }
+
+.token_icon
+{
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 2px;
+}
+
+/* The die to throw glows. The glow is a patch behind the die, on the dice's container: a filter on the die itself would flatten its 3D cube */
+.want_dice1:before, .want_dice2:before
+{
+    content: '';
+    position: absolute;
+    left: 25px;
+    top: 25px;
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    background: #ffb30055;
+    box-shadow: 0 0 22px 14px #ffb300;
+    animation: dice_glow 0.8s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+.want_dice2:before
+{
+    left: 175px;
+}
+
+@keyframes dice_glow
+{
+    to { box-shadow: 0 0 30px 20px #ff6f00; }
+}
+
+.want_dice1 #dice1, .want_dice2 #dice2
+{
+    cursor: pointer;
+}
+
+.in_bid
+{
+    width: 110px;
+    height: 30px;
+    font-size: 18px;
+}
+
+/* Assets of the current player: cash and title deeds */
+#divMyAssets
+{
+    flex: 0 0 470px;
+    overflow-y: auto;
+    border-left: 2px dashed #c9a227;
+    padding-left: 8px;
+}
+
+.assets_title
+{
+    font-size: 1.2em;
+}
+
+.cash_fan
+{
+    display: flex;
+    gap: 2px;
+    padding: 14px 4px 6px 4px;
+    min-height: 64px;
+}
+
+.cash_stack
+{
+    position: relative;
+    width: 90px;
+    height: 60px;
+    transform-origin: bottom center;
+}
+
+.cash_stack img
+{
+    position: absolute;
+    width: 72px;
+    height: 36px;
+    border-radius: 3px;
+    box-shadow: 1px 1px 2px #0007;
+}
+
+.cash_count
+{
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: #000b;
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.deeds_row
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.deed_mini
+{
+    width: 104px;
+    border: 3px solid;
+    border-radius: 6px;
+    background: #fffef7;
+    font-size: 12px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 2px 2px 3px #0005;
+}
+
+.deed_mini_title
+{
+    color: #fff;
+    font-weight: bold;
+    font-size: 13px;
+    text-shadow: 0 0 2px #000;
+}
+
+.deed_pip
+{
+    display: inline-block;
+    width: 9px;
+    height: 12px;
+    margin: 2px 1px 0 1px;
+    border: 1px solid #555;
+    background: #eee;
+}
+
+.deed_pip_leisure { border-radius: 50%; height: 9px; }
+.deed_pip_on { background: #2e7d32; }
+.deed_pip_leisure.deed_pip_on { background: #29b6f6; }
+
+/* Title deed card */
+.deed
+{
+    display: inline-block;
+    vertical-align: top;
+    margin: 4px;
+    border: 4px solid;
+    border-radius: 8px;
+    background: #fffef7;
+    box-shadow: 3px 3px 6px #0006;
+    font-size: 13px;
+}
+
+.deed_title
+{
+    color: #fff;
+    font-size: 1.4em;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 0 3px #000;
+    letter-spacing: 1px;
+}
+
+.deed_owner
+{
+    text-align: center;
+    padding: 2px;
+}
+
+.deed_costs, .deed_table
+{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.deed_costs td { padding: 1px 6px; }
+.deed_costs td:nth-child(even) { font-weight: bold; text-align: right; }
+.deed_table th { background: #eee6c8; font-size: 0.9em; }
+.deed_table td { border-top: 1px solid #ccc; padding: 1px 5px; text-align: right; }
+.deed_table td.deed_phase { text-align: left; }
+.deed_done { background: #dcedc8; }
+
+#divPromptDeeds /* deeds that go with the question being asked */
+{
+    position: fixed;
+    left: 8px;
+    bottom: 8px;
+    z-index: 45;
+    max-width: 96%;
+    text-align: left;
+    pointer-events: none;
+}
+
+.deeds_popup
+{
+    text-align: center;
+    background: #f5f0dc;
+}
+
+/* Everyone's money and hotels */
+.balances
+{
+    border-collapse: collapse;
+    font-size: 1.1em;
+}
+
+.balances th { text-align: left; background: #eee6c8; }
+.balances td, .balances th { padding: 4px 10px; border-bottom: 1px solid #ccc; }
+.balance_who { background: #fff8e1; }
+.balance_out { opacity: 0.45; text-decoration: line-through; }
+
+.balance_hotel
+{
+    display: inline-block;
+    margin: 1px 3px;
+    padding: 0 5px;
+    border: 2px solid;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+
+/* The map */
+#divPlayingArea
+{
+    position: relative;
+    z-index: 0; /* keeps the buildings' z-indexes to the map, beneath the top panel */
+    background-image: url(../images/hotels.webp);
+    background-repeat: no-repeat;
+    background-size: 100%;
+    width: 1600px;
+    height: 1278px;
+}
+
+#divBuildings
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.cell_container {
+    position: absolute;
+    min-width: 80px;
+    height: 80px;
+    width: 80px;
+}
+
+.cell_container:hover {
+    background-color: #00ff0066;
+}
+
+.cell_container_start
+{
+    position: absolute;
+    height: 80px;
+    width: 80px;
+}
+
+.cell {
+    min-width: 60px;
+    max-width: 80px;
+    height: 80px;
+    width: 80px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-spacing: 0;
+    padding: 0;
+}
+
+.cell_player_0, .cell_player_1, .cell_player_2, .cell_player_3, .cell_player_4,
+.cell_player_5, .cell_player_6, .cell_player_7, .cell_player_8
+{
+    background-repeat: no-repeat;
+    background-size: 100%;
+    position: relative;
+    z-index: 10; /* above the entrances beside the road */
+    filter: drop-shadow(2px 3px 2px #0008);
+}
+
+/* the token rides in its car: face above, car across the bottom of the space */
+.cell_player_0, .cell_player_1, .cell_player_2, .cell_player_3, .cell_player_4,
+.cell_player_5, .cell_player_6, .cell_player_7, .cell_player_8
+{
+    background-size: 100%; /* the face at full size; the car drives across its lower part */
+    background-position: center -8px;
+}
+
+.token_swirl /* circling swirl around the token of the player whose turn it is; as in Cluedo */
+{
+    position: absolute;
+    top: -6px; left: -6px;
+    width: 92px; height: 92px;
+    box-sizing: border-box;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 50%;
+    border: 6px solid transparent;
+    border-top-color: #ff0;
+    border-right-color: #f80;
+    box-shadow: 0 0 6px 1px #fc08;
+    animation: token_swirl 1.4s linear infinite;
+}
+
+.token_swirl:after /* a 2nd arc, going the other way */
+{
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px; right: 4px; bottom: 4px;
+    border-radius: 50%;
+    border: 4px solid transparent;
+    border-bottom-color: #0cf;
+    border-left-color: #fff;
+    animation: token_swirl 0.9s linear infinite reverse;
+}
+
+@keyframes token_swirl
+{
+    to { transform: rotate(360deg); }
+}
+
+.claim_bell /* on a guest whose hotel fee is waiting to be claimed */
+{
+    position: absolute;
+    right: -18px;
+    top: -20px;
+    z-index: 6;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 26px;
+    border-radius: 50%;
+    background: #ffd54f;
+    border: 2px solid #000;
+    cursor: pointer;
+    text-align: center;
+    animation: claim_glow 0.6s ease-in-out infinite alternate;
+}
+
+.claim_bell_big /* after a click on the token: as big as the token, over it */
+{
+    right: -6px;
+    top: -6px;
+    width: 88px;
+    height: 88px;
+    line-height: 88px;
+    font-size: 58px;
+    z-index: 8;
+}
+
+.car
+{
+    position: absolute;
+    left: -20px;
+    bottom: -22px;
+    width: 120px;
+    line-height: 0;
+}
+
+.car_left svg { transform: scaleX(-1); }
+
+#divTrail
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.dust /* puff in the colour of the car that drove over this road space on its player's last turn */
+{
+    position: absolute;
+    translate: -50% -50%;
+    width: 46px;
+    height: 31px;
+    z-index: 3;
+    opacity: 0.92;
+    filter: drop-shadow(1px 2px 1px #0008);
+    animation: dust_puff 0.6s ease-out;
+}
+
+@keyframes dust_puff
+{
+    from { transform: scale(0.2); opacity: 0; }
+    to   { transform: scale(1); opacity: 0.92; }
+}
+
+.action_mark /* 'buy' or 'build' icon left beside the road */
+{
+    position: absolute;
+    translate: -50% -50%;
+    width: 44px;
+    height: 44px;
+    z-index: 7;
+    border: 4px solid;
+    border-radius: 50%;
+    background: #fffd;
+    box-shadow: 2px 2px 3px #0008;
+    pointer-events: auto;
+    cursor: help;
+}
+
+.action_mark img
+{
+    width: 100%;
+    height: 100%;
+}
+
+.action_mark:hover
+{
+    z-index: 400; /* its bubble goes over the buildings */
+}
+
+.action_tip /* what happened there: a bubble in the style of the hotel names, when the mouse is over the icon */
+{
+    display: none;
+    left: 50%;
+    top: -12px;
+    translate: -50% -100%;
+    font-weight: normal;
+    cursor: help;
+}
+
+.action_mark:hover .action_tip
+{
+    display: block;
+}
+
+.deed_sell
+{
+    text-align: center;
+    padding: 4px;
+}
+
+.deed_sell button
+{
+    padding: 6px 12px;
+    font-size: 15px;
+}
+
+.cell_player_0 { background-image: url(../images/token-yellow.png); }
+.cell_player_1 { background-image: url(../images/token-red.png); }
+.cell_player_2 { background-image: url(../images/token-brown.png); }
+.cell_player_3 { background-image: url(../images/token-white.png); }
+.cell_player_4 { background-image: url(../images/token-gray.png); }
+.cell_player_5 { background-image: url(../images/token-green.png); }
+.cell_player_6 { background-image: url(../images/token-purple.png); }
+.cell_player_7 { background-image: url(../images/token-blue.png); }
+.cell_player_8 { background-image: url(../images/token-pink.png); }
+
+/* Entrance spots: 1 on each side of a road space; unseen until on offer or built on */
+.cell_entrance
+{
+    height: 25px;
+    border: 5px solid transparent;
+    text-align: center;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.cell_entrance.entrance_built /* bought: the whole spot is filled in, yellow edged in blue for every hotel and owner */
+{
+    pointer-events: auto;
+    background-color: #f5c400;
+    border-color: #1e88e5;
+    border-style: solid;
+    border-radius: 6px;
+    box-shadow: 2px 2px 4px #000a;
+    cursor: help;
+}
+
+.cell_entrance.entrance_visited /* a guest stands at it, and the fee can be claimed: it sparkles, and a click claims */
+{
+    cursor: pointer;
+    z-index: 9;
+    animation: entrance_sparkle 0.5s ease-in-out infinite alternate;
+}
+
+.cell_entrance.entrance_visited:before, .cell_entrance.entrance_visited:after
+{
+    content: '\2728';
+    position: absolute;
+    top: -18px;
+    font-size: 26px;
+    animation: sparkle_twinkle 0.7s ease-in-out infinite alternate;
+}
+
+.cell_entrance.entrance_visited:before { left: -16px; }
+.cell_entrance.entrance_visited:after { right: -16px; top: 8px; animation-delay: 0.35s; }
+
+@keyframes entrance_sparkle
+{
+    from { box-shadow: 0 0 6px 2px #fff; filter: brightness(1); }
+    to   { box-shadow: 0 0 18px 8px #ffeb3b; filter: brightness(1.5); }
+}
+
+@keyframes sparkle_twinkle
+{
+    from { transform: scale(0.5) rotate(-20deg); opacity: 0.4; }
+    to   { transform: scale(1.2) rotate(20deg); opacity: 1; }
+}
+
+.cell_entrance.entrance_avail
+{
+    pointer-events: auto;
+    cursor: pointer;
+    border-color: #00c853;
+    background-color: #b9f6cacc;
+    animation: entrance_glow 0.7s ease-in-out infinite alternate;
+}
+
+.cell_entrance.entrance_hilite, .cell_entrance.entrance_avail:hover
+{
+    background-color: #ffff00 !important;
+    border-color: #ff6f00;
+}
+
+@keyframes entrance_glow
+{
+    to { box-shadow: 0 0 14px 6px #00e676; }
+}
+
+.entrance_icon
+{
+    width: 38px;
+    height: 38px;
+    margin-top: -10px;
+    border: 3px solid;
+    border-radius: 50%;
+    background: #fffc;
+    box-shadow: 2px 2px 3px #0008;
+}
+
+.entrance_star /* on a hotel's starred spot: at one end of the entrance, which covers the star on the map */
+{
+    position: absolute;
+    left: -16px;
+    top: -8px;
+    width: 40px;
+    height: 40px;
+    filter: drop-shadow(0 0 2px #000);
+    pointer-events: none;
+}
+
+/* Hotel names, 'sold' signs and buildings */
+.hotel_label
+{
+    position: absolute;
+    translate: -50% -50%;
+    z-index: 8;
+    padding: 1px 8px;
+    border: 3px solid #555;
+    border-radius: 10px;
+    background: #fffe;
+    font-weight: bold;
+    font-size: 28px;
+    line-height: 1.15;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 2px 2px 3px #0006;
+}
+
+.hotel_label small { font-weight: normal; }
+.hotel_label small { font-size: 22px; }
+.hotel_label .token_icon { width: 40px; height: 40px; }
+.place_label { background: #333d; color: #fff; cursor: default; font-size: 22px; }
+
+.land_sign
+{
+    position: absolute;
+    translate: -50% -100%;
+    padding-bottom: 26px;
+}
+
+.land_sign:after /* its post */
+{
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 6px;
+    height: 26px;
+    margin-left: -3px;
+    background: #5d4037;
+}
+
+.land_sign_board
+{
+    padding: 0 5px 0 2px;
+    border: 3px solid;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 24px;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 2px 2px 2px #0006;
+}
+
+.land_sign_board .token_icon { width: 40px; height: 40px; }
+
+.building /* a point at the plot; its picture (.building_art) hangs off it */
+{
+    position: absolute;
+    width: 0;
+    height: 0;
+    line-height: 0;
+    filter: drop-shadow(6px 4px 3px #0009);
+    transform-origin: bottom center;
+}
+
+.building_leisure
+{
+    filter: drop-shadow(2px 2px 2px #0007);
+    transform-origin: center;
+}
+
+.building_art
+{
+    position: absolute;
+    pointer-events: auto;
+}
+
+.building_wobble /* its hotel has a guest whose fee can be claimed: it wobbles now and then, and a click claims */
+{
+    cursor: pointer;
+    transform-origin: 50% 100%;
+    animation: building_wobble 2.6s ease-in-out infinite;
+}
+
+@keyframes building_wobble
+{
+    0%, 45%, 100% { transform: rotate(0deg); filter: none; }
+    8%  { transform: rotate(-7deg); filter: drop-shadow(0 0 8px #ffeb3b); }
+    16% { transform: rotate(6deg); }
+    24% { transform: rotate(-5deg); filter: drop-shadow(0 0 8px #ffeb3b); }
+    32% { transform: rotate(4deg); }
+    40% { transform: rotate(-2deg); }
+}
+
+.building_flag /* in the colour of the hotel's owner, on its main building */
+{
+    position: absolute;
+    left: 50%;
+    top: -22px;
+    width: 30px;
+    height: 18px;
+    border: 1px solid #000;
+    border-left: 3px solid #333;
+    z-index: 1;
+    animation: flag_wave 1.6s ease-in-out infinite alternate;
+    transform-origin: left center;
+}
+
+.building_flag:after /* its pole */
+{
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 40px;
+    background: #333;
+}
+
+@keyframes flag_wave
+{
+    from { transform: skewY(-8deg); }
+    to   { transform: skewY(8deg); }
+}
+
+.float_label /* money gained or lost, floating up from a token */
+{
+    position: absolute;
+    translate: -50% -50%;
+    z-index: 30;
+    padding: 0 8px;
+    border-radius: 10px;
+    background: #fffd;
+    font-size: 22px;
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: float_up 1.8s ease-out forwards;
+}
+
+.float_gain { color: #1b8a1b; }
+.float_loss { color: #d50000; }
+
+@keyframes float_up
+{
+    0%   { transform: translateY(0); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translateY(-90px); opacity: 0; }
+}
+
+.confetti
+{
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 0;
+    z-index: 60;
+    pointer-events: none;
+}
+
+.confetti span
+{
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 16px;
+    opacity: 0;
+    animation: confetti_fall 4s ease-in forwards;
+}
+
+@keyframes confetti_fall
+{
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--dx), 100vh) rotate(var(--turn)); opacity: 0.8; }
+}
+
+/* Car park */
+.cell_player_starter_0:hover { background-color: yellow; }
+.cell_player_starter_1:hover { background-color: #ff7777; }
+.cell_player_starter_2:hover { background-color: #c25b5b; }
+.cell_player_starter_3:hover { background-color: white; }
+.cell_player_starter_4:hover { background-color: lightgray; }
+.cell_player_starter_5:hover { background-color: lightgreen; }
+.cell_player_starter_6:hover { background-color: #de7ade; }
+.cell_player_starter_7:hover { background-color: lightblue; }
+.cell_player_starter_8:hover { background-color: pink; }
+
+.pulsate {
+    animation-name: pulsate;
+    animation-duration: 5s;
+    animation-iteration-count: 10;
+    animation-timing-function: linear;
+}
+
+.pulsate_once {
+    animation-name: pulsate_once;
+    animation-duration: 0.5s;
+    animation-iteration-count: 1;
+    animation-timing-function: linear;
+}
+
+@keyframes pulsate {
+  10%, 30%, 50%, 70%, 90% {
+    transform: scale(2);
+  }
+  20%, 40%, 60%, 80% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulsate_once {
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.shimmer { /* token of the player whose turn it is */
+  display: inline-block;
+  animation: shimmer 6.5s infinite;
+  transform: scale(1.2);
+}
+
+@keyframes shimmer {
+  0%  { transform: rotate(-10deg) scale(1.2) }
+  10% { transform: rotate( 10deg) scale(1.2) }
+  50% { transform: rotate(-10deg) scale(1.2) }
+  60% { transform: rotate( 10deg) scale(1.2) }
+}
+
+/* Players table */
+.player_pick
+{
+    display: flex;
+    align-items: center;
+}
+
+.player_pick_opts
+{
+    display: flex;
+    flex-direction: column;
+}
+
+.player_pick_ai
+{
+    font-weight: bold;
+    background: #fffa;
+    border-radius: 4px;
+    padding: 0 3px;
+}
+
+.player_pick_name
+{
+    text-align: center;
+    font-weight: bold;
+    background: #fffa;
+}
+
+.player_pick_level
+{
+    width: 100%;
+    font-size: 1em;
+}
+
+input {
+  width: 20px;
+  height: 20px;
+}
+
+.big_checkbox {
+  width: 40px;
+  height: 40px;
+}
+
+button {
+    padding: 15px;
+    margin: 3px;
+    color: black;
+    font-weight: bold;
+    background-color: #f4a35e;
+    border: none;
+    font-size: 20px;
+    border-radius: 20px;
+    box-shadow: 1px 3px #3f404e;
+    outline: none;
+    transition: .3s;
+}
+
+button:hover, button:active {
+    outline: none;
+    background: #3f404e;
+    color: white;
+    cursor: pointer;
+    transform: translateY(5px);
+}
+
+.button_claim /* a human owner catches a computer player at their hotel */
+{
+    background: #ffd54f;
+    animation: claim_glow 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes claim_glow
+{
+    to { box-shadow: 0 0 14px 5px #ff6f00; }
+}
+
+.balance_built { background: #ffcc80; } /* main building up, but no entrance: earns nothing yet */
+.balance_open { background: #a5d6a7; } /* has an entrance */
+
+.button_small
+{
+    padding: 2px 10px;
+    font-size: 14px;
+}
+
+.button_ai
+{
+    background: lightblue;
+}
+.button_final
+{
+    background: pink;
+}
+.button_minor
+{
+    background: #ddd;
+}
+.button_free_stuff
+{
+    background: green;
+    color: white;
+}
+button:disabled,
+button[disabled]
+{
+    background: gray;
+    color: lightgray;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Build buttons, under the mouse: can it be paid for even at double price? */
+button.afford_spare:hover { background: #2e7d32; color: #fff; } /* yes, with cash left over */
+button.afford_exact:hover { background: #ef6c00; color: #fff; } /* yes, with the very last of it */
+button.afford_short:hover { background: #c62828; color: #fff; } /* no */
+
+.cell_entrance.entrance_blink /* shown from its button: where this entrance spot is */
+{
+    animation: entrance_blink 0.4s steps(2, jump-none) infinite;
+    z-index: 11;
+}
+
+@keyframes entrance_blink
+{
+    from { background-color: #ffff00; box-shadow: 0 0 22px 12px #ffea00; transform: var(--turned, none); }
+    to   { background-color: #ff1744; box-shadow: 0 0 6px 2px #fff; }
+}
+
+/* A payment, shown over the question in the top panel: payer, bank notes going across, payee */
+#divMid
+{
+    position: relative;
+}
+
+.pay_show
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    background: #fffdf5f5;
+    border: 3px solid #c9a227;
+    border-radius: 12px;
+    pointer-events: none;
+    animation: pay_fade var(--pay) ease-in-out both;
+}
+
+@keyframes pay_fade
+{
+    0%   { opacity: 0; }
+    8%   { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.pay_face
+{
+    flex: 0 0 170px;
+    text-align: center;
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.pay_face img
+{
+    width: 150px;
+    height: 150px;
+}
+
+.pay_face svg
+{
+    height: 150px;
+    width: auto;
+}
+
+.pay_face:first-child { animation: pay_give var(--pay) ease-in-out both; }
+.pay_face:last-child { animation: pay_take var(--pay) ease-in-out both; }
+
+@keyframes pay_give
+{
+    0%, 30%, 100% { transform: none; }
+    15% { transform: translateX(14px) rotate(6deg); }
+}
+
+@keyframes pay_take
+{
+    0%, 55%, 100% { transform: none; }
+    75% { transform: scale(1.12) rotate(-5deg); }
+}
+
+.pay_lane
+{
+    flex: 1 1 auto;
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+}
+
+.pay_note
+{
+    position: absolute;
+    left: 0;
+    width: 130px;
+    height: 65px;
+    border-radius: 4px;
+    box-shadow: 2px 2px 3px #0007;
+    opacity: 0;
+    animation: pay_fly calc(var(--pay) * 0.55) ease-in-out both;
+}
+
+@keyframes pay_fly
+{
+    0%   { left: -10%; opacity: 0; transform: rotate(-12deg); }
+    15%  { opacity: 1; }
+    50%  { transform: rotate(8deg) translateY(-10px); }
+    85%  { opacity: 1; }
+    100% { left: 100%; opacity: 0; transform: rotate(-6deg); }
+}
+
+.pay_amount
+{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 34px;
+    text-align: center;
+    font-size: 3.2em;
+    font-weight: bold;
+    color: #1b5e20;
+    text-shadow: 0 0 6px #fff, 0 0 2px #000;
+    animation: pay_flash 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes pay_flash
+{
+    from { transform: scale(1); color: #1b5e20; }
+    to   { transform: scale(1.12); color: #c62828; }
+}
+
+.pay_what
+{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    text-align: center;
+    font-size: 1.15em;
+}
+
+/* A new building going up: a bulldozer at work on the plot, then the building drops into place and squashes down in a cloud of dust.
+   --build: how long it all takes; --t: how far it had got (as a negative delay) when the map was last drawn */
+.building_new .building_art
+{
+    transform-origin: 50% 100%;
+    animation: building_drop calc(var(--build) * 0.5) cubic-bezier(0.5, 0, 0.9, 0.6) both;
+    animation-delay: calc(var(--t) + var(--build) * 0.4);
+}
+
+@keyframes building_drop
+{
+    0%   { transform: translateY(-420px) scaleY(1.15); opacity: 0; }
+    10%  { opacity: 1; }
+    60%  { transform: translateY(0) scaleY(1); }
+    72%  { transform: translateY(0) scaleY(0.78) scaleX(1.12); }
+    86%  { transform: translateY(0) scaleY(1.08) scaleX(0.97); }
+    100% { transform: none; opacity: 1; }
+}
+
+.build_dozer
+{
+    position: absolute;
+    left: -40px;
+    top: -62px;
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+    animation: dozer_work calc(var(--build) * 0.5) ease-in-out both;
+    animation-delay: var(--t);
+}
+
+@keyframes dozer_work
+{
+    0%   { opacity: 0; transform: translateX(-50px); }
+    15%  { opacity: 1; transform: translateX(-20px) rotate(-6deg); }
+    30%  { transform: translateX(16px) rotate(5deg); }
+    45%  { transform: translateX(-14px) rotate(-5deg); }
+    60%  { transform: translateX(12px) rotate(4deg); }
+    80%  { opacity: 1; transform: translateX(-6px); }
+    100% { opacity: 0; transform: translateX(60px); }
+}
+
+.build_dust
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.build_dust span
+{
+    position: absolute;
+    width: 70px;
+    height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f5e9d0 0%, #cdb892dd 55%, #b9a37a00 75%);
+    opacity: 0;
+    animation: dust_burst calc(var(--build) * 0.35) ease-out both;
+    animation-delay: calc(var(--t) + var(--build) * 0.68);
+}
+
+.build_dust span:nth-child(1) { left: -80px; top: -26px; --dx: -70px; }
+.build_dust span:nth-child(2) { left: -35px; top: -14px; --dx: 0px; }
+.build_dust span:nth-child(3) { left: 10px; top: -26px; --dx: 70px; }
+
+@keyframes dust_burst
+{
+    0%   { opacity: 0; transform: scale(0.3); }
+    20%  { opacity: 0.95; }
+    100% { opacity: 0; transform: translate(var(--dx), -24px) scale(2.4); }
+}
+
+/* Row of icons at the foot of the message area: what the player whose turn it is has done on it */
+#divTurnActions
+{
+    margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 66px;
+    padding-top: 2px;
+    border-top: 2px dashed #c9a227;
+}
+
+.ta_item
+{
+    position: relative;
+    width: 62px;
+    height: 62px;
+    border: 2px solid #c9a227;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 1px 2px 3px #0005;
+    cursor: pointer;
+    animation: ta_pop 0.5s ease-out;
+}
+
+@keyframes ta_pop
+{
+    from { transform: scale(0.2); }
+    60%  { transform: scale(1.25); }
+    to   { transform: scale(1); }
+}
+
+.ta_item:hover, .ta_open
+{
+    border-color: #ff6f00;
+    z-index: 30;
+}
+
+.ta_icon
+{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    line-height: 0;
+}
+
+.ta_icon img { width: 48px; height: 48px; }
+.ta_icon svg { max-width: 58px; max-height: 58px; }
+.ta_die { font-size: 54px; line-height: 1; }
+.ta_emoji { font-size: 38px; line-height: 1; }
+.ta_stay_nights
+{
+    position: absolute;
+    top: -12px;
+    left: 42px;
+    font-size: 1em;
+    font-weight: bold;
+    padding: 14px 6px 12px 4px;
+    color: #fff;
+}
+.ta_stay_crescent
+{
+    position: absolute;
+    top: -8px;
+    left: 44px;
+    right: -7px;
+    bottom: 43px;
+    border-radius: 14px;
+    background: #3c0788ba;
+}
+
+.ta_money /* money out or in */
+{
+    position: absolute;
+    left: -3px;
+    right: -3px;
+    bottom: -8px;
+    padding: 0 2px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 16px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.ta_out { background: #c62828; }
+.ta_in { background: #2e7d32; }
+
+.ta_tag /* FREE, 2x, NIL */
+{
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    padding: 0 4px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    background: #2e7d32;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 16px;
+}
+
+.ta_denied /* stamped across the icon */
+{
+    right: auto;
+    left: -4px;
+    top: 18px;
+    width: 66px;
+    padding: 0;
+    border: 3px double #c62828;
+    border-radius: 4px;
+    background: #fffc;
+    color: #c62828;
+    font-size: 13px;
+    text-align: center;
+    transform: rotate(-18deg);
+}
+
+.ta_tip /* its details: below the icon, over the map */
+{
+    top: auto;
+    bottom: -14px;
+    translate: -50% 100%;
+    cursor: pointer;
+}
+
+.ta_item:hover .ta_tip, .ta_open .ta_tip
+{
+    display: block;
+}
+
+.label_flash /* a hotel's name on the map, pointed out */
+{
+    animation: label_flash 0.5s ease-in-out 6 alternate;
+}
+
+@keyframes label_flash
+{
+    to { box-shadow: 0 0 24px 14px #ffea00; scale: 1.25; }
+}
+
+/* A stamp over the message area: how the planning permission die fell */
+.stamp_show
+{
+    justify-content: center;
+}
+
+.stamp
+{
+    padding: 4px 34px;
+    border: 10px double;
+    border-radius: 14px;
+    font-size: 4.6em;
+    font-weight: bold;
+    line-height: 1.1;
+    letter-spacing: 6px;
+    text-align: center;
+    text-transform: uppercase;
+    transform: rotate(-9deg);
+    animation: stamp_down 0.45s cubic-bezier(0.3, 1.6, 0.6, 1) both;
+}
+
+.stamp small
+{
+    display: block;
+    font-size: 0.32em;
+    letter-spacing: 1px;
+}
+
+.stamp_good { color: #2e7d32; }
+.stamp_bad { color: #c62828; }
+.stamp_warn { color: #ef6c00; }
+.stamp_free { color: #b8860b; text-shadow: 0 0 12px #ffeb3b; }
+
+@keyframes stamp_down
+{
+    from { transform: rotate(-9deg) scale(3.5); opacity: 0; }
+    to   { transform: rotate(-9deg) scale(1); opacity: 1; }
+}
+
+.float_honk
+{
+    color: #e65100;
+    font-size: 26px;
+}
+
+/* Pale map: the picture of the map is washed out, and comes back in full colour in rings around whatever is built */
+#divPale, #divVivid
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.pale_map #divPale
+{
+    backdrop-filter: saturate(0.3) brightness(1.12) contrast(0.85);
+}
+
+#divVivid
+{
+    overflow: hidden;
+}
+
+.vivid_ring
+{
+    position: absolute;
+    border-radius: 50%;
+    background-image: url(../images/hotels.webp);
+    background-repeat: no-repeat;
+    background-size: 1600px 1278px;
+}
+
+/* A hotel's land in full colour, within its traced outline (pale map) */
+.vivid_land
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url(../images/hotels.webp);
+    background-repeat: no-repeat;
+    background-size: 1600px 1278px;
+}
+
+/* Demo page: tracing the outline of a hotel's land. Outlines are drawn in #svgTrace */
+#svgTrace
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 200;
+    pointer-events: none;
+}
+
+/* while tracing: nothing but the map, in full colour, to click on */
+.tracing
+{
+    cursor: crosshair;
+}
+
+.tracing #divBuildings, .tracing #divTrail, .tracing #divVivid, .tracing .cell_container, .tracing .cell_container_start
+{
+    display: none;
+}
+
+.tracing #divPale
+{
+    backdrop-filter: none;
+}
+
+.trace_bar
+{
+    display: inline-block;
+    padding: 2px 8px;
+    border: 3px solid #ff6f00;
+    border-radius: 10px;
+    background: #fff8e1;
+}
+
+#selTrace
+{
+    font-size: 16px;
+    height: 34px;
+}
+
+.demo_note
+{
+    font-size: 0.55em;
+    font-weight: normal;
+}
+
+/* Build buttons show at once whether they can be paid for, even at double price (and darken under the mouse) */
+button.afford_spare { background: #66bb6a; }
+button.afford_exact { background: #ffa726; }
+button.afford_short { background: #ef5350; color: #fff; }
+
+/* A car going by a space that another car stands on: drawn over it, a little up and to the left */
+.token_passing
+{
+    position: absolute;
+    translate: -62% -62%;
+    width: 80px;
+    height: 80px;
+    z-index: 12;
+    background-repeat: no-repeat;
+    background-size: 100%;
+    background-position: center -8px;
+    filter: drop-shadow(3px 4px 3px #000a);
+    pointer-events: none;
+}
+
+/* Speech bubble over a token: how it took what just happened */
+.token_bubble
+{
+    position: absolute;
+    translate: -50% -100%;
+    z-index: 300;
+    padding: 4px 12px;
+    border: 3px solid #333;
+    border-radius: 22px;
+    background: #fff;
+    font-size: 44px;
+    line-height: 1.1;
+    white-space: nowrap;
+    box-shadow: 3px 3px 5px #0007;
+    pointer-events: none;
+    animation: bubble_pop 3.5s ease-in-out both;
+}
+
+.token_bubble:after /* its tail */
+{
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -16px;
+    margin-left: -10px;
+    border: 10px solid transparent;
+    border-top-color: #333;
+    border-bottom-width: 6px;
+}
+
+.token_bubble img
+{
+    width: 46px;
+    height: 46px;
+    vertical-align: middle;
+}
+
+@keyframes bubble_pop
+{
+    0%   { transform: scale(0); opacity: 0; }
+    8%   { transform: scale(1.2); opacity: 1; }
+    14%  { transform: scale(1); }
+    88%  { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.6); opacity: 0; }
+}
+
+.crossed_out /* what was not to be had */
+{
+    position: relative;
+    display: inline-block;
+}
+
+.crossed_out:after
+{
+    content: '\2716';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    color: #d50000;
+    font-size: 44px;
+    line-height: 46px;
+    text-align: center;
+    text-shadow: 0 0 3px #fff;
+}
+
+/* Foot of the message area: this turn's action icons on the left, the news banner on the right */
+#divFoot
+{
+    margin-top: auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    border-top: 2px dashed #c9a227;
+}
+
+#divTurnActions
+{
+    margin-top: 0;
+    border-top: none;
+    flex: 0 1 auto;
+}
+
+#divNews
+{
+    flex: 1 1 120px;
+    min-width: 120px;
+    height: 34px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #263238;
+    color: #ffeb3b;
+    font-size: 18px;
+    line-height: 34px;
+    white-space: nowrap;
+}
+
+#divNews:empty
+{
+    visibility: hidden;
+}
+
+.news_roll
+{
+    display: inline-block;
+    padding-left: 100%;
+    animation: news_roll 30s linear infinite;
+}
+
+.news_roll b { color: #fff; }
+.news_gap { margin: 0 18px; color: #ff7043; }
+
+@keyframes news_roll
+{
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+}
+
+/* Beside whose turn it is: what the space under the token has to offer */
+.who_spot
+{
+    margin-left: 14px;
+    padding: 0 10px 0 4px;
+    border: 2px solid #c9a227;
+    border-radius: 14px;
+    background: #fff;
+    font-size: 1em;
+    white-space: nowrap;
+}
+
+.who_spot img
+{
+    width: 45px;
+    height: 45px;
+    vertical-align: middle;
+}
+
+/* A new entrance: on the map it drops into its spot; in the top panel a red carpet rolls out to the hotel */
+.cell_entrance.entrance_new
+{
+    animation: entrance_drop 0.9s cubic-bezier(0.3, 1.5, 0.6, 1) both, entrance_blink 0.4s steps(2, jump-none) 0.9s 4;
+    z-index: 11;
+}
+
+@keyframes entrance_drop
+{
+    from { scale: 6; opacity: 0; }
+    to   { scale: 1; opacity: 1; }
+}
+
+.carpet_show .pay_lane
+{
+    overflow: visible;
+}
+
+.carpet
+{
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: 54px;
+    margin-top: -40px;
+    width: 0;
+    border-top: 5px solid #ffd54f;
+    border-bottom: 5px solid #ffd54f;
+    background: repeating-linear-gradient(90deg, #c62828 0 22px, #b71c1c 22px 26px);
+    box-shadow: 0 6px 6px #0006;
+    animation: carpet_roll calc(var(--pay) * 0.6) ease-out both;
+}
+
+.carpet:after /* the roll at its end */
+{
+    content: '';
+    position: absolute;
+    right: -18px;
+    top: -9px;
+    width: 36px;
+    height: 62px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ef5350 0 20%, #8e0000 22% 40%, #c62828 42% 60%, #8e0000 62%);
+    animation: carpet_end calc(var(--pay) * 0.6) ease-out both;
+}
+
+@keyframes carpet_roll
+{
+    from { width: 0; }
+    to   { width: 100%; }
+}
+
+@keyframes carpet_end
+{
+    from { scale: 1.3; }
+    to   { scale: 0.35; }
+}
+
+.carpet_door
+{
+    position: absolute;
+    right: -14px; /* at the hotel's end of the carpet: its door */
+    top: 50%;
+    width: 84px;
+    height: 84px;
+    margin: -98px 0 0 0;
+    animation: bubble_pop calc(var(--pay) * 1.1) ease-in-out both;
+}
+
+/* What a computer player is about to throw a die for, said out loud in the message area */
+.prompt_announce
+{
+    margin: 2px 0;
+    padding: 4px 10px;
+    border-left: 8px solid #ff6f00;
+    border-radius: 6px;
+    background: #fff3e0;
+    font-size: 1.25em;
+    line-height: 1.25;
+}
+
+/* in the bubble of a build icon: how the price came out */
+.tip_double { padding: 0 4px; border-radius: 4px; background: #c62828; color: #fff; }
+.tip_free { padding: 0 4px; border-radius: 4px; background: #2e7d32; color: #fff; }
+
+.token_bubble_stay /* stays up until that player's next bubble or turn: no fading away */
+{
+    animation: bubble_fume 1.2s ease-in-out infinite alternate;
+}
+
+.token_bubble_calm /* the others pop up, then keep still */
+{
+    animation: bubble_in 0.5s ease-out both;
+}
+
+@keyframes bubble_in
+{
+    0%   { transform: scale(0); opacity: 0; }
+    60%  { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bubble_fume
+{
+    from { transform: rotate(-4deg); }
+    to   { transform: rotate(4deg) scale(1.06); }
+}
+
+/* (stronger than the shades of the stacked buttons) */
+.prompt_box .stack_item button.afford_spare { background-color: #66bb6a; }
+.prompt_box .stack_item button.afford_exact { background-color: #ffa726; }
+.prompt_box .stack_item button.afford_short { background-color: #ef5350; color: #fff; }
+
+
+
+.ta_icon .crossed_out img { width: 44px; height: 44px; }
+
+/* Before a throw: what the next 6 spaces hold */
+#divAhead
+{
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ahead
+{
+    position: absolute;
+    translate: -50% -50%;
+    width: 92px;
+    height: 92px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    z-index: 9;
+    pointer-events: auto;
+}
+
+.ahead_free /* something free: a rainbow ring going round, and sparkles */
+{
+    border: 7px solid transparent;
+    background: conic-gradient(#f44336, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f44336) border-box;
+    -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: ahead_turn 2s linear infinite;
+}
+
+.ahead_safe /* an entrance of its own: safe */
+{
+    width: 104px;
+    height: 104px;
+    border: 6px solid transparent;
+    border-top-color: #00e676;
+    border-bottom-color: #00c853;
+    box-shadow: 0 0 10px 2px #00e676;
+    animation: ahead_turn 1.6s linear infinite;
+}
+
+.ahead_danger /* an entrance of someone else's hotel: a stay to pay */
+{
+    width: 104px;
+    height: 104px;
+    border: 7px solid transparent;
+    border-top-color: #000;
+    border-right-color: #4a148c;
+    border-bottom-color: #000;
+    box-shadow: 0 0 12px 4px #000, inset 0 0 10px 2px #000a;
+    animation: ahead_turn 1.1s linear infinite reverse;
+}
+
+@keyframes ahead_turn
+{
+    to { transform: rotate(360deg); }
+}
+
+/* A car swerving round one that is in its way: out to the side and back, fast and leaning */
+.token_swerve
+{
+    animation-name: token_swerve;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+}
+
+@keyframes token_swerve
+{
+    0%   { transform: translate(-46px, 20px) rotate(-10deg); }
+    30%  { transform: translate(-14px, -62px) rotate(24deg) scale(1.08); }
+    60%  { transform: translate(34px, -58px) rotate(-22deg) scale(1.08); }
+    100% { transform: translate(52px, 16px) rotate(8deg); }
+}
+
+.skid /* tyre marks where it did */
+{
+    position: absolute;
+    translate: -50% -50%;
+    width: 120px;
+    height: 70px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Cheer and Jeer: the button grows with each click (its font size is set from the code), and the cheer or boo floats up from it */
+#divPrompt button.button_crowd
+{
+    position: relative;
+    padding: 0.7em 1.2em;
+    transition: font-size 0.2s;
+}
+
+.crowd_float
+{
+    position: absolute;
+    top: -10px;
+    font-size: 26px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-shadow: 0 0 4px #fff, 0 0 2px #fff;
+    pointer-events: none;
+    animation: crowd_float 1.2s ease-out forwards;
+}
+
+@keyframes crowd_float
+{
+    from { transform: translate(-50%, 0); opacity: 1; }
+    to   { transform: translate(-50%, -90px); opacity: 0; }
+}
+
+/* In a speech bubble: money coming in, and money flying away */
+.bubble_cash
+{
+    color: #2e7d32;
+    font-weight: bold;
+    text-shadow: 0 0 2px #fff;
+}
+
+.bubble_fly
+{
+    display: inline-block;
+    animation: bubble_fly 1.1s ease-in infinite;
+}
+
+.bubble_fly + .bubble_fly
+{
+    animation-delay: 0.45s;
+}
+
+@keyframes bubble_fly
+{
+    0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(34px, -46px) rotate(30deg) scale(0.6); opacity: 0; }
+}
+
+/* News banner: it stops while the mouse is over it, and its items can be clicked */
+#divNews:hover .news_roll
+{
+    animation-play-state: paused;
+}
+
+.news_item
+{
+    cursor: pointer;
+}
+
+.news_item:hover
+{
+    text-decoration: underline;
+    color: #fff;
+}
+
+/* What a clicked item of news is about, on the map: glowing and sparkling for a few seconds */
+.sparkle_now
+{
+    animation: sparkle_glow 0.5s ease-in-out infinite alternate;
+    z-index: 250 !important;
+}
+
+.sparkle_now:before, .sparkle_now:after
+{
+    content: '\2728';
+    position: absolute;
+    left: -24px;
+    top: -26px;
+    font-size: 40px;
+    line-height: 1;
+    animation: sparkle_twinkle 0.7s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+.sparkle_now:after
+{
+    left: auto;
+    right: -24px;
+    top: auto;
+    bottom: -14px;
+    animation-delay: 0.35s;
+}
+
+@keyframes sparkle_glow
+{
+    from { filter: drop-shadow(0 0 4px #fff) brightness(1); }
+    to   { filter: drop-shadow(0 0 16px #ffeb3b) brightness(1.35); }
+}
+
+/* Balance sheet popup: everyone's net worth, with a stacked bar each */
+.sheet
+{
+    padding: 8px 12px;
+    background: #fffdf5;
+    color: #000;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+
+.sheet_key
+{
+    margin-bottom: 6px;
+}
+
+.sheet_table
+{
+    border-collapse: collapse;
+    font-size: 1.05em;
+}
+
+.sheet_table th { background: #eee6c8; font-size: 0.85em; }
+.sheet_table td, .sheet_table th { padding: 5px 8px; border-bottom: 1px solid #ccc; white-space: nowrap; }
+.sheet_number { text-align: right; }
+
+.sheet_bar
+{
+    min-width: 304px;
+    line-height: 0;
+}
+
+.sheet_part
+{
+    display: inline-block;
+    height: 22px;
+    vertical-align: middle;
+}
+
+.sheet_key .sheet_part { width: 22px; border: 1px solid #0006; }
+.sheet_cash { background: #43a047; }
+.sheet_land { background: #8d6e63; }
+.sheet_buildings { background: #1e88e5; }
+.sheet_entrances { background: #f5c400; }
+
+.sheet_note
+{
+    margin: 8px 0;
+    color: #555;
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+.sheet_end
+{
+    margin-top: 6px;
+    font-size: 1.1em;
+}
