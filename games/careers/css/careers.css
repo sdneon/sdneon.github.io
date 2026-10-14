@@ -1,0 +1,757 @@
+:root {
+    /* Comic Sans, or a friendly sans-serif where it is missing; never a serif */
+    --font: 'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', 'Trebuchet MS', sans-serif;
+}
+body {
+    font-family: var(--font);
+    background: #f4f1ea;
+    margin: 10px;
+}
+h1 .motto {
+    font-size: 60%;
+    font-style: italic;
+    color: #6a4c93;
+}
+#divTop {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+#divTop .dice-container {
+    width: 300px;
+    margin-top: 0;
+    cursor: pointer;
+}
+#divMid {
+    flex: 1;
+}
+#divStatus {
+    font-size: 18px;
+    min-height: 2.5em;
+}
+#divButtons button {
+    font-size: 16px;
+    margin: 4px 4px 0 0;
+}
+.button_final {
+    font-weight: bold;
+}
+.note {
+    color: #666;
+    font-size: 14px;
+}
+
+/* the board */
+#divBoard {
+    position: relative;
+    background: #5b3f8c; /* purple frame of the outer track */
+    margin-top: 10px;
+}
+#divBoard .inner {
+    position: absolute;
+    background: #efeee8;
+    border: 3px solid #222;
+    box-sizing: border-box;
+}
+#divBoard .title {
+    position: absolute;
+    text-align: center;
+    font: bold 44px var(--font);
+    color: #6a4c93;
+}
+#divBoard .title .motto {
+    font-size: 16px;
+    color: #555;
+}
+.sq {
+    position: absolute;
+    box-sizing: border-box;
+    overflow: hidden;
+    cursor: default;
+}
+.sq.outer {
+    border: 3px solid #333;
+    border-radius: 8px;
+    background: #fbf6dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sq.outer .label {
+    text-align: center;
+    padding: 2px;
+    line-height: 1.1;
+}
+/* text upright everywhere (a screen is read from one side; owner (n)), along the square's inner edge: the outer half
+   is for tokens (see .tokens.rim_*); corners keep their name across the diagonal */
+.sq.side_corner .label { transform: rotate(-45deg); }
+.sq.outer .name {
+    font: bold 15px var(--font);
+}
+.sq.outer .small {
+    font-size: 8px;
+}
+.sq.outer .print {
+    font-size: 7px;
+    color: #333;
+    margin-top: 2px;
+}
+.sq.corner .print, .sq.payday .print, .sq.hospital .print, .sq.unemployment .print, .sq.hawaii .print {
+    font-size: 8px;
+}
+.sq.payday .name, .sq.hospital .name, .sq.unemployment .name, .sq.hawaii .name {
+    font-size: 22px;
+}
+.sq.opp { background: #cbbfe6; border-color: #3949ab; }
+.sq.opp .name { color: #283593; font-size: 13px; }
+.sq.payday { background: #f7e93c; border-color: #c9b800; }
+.sq.payday .name { color: #2e7d32; }
+.sq.hospital { background: #c2185b; border-color: #880e4f; color: #fde; }
+.sq.unemployment { background: #1b7f5a; border-color: #0d5c40; color: #ffe; }
+.sq.hospital .print, .sq.unemployment .print { color: #fff; }
+.sq.hawaii { background: #9ccc65; border-color: #558b2f; }
+.sq.hawaii .name { color: #ef6c00; }
+.sq.tax, .sq.rent, .sq.inflation { background: #f6a623; border-color: #c2185b; }
+.sq.tax .name, .sq.rent .name, .sq.inflation .name { color: #ad1457; }
+.sq.shop, .sq.paris { border-color: #d32f2f; }
+.sq.shop .name, .sq.paris .name { color: #c62828; }
+.sq.auto, .sq.hobby { background: #cfe8f3; border-color: #f57c00; }
+.sq.auto .name, .sq.hobby .name { color: #ef6c00; }
+.sq.vegas { background: #f5f03a; border-color: #b0a400; }
+.sq.vegas .name { color: #5b3f8c; }
+.sq.charity .name { color: #4a5a8c; }
+.sq.entry .name { color: #2e7d32; }
+
+.sq.path {
+    background: #f3e7c4;
+    border: 2px solid #999;
+    font-size: 7px;
+    line-height: 1.05;
+    text-align: center;
+    padding: 1px;
+}
+.sq.path .story {
+    color: #444;
+}
+.sq.path .reward {
+    font-weight: bold;
+    color: #1a237e;
+    margin-top: 1px;
+}
+/* triangle pointing down before it is turned; size as ARROW_SIZE in careers.js */
+.arrow {
+    position: absolute;
+    width: 36px;
+    height: 20px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    cursor: help;
+    z-index: 4;
+}
+.arrow.in { background: #6a1b9a; }
+.arrow.out { background: #555; }
+.arrow:hover { filter: brightness(1.6); }
+
+/* rich tooltips over the board */
+#divTip {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    max-width: 420px;
+    background: #fffef6;
+    border: 2px solid #5b3f8c;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font: 18px/1.35 var(--font);
+    color: #222;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+#divTip .tip_title {
+    font-weight: bold;
+    font-size: 24px;
+    color: #5b3f8c;
+    margin-bottom: 6px;
+}
+#divTip .tip_step {
+    font-size: 14px;
+    font-weight: normal;
+    color: #777;
+}
+#divTip .tip_story { font-style: italic; }
+#divTip .tip_reward {
+    font-weight: bold;
+    color: #1a237e;
+    margin-top: 4px;
+}
+#divTip .star { color: #1a237e; }
+#divTip .heart { color: #d32f2f; }
+#divTip .tip_here {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #ccc;
+    font-size: 16px;
+}
+#divTip .tip_payday { color: #2e7d32; }
+#divTip .tip_hospital, #divTip .tip_tax, #divTip .tip_rent, #divTip .tip_inflation { color: #ad1457; }
+#divTip .tip_unemployment, #divTip .tip_entry { color: #1b7f5a; }
+#divTip .tip_hawaii, #divTip .tip_auto, #divTip .tip_hobby { color: #ef6c00; }
+#divTip .tip_opp { color: #283593; }
+#divTip .tip_shop, #divTip .tip_paris { color: #c62828; }
+
+/* players */
+#divPlayersInfo table {
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 15px;
+}
+#divPlayersInfo th, #divPlayersInfo td {
+    padding: 2px 10px;
+    text-align: left;
+}
+#divPlayersInfo tr.current {
+    background: #fff3b0;
+}
+#divPlayersInfo td.hidden {
+    color: #aaa;
+    text-align: center;
+}
+.button_minor {
+    font-size: 12px;
+    color: #666;
+}
+#divOptions {
+    margin-top: 8px;
+    line-height: 1.8;
+}
+#divOptions input[type=number] {
+    width: 80px;
+}
+#divPlayerChoice .choice {
+    display: inline-block;
+    margin-right: 14px;
+    white-space: nowrap;
+}
+img.icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+}
+
+/* tokens: along the board's outer rim of a square (its text moves inwards to make room), in the 2 empty corners
+   of a corner square, in the middle of a path square (fading while the mouse is over it) */
+.tokens {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 3;
+}
+.token {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+.tokens .token + .token { margin-left: -20px; }
+.sq.side_bottom { padding-bottom: 54px; }
+.sq.side_top { padding-top: 54px; }
+.sq.side_left { padding-left: 54px; }
+.sq.side_right { padding-right: 54px; }
+.tokens.rim_bottom { left: 0; right: 0; bottom: 4px; height: 44px; }
+.tokens.rim_top { left: 0; right: 0; top: 4px; height: 44px; }
+.tokens.rim_left, .tokens.rim_right { top: 0; bottom: 0; width: 48px; flex-direction: column; }
+.tokens.rim_left { left: 1px; }
+.tokens.rim_right { right: 1px; }
+.tokens.rim_left .token + .token, .tokens.rim_right .token + .token { margin-left: 0; margin-top: -20px; }
+.tokens.corner_a { top: 3px; left: 3px; }
+.tokens.corner_b { bottom: 3px; right: 3px; }
+.sq.path .tokens { left: 0; right: 0; top: 0; bottom: 0; }
+.sq.path .token { width: 40px; height: 40px; }
+.sq.path .tokens .token + .token { margin-left: -26px; }
+.sq.path:hover .tokens { opacity: 0.15; }
+/* Cluedo's circling swirl round the token of the player whose turn it is (movement.css .move_swirl) */
+.token_box { position: relative; display: inline-flex; flex-shrink: 0; z-index: 1; }
+.tokens .token_box + .token, .tokens .token + .token_box { margin-left: -20px; }
+.tokens.rim_left .token_box + .token, .tokens.rim_left .token + .token_box,
+.tokens.rim_right .token_box + .token, .tokens.rim_right .token + .token_box { margin-left: 0; margin-top: -20px; }
+.swirl {
+    position: absolute;
+    top: -5px; left: -5px; right: -5px; bottom: -5px;
+    box-sizing: border-box;
+    pointer-events: none;
+    border-radius: 50%;
+    border: 4px solid transparent;
+    border-top-color: #ff0;
+    border-right-color: #f80;
+    box-shadow: 0 0 6px 1px #fc08;
+    animation: swirl 1.4s linear infinite;
+}
+.swirl:after { /* a 2nd arc, going the other way */
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px; right: 3px; bottom: 3px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-bottom-color: #0cf;
+    border-left-color: #f0f;
+    animation: swirl 0.9s linear infinite reverse;
+}
+@keyframes swirl { to { transform: rotate(360deg); } }
+.sq.target {
+    cursor: pointer;
+    box-shadow: 0 0 6px 4px #ffeb3b inset, 0 0 12px 4px #ffeb3b;
+    z-index: 3;
+    animation: glow 0.8s ease-in-out infinite alternate;
+}
+@keyframes glow {
+    from { filter: brightness(1); }
+    to { filter: brightness(1.25); }
+}
+
+/* career path themes (PATH_THEMES in careers.js) */
+.path_emblem {
+    position: absolute;
+    width: 80px; /* EMBLEM_SIZE in careers.js */
+    height: 80px;
+    font-size: 54px;
+    line-height: 80px;
+    text-align: center;
+    border-radius: 50%;
+    opacity: 0.7;
+    pointer-events: none;
+}
+.path_emblem img.art_img { width: 60px; height: 60px; vertical-align: middle; }
+#divTip .tip_art {
+    float: right;
+    margin: 0 0 4px 10px;
+    font-size: 54px;
+    line-height: 1;
+}
+#divTip .tip_art img.art_img { width: 120px; height: auto; }
+#divTip img.tip_icon.art_img, .sq.outer img.emblem.art_img { width: 1.2em; height: 1.2em; vertical-align: middle; }
+
+/* score sheets (in WinBox windows), after the paper score card */
+#divPlayersInfo tr { cursor: pointer; }
+#divPlayersInfo tr:hover td { background: #f0e9ff; }
+.sheet {
+    font-family: var(--font);
+    font-size: 15px;
+    padding: 10px;
+    background: #fffef6;
+    min-height: 100%;
+    box-sizing: border-box;
+}
+.sheet .sheet_head { font-size: 20px; margin-bottom: 6px; }
+.sheet .sheet_formula {
+    border: 2px dashed #888;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    line-height: 1.8;
+}
+.sheet .sheet_formula input { width: 52px; font-size: 15px; }
+.sheet .bad { color: #d32f2f; }
+.sheet .reached { color: #2e7d32; }
+.sheet .hidden { color: #aaa; }
+.sheet .sheet_now { margin-bottom: 8px; }
+.sheet table.sheet_cols { border-collapse: collapse; width: 100%; }
+.sheet table.sheet_cols > tbody > tr > td, .sheet table.sheet_cols > tbody > tr > th {
+    border: 2px solid #333;
+    padding: 4px 6px;
+    vertical-align: top;
+    text-align: center;
+}
+.sheet table.sheet_occ { border-collapse: collapse; text-align: left; font-size: 13px; }
+.sheet table.sheet_occ td, .sheet table.sheet_occ th { padding: 1px 4px; border-bottom: 1px solid #ccc; }
+.sheet table.sheet_occ td + td { text-align: center; color: #2e7d32; }
+.sheet .sheet_college { margin-top: 10px; text-align: left; font-size: 13px; }
+.sheet s { color: #999; }
+.sheet .sheet_cash { margin: -4px 0 8px 0; }
+.sq.outer .emblem {
+    font-size: 14px;
+}
+#divTop > button { font-size: 16px; }
+#divTip .tip_icon {
+    font-size: 30px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+button, input, select {
+    font-family: var(--font);
+}
+/* choices and cards in the status area */
+#divButtons .prompt { font-weight: bold; margin-right: 6px; }
+#divButtons input.amount { width: 60px; font-size: 16px; }
+#divButtons button.card_opp { background: #e8e0f7; border: 2px solid #5b3f8c; border-radius: 6px; }
+#divButtons button.card_exp { background: #fff3d6; border: 2px solid #c77700; border-radius: 6px; }
+#divStatus .winner {
+    margin-top: 6px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #2e7d32;
+}
+.sheet .sheet_cards { margin-top: 6px; font-size: 14px; }
+
+/* players table to choose from, as Cluedo's (movement.css, cluedo.css) */
+.player_table td {
+    padding: 4px;
+    border-radius: 6px;
+    text-align: center;
+    vertical-align: top;
+}
+.player_pick { display: flex; }
+.player_pick_opts {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.big_checkbox { width: 40px; height: 40px; }
+.checkbox_ai { margin-left: 0; }
+.player_pick_ai {
+    padding: 0 4px;
+    border-radius: 6px;
+    font-weight: bold;
+    background: #fffc;
+}
+.player_pick_token { width: 100px; }
+.player_pick_level { display: block; width: 100%; font-size: 1em; }
+.player_pick_name {
+    font-size: 13px;
+    color: #fff;
+    text-shadow: 0 0 3px #000;
+}
+.ai_tag {
+    font-size: 12px;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: lightblue;
+}
+.ai_note { font-style: italic; color: #555; }
+.button_ai { background: lightblue; }
+
+/* cards just drawn, face down in the message area; the drawer clicks to turn them over */
+.drawn_cards { display: inline-flex; gap: 8px; vertical-align: middle; margin: 4px 0; }
+.flipcard {
+    display: inline-block;
+    width: 100px;
+    height: 134px;
+    perspective: 600px;
+    cursor: default;
+}
+.flipcard.mine { cursor: pointer; }
+.flip_inner {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+.flipcard.flipped .flip_inner { transform: rotateY(180deg); }
+.flip_back, .flip_front {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    border: 3px solid #333;
+    box-sizing: border-box;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.2;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+.flipcard.opp .flip_back { background: #cbbfe6; border-color: #3949ab; color: #283593; }
+.flipcard.exp .flip_back { background: #ffcc80; border-color: #c77700; color: #8d4b00; }
+.flip_title { font-size: 14px; font-weight: bold; transform: rotate(-20deg); }
+.flip_front { background: #fffef6; transform: rotateY(180deg); overflow: hidden; font-size: 12px; }
+.flipcard .flip_front .flip_text { display: none; }
+.flip_front .flip_icon { font-size: 26px; }
+.flip_front .flip_text { font-size: 10px; color: #444; margin-top: 4px; }
+.flip_front .flip_move { font-size: 36px; font-weight: bold; color: #c77700; line-height: 1; }
+
+/* the current player's hand (as Cluedo's notes area with the murder cards): face up; a card playable now glows */
+#divMyAssets .hand_title { font-weight: bold; }
+#divMyAssets .hand_cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.handcard {
+    width: 92px;
+    height: 124px;
+    border-radius: 10px;
+    border: 3px solid #333;
+    box-sizing: border-box;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.15;
+    background: #fffef6;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+.handcard.opp { border-color: #3949ab; }
+.handcard.exp { border-color: #c77700; }
+.handcard.back.opp { background: #cbbfe6; color: #283593; font-weight: bold; }
+.handcard.back.exp { background: #ffcc80; color: #8d4b00; font-weight: bold; }
+.handcard .flip_icon { font-size: 26px; }
+.handcard .flip_text { display: none; }
+.handcard .flip_move { font-size: 40px; font-weight: bold; color: #c77700; line-height: 1; }
+.handcard.playable {
+    cursor: pointer;
+    box-shadow: 0 0 8px 4px #ffeb3b;
+    animation: glow 0.8s ease-in-out infinite alternate;
+}
+.handcard.new { outline: 3px dashed #2e7d32; }
+.flip_front button.use_now { margin-top: 4px; font-size: 11px; font-weight: bold; background: pink; }
+/* a throw a square asks for: the dice wait for a click */
+.throw_prompt { font-weight: bold; font-size: 18px; color: #c62828; }
+.dice-container.dice_wait { border-radius: 12px; box-shadow: 0 0 12px 6px #ffeb3b; animation: glow 0.8s ease-in-out infinite alternate; }
+
+/* buttons as Cluedo's (cluedo.css): big, round, colourful */
+button {
+    padding: 8px 16px;
+    margin: 3px;
+    color: black;
+    font-weight: bold;
+    background-color: #f4a35e;
+    border: none;
+    font-size: 17px;
+    border-radius: 20px;
+    box-shadow: 1px 3px #3f404e;
+    outline: none;
+    transition: .3s;
+}
+button:hover, button:active {
+    outline: none;
+    background: #3f404e;
+    color: white;
+    cursor: pointer;
+    transform: translateY(3px);
+}
+.button_ai { background: lightblue; }
+.button_final { background: pink; }
+.button_minor { font-size: 13px; padding: 4px 10px; background: #e0d6c8; color: #444; }
+.flip_front button.use_now { padding: 3px 8px; border-radius: 10px; }
+.title img.title_pic { max-width: 100%; max-height: 100%; }
+#divRules { padding: 12px 18px; font-family: var(--font); font-size: 16px; line-height: 1.45; }
+#divRules h3 { color: #5b3f8c; margin: 14px 0 4px; }.sq.side_left .name.long_name, .sq.side_right .name.long_name { font-size: 12px; letter-spacing: -0.3px; }
+/* room for the arrow into / out of a career, on the square's inner edge */
+.sq.has_arrow.side_top { padding-bottom: 22px; }
+.sq.has_arrow.side_bottom { padding-top: 22px; }
+.sq.has_arrow.side_left { padding-right: 22px; }
+.sq.has_arrow.side_right { padding-left: 22px; }
+
+/* top panel stays in view over the board (as Hotels') */
+#divTop {
+    position: sticky;
+    top: 0;
+    z-index: 9; /* under WinBox windows (score sheets, rules: 10 and up) */
+    background: #f4f1eaf2;
+    border-bottom: 3px solid #c9a227;
+    box-shadow: 0 4px 8px #0003;
+    padding: 4px 6px;
+    min-height: 200px;
+}
+#divMid { position: relative; align-self: stretch; }
+#divStatus {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 16px;
+}
+#divStatus .log_line { padding: 2px 0; border-bottom: 1px dotted #ddd; }
+.turn_head { font-weight: bold; margin-top: 8px; border-top: 2px solid #c9a227; padding-top: 4px; }
+.history { padding: 8px 12px; font-family: var(--font); font-size: 15px; }
+.history .log_line { padding: 2px 0; }
+.history .flipcard { width: 60px; height: 80px; }
+
+/* money changing hands (Hotels' .pay_show) */
+.pay_show {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    background: #fffdf5f5;
+    border: 3px solid #c9a227;
+    border-radius: 12px;
+    pointer-events: none;
+    animation: pay_fade var(--pay) ease-in-out both;
+}
+@keyframes pay_fade { 0% { opacity: 0; } 8% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
+.pay_face { flex: 0 0 130px; text-align: center; font-size: 1.1em; font-weight: bold; }
+.pay_face img.pay_token { width: 110px; height: 110px; }
+.pay_face .pay_bank { font-size: 90px; line-height: 110px; }
+.pay_face:first-child { animation: pay_give var(--pay) ease-in-out both; }
+.pay_face:last-child { animation: pay_take var(--pay) ease-in-out both; }
+@keyframes pay_give { 0%, 30%, 100% { transform: none; } 15% { transform: translateX(14px) rotate(6deg); } }
+@keyframes pay_take { 0%, 55%, 100% { transform: none; } 75% { transform: scale(1.12) rotate(-5deg); } }
+.pay_lane { flex: 1 1 auto; position: relative; height: 100%; overflow: hidden; }
+.pay_note {
+    position: absolute;
+    left: 0;
+    width: 110px;
+    height: 55px;
+    border-radius: 4px;
+    box-shadow: 2px 2px 3px #0007;
+    opacity: 0;
+    animation: pay_fly calc(var(--pay) * 0.55) ease-in-out both;
+}
+@keyframes pay_fly {
+    0% { left: -10%; opacity: 0; transform: rotate(-12deg); }
+    15% { opacity: 1; }
+    50% { transform: rotate(8deg) translateY(-10px); }
+    85% { opacity: 1; }
+    100% { left: 100%; opacity: 0; transform: rotate(-6deg); }
+}
+.pay_amount {
+    position: absolute;
+    left: 0; right: 0; bottom: 30px;
+    text-align: center;
+    font-size: 2.8em;
+    font-weight: bold;
+    color: #1b5e20;
+    text-shadow: 0 0 6px #fff, 0 0 2px #000;
+    animation: pay_flash 0.45s ease-in-out infinite alternate;
+}
+@keyframes pay_flash { from { transform: scale(1); color: #1b5e20; } to { transform: scale(1.12); color: #c62828; } }
+.pay_what { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 1.1em; }
+
+/* money gained or lost, floating up from a token (Hotels') */
+.float_label {
+    position: absolute;
+    translate: -50% -50%;
+    z-index: 30;
+    padding: 0 8px;
+    border-radius: 10px;
+    background: #fffd;
+    font-size: 22px;
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: float_up 1.8s ease-out forwards;
+}
+.float_gain { color: #1b8a1b; }
+.float_loss { color: #d50000; }
+@keyframes float_up { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-90px); opacity: 0; } }
+.confetti { position: fixed; left: 0; top: 0; width: 100%; height: 0; z-index: 60; pointer-events: none; }
+.confetti span { position: absolute; top: -20px; width: 10px; height: 16px; opacity: 0; animation: confetti_fall 4s ease-in forwards; }
+@keyframes confetti_fall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--dx), 100vh) rotate(var(--turn)); opacity: 0.8; } }
+
+/* a token arriving by a card, sent to Hospital / Unemployment, or found (Find Me!) */
+.token.hop { animation: hop 0.9s ease-out; }
+.token.step { animation: step 0.35s ease-out; } /* a little lift at each square walked over */
+@keyframes step { 0% { transform: translateY(-16px) scale(1.12); } 100% { transform: none; } }
+@keyframes hop { 0% { transform: translateY(-60px) scale(1.6); opacity: 0.3; } 60% { transform: translateY(6px) scale(1); opacity: 1; } 80% { transform: translateY(-8px); } 100% { transform: none; } }
+
+/* turn dial: tokens round a ring in turn order, the current player at 12 o'clock under the arrow; the ring turns */
+#divDial { position: relative; width: 120px; height: 120px; flex-shrink: 0; cursor: pointer; }
+#divDial .dial_ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 3px dashed #c9a227;
+    box-sizing: border-box;
+    transition: transform 0.8s ease-in-out;
+}
+#divDial .dial_token { position: absolute; transition: transform 0.8s ease-in-out; }
+#divDial .dial_img { width: 30px; height: 30px; border-radius: 50%; display: block; transition: width 0.4s, height 0.4s; }
+#divDial .dial_token.current .dial_img { width: 44px; height: 44px; box-shadow: 0 0 0 3px #fff, 0 0 10px 4px #f0c; }
+#divDial .dial_arrow {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -60%);
+    font-size: 30px;
+    color: #c9a227;
+    pointer-events: none;
+}
+.next_player img.icon { margin: -4px 2px 0 4px; }
+
+/* the board's own layers (tokens, arrows, floating amounts) stay under the top panel */
+#divBoard { isolation: isolate; }
+
+/* speech bubble over a token (Hotels'): how the player took what just happened; stays until their next turn */
+.token_bubble {
+    position: absolute; /* left, top: placed by drawBubbles() */
+    z-index: 30;
+    padding: 2px 10px;
+    border: 3px solid #333;
+    border-radius: 20px;
+    background: #fff;
+    font-size: 30px;
+    line-height: 1.15;
+    white-space: nowrap;
+    box-shadow: 3px 3px 5px #0007;
+    pointer-events: none;
+    animation: bubble_fume 1.2s ease-in-out infinite alternate; /* fuming: keeps rocking */
+}
+.token_bubble:after { /* its tail */
+    content: '';
+    position: absolute;
+    left: var(--tail, 50%); /* over the token */
+    bottom: -14px;
+    margin-left: -9px;
+    border: 9px solid transparent;
+    border-top-color: #333;
+    border-bottom-width: 5px;
+}
+.token_bubble_calm { animation: bubble_in 0.5s ease-out both; } /* the others pop up, then keep still */
+@keyframes bubble_in { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bubble_fume { from { transform: rotate(-4deg); } to { transform: rotate(4deg) scale(1.06); } }
+.token_bubble img.bubble_icon { width: 32px; height: 32px; vertical-align: middle; }
+.bubble_cash { color: #2e7d32; font-weight: bold; text-shadow: 0 0 2px #fff; }
+.bubble_fly { display: inline-block; animation: bubble_fly 1.1s ease-in infinite; }
+.bubble_fly + .bubble_fly { animation-delay: 0.45s; }
+@keyframes bubble_fly { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(30px, -40px) rotate(30deg) scale(0.6); opacity: 0; } }
+.token_bubble_below:after { bottom: auto; top: -14px; border-top-color: transparent; border-bottom-color: #333; border-top-width: 5px; border-bottom-width: 9px; }
+
+/* top panel as Hotels': dice, dial and buttons on the left; message area; the current player's cash and cards on the right */
+#divTop { align-items: stretch; }
+#divDice { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+#divDice .dice_row { display: flex; align-items: center; gap: 10px; }
+#divDice .top_buttons { display: flex; flex-wrap: wrap; gap: 4px; max-width: 440px; }
+#divDice .top_buttons button { font-size: 15px; padding: 5px 9px; }
+#divMyAssets {
+    flex: 0 0 380px;
+    max-height: 300px;
+    overflow-y: auto;
+    border-left: 2px dashed #c9a227;
+    padding-left: 8px;
+}
+.assets_title { font-size: 1.1em; }
+.cash_fan { display: flex; gap: 2px; padding: 14px 4px 6px 4px; min-height: 64px; }
+.cash_stack { position: relative; width: 84px; height: 60px; transform-origin: bottom center; }
+.cash_stack img { position: absolute; width: 72px; height: 36px; border-radius: 3px; box-shadow: 1px 1px 2px #0007; }
+.cash_count {
+    position: absolute; right: 2px; bottom: 0;
+    padding: 0 4px; border-radius: 8px;
+    background: #fff; border: 1px solid #999; font-size: 13px; font-weight: bold;
+}
+.cash_coins { font-size: 28px; align-self: flex-end; }
+/* trails of each player's last moves (Hotels' dust, Cluedo's routes): over the squares, under the tokens */
+#divBoard svg.trails { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; overflow: visible; }
+.trails .trail_jump { fill: none; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0.1 20; opacity: 0.9; }
+.trails .trail_halo { fill: none; stroke: #fff; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0.1 20; opacity: 0.8; }
+.trails .trail_dot { opacity: 0.55; stroke: #fff; stroke-width: 2; }
+.trails image { opacity: 0.85; }
+/* turn dial: a computer player's token wears an 'AI' pin, in the colour of its level */
+#divDial .ai_pin {
+    position: absolute; right: -8px; bottom: -6px;
+    width: 18px; height: 18px; border-radius: 50%;
+    font-size: 9px; font-weight: bold; line-height: 18px; text-align: center;
+    border: 2px solid #fff; box-shadow: 0 1px 3px #0008;
+    color: #fff; text-shadow: 0 0 2px #0009;
+}
+#divDial .pin_green { background: radial-gradient(circle at 35% 30%, #a5d6a7, #2e7d32); }
+#divDial .pin_silver { background: radial-gradient(circle at 35% 30%, #fff, #9e9e9e); }
+#divDial .pin_gold { background: radial-gradient(circle at 35% 30%, #fff59d, #c99700); }
+/* score sheet: a part of the Success Formula reached shows green, in the formula, 'Now' and its column */
+.sheet input.reached { color: #2e7d32; border-color: #2e7d32; font-weight: bold; }
+.sheet b.reached { color: #2e7d32; }
+.sheet .sheet_salary { margin-bottom: 6px; line-height: 1.5; }
+.sheet .sheet_salary s, .sheet .sheet_salary b { white-space: nowrap; }

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<title>Careers board game</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/careers.css">
+<link rel="stylesheet" href="../cluedo/css/dice.css">
+<link rel="stylesheet" href="../cluedo/css/tooltip.css">
+<script src="../cluedo/js/jquery.min.js"></script>
+<script src="../cluedo/js/winbox.bundle.min.js"></script>
+<script src="../cluedo/js/dice.js"></script>
+<script src="js/board.js"></script>
+<script src="js/art.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/careers.js"></script>
+<script src="js/ai.js"></script>
+</head>
+<body>
+<h1>Careers board game (alpha) <span class="motto">Fame, Fortune or Happiness, The Choice is Yours &#x1F604;</span></h1>
+<div id="divTop">
+    <div id="divDice">
+        <div class="dice_row">
+            <div class="dice-container" onclick="rollClicked();" title="Click to roll"></div>
+            <div id="divDial" onclick="findMe();"></div>
+        </div>
+        <div class="top_buttons">
+            <button onclick="findMe();" title="Scroll to the token of the player whose turn it is">Find Me!</button>
+            <button id="buttPause" onclick="toggleAiPause();" class="button_ai" title="Hold the computer players: each then waits for Go! on its turn">Pause AI &#x23F8;</button>
+            <button onclick="showHistory();" title="All that has happened in this game">History</button>
+            <button onclick="openSheet(who);" title="Your Success Formula, scores and occupation record">My score sheet</button>
+        </div>
+    </div>
+    <div id="divMid">
+        <div id="divStatus"></div>
+        <div id="divButtons"></div>
+    </div>
+    <div id="divMyAssets"></div>
+</div>
+<div id="divBoard"></div>
+<div id="divPlayersInfo"></div>
+<hr>
+<button onclick="newGame();" class="button_final">New Game</button>
+<button onclick="exportGame();" title="Save the game as at the start of this turn as a file, to keep or pass on (debugging)">Export game</button>
+<button onclick="$('#fileGame')[0].click();" title="Put on a game from a file made by Export game, in place of the one being played">Load game</button>
+<input type="file" id="fileGame" accept=".json,application/json" style="display: none;" onchange="importGameFile(this);">
+<span class="note">(The game is saved at the start of every turn, and offered back when the page is opened again.)</span>
+<div id="divOptions">
+<b>Options</b> (from the next New Game):<br>
+<label for="option_cash">Starting cash $</label>
+<input type="number" id="option_cash" min="0" step="500" onchange="setOption('cash', this.value);">
+<label for="option_salary">Starting salary $</label>
+<input type="number" id="option_salary" min="0" step="500" onchange="setOption('salary', this.value);">
+<label for="option_success">Success points</label>
+<input type="number" id="option_success" min="3" step="10" onchange="setOption('success', this.value);"
+    title="Points in every Success Formula: 60 as standard, more (like 80) for a longer game"><br>
+<input type="checkbox" id="option_bump_card" onclick="setOption('bumpCard', this.checked);">
+<label for="option_bump_card"> 'Send any opponent to Unemployment' Opportunity card in the deck (from the 1979 rules)</label><br>
+<input type="checkbox" id="option_any_degree" onclick="setOption('anyDegree', this.checked);">
+<label for="option_any_degree"> Any College degree lets you into Big Business and Sports free (unticked: only the plain College degree)</label><br>
+<input type="checkbox" id="option_ai_pause" onclick="setAiPause(this.checked);">
+<label for="option_ai_pause"> Pause computer players (each waits for Go! on its turn)</label><br>
+<input type="checkbox" id="option_ai_review" onclick="setOption('aiReview', this.checked);">
+<label for="option_ai_review"> After a computer player's turn, wait for Next Player (to see what it did)</label><br>
+<input type="checkbox" id="option_casual" onclick="setOption('casual', this.checked);">
+<label for="option_casual"><span data-tooltip-position='top-right' data-tooltip='People may accidentally click the dice and re-rolls, or click short/past the glowing square 😋'>
+Casual mode</span></label><br>
+<b>Players</b> (up to 6; from the next New Game) <span id="spanPlayerCount"></span>. Tick AI for a computer player (at once):
+<div id="divPlayerChoice"></div>
+<button onclick="resetOptions();">Reset Options</button>
+</div>
+<p class="note">Point at a square to read it in full. Click a player in the table for their score sheet.</p>
+<hr><h2>Fame, fortune or happiness: reach your own Success Formula first! <button onclick="showRules();" class="button_ai">Show Rules</button></h2>
+</body>
+</html>
