@@ -213,6 +213,19 @@ class Dice {
             if (i < 5) return i + 2; //0..4 give 2..6
             return 1; //5..9 give 1
         }
+        //syntax: 'rig#' where '#' is the (once-off) forced number to roll; mainly for debugging
+        if (this.cheat.startsWith('rig'))
+        {
+            let n = this.cheat.substring(3);
+            delete this.cheat;
+            try
+            {
+                n = parseInt(n);
+                if ((n >= 1) && (n <= 6))
+                    return n;
+            }
+            catch (err) {}
+        }
         return 1;
     }
 }

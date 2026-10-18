@@ -3,7 +3,10 @@ const RULES = `<div id="divRules">
 <h3>Object</h3>
 Be the first to reach your own <b>Success Formula</b>: money ($1,000 of cash is 1 point) + fame (&#x2605;) +
 happiness (&#x2665;), adding up to 60 points (Options: more for a longer game). Choose it secretly on your score sheet
-before your first move (e.g. 20 + 20 + 20, or 5 + 45 + 10). You win the moment all three parts are reached.
+before the game starts, each in turn while the others look away (e.g. 20 + 20 + 20, or 5 + 45 + 10), and lock it in:
+it cannot be changed after. You win the moment all three parts are reached.<br>
+Players can join (at Pay Day, with the starting cash and salary) or leave during a game: tick or untick them under
+Players.
 
 <h3>Your turn</h3>
 Throw 2 dice on the outer track (1 die inside a career), then click the glowing square to move there; do what it

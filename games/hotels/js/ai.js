@@ -2,6 +2,7 @@
 //A level is a set of traits; the choices themselves are the same code for all levels.
 
 const AI_LEVELS = { friendly: 'Friendly', aggressive: 'Aggressive' }; //1st is the default
+const AI_PINS = { friendly: 'pin_green', aggressive: 'pin_gold' }; //the 'AI' pin on a computer player's token in the turn dial
 const AI_TRAITS = {
     friendly: {
         reserve: 3000, //least cash it likes to keep in hand after buying something

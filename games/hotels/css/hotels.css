@@ -36,6 +36,25 @@ body {
 	margin-top: 0px;
 }
 
+/* turn dial (turndial.css) beside whose turn and the question; the action icons and news run on beneath all three */
+#divMidTop
+{
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+#divDial
+{
+    margin: 4px 0 0 4px;
+}
+
+#divMidText
+{
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 #divMid
 {
     flex: 1 1 auto;
@@ -1312,7 +1331,7 @@ button.afford_short:hover { background: #c62828; color: #fff; } /* no */
 {
     position: absolute;
     top: -12px;
-    left: 42px;
+    left: 40px;
     font-size: 1em;
     font-weight: bold;
     padding: 14px 6px 12px 4px;
@@ -1322,8 +1341,8 @@ button.afford_short:hover { background: #c62828; color: #fff; } /* no */
 {
     position: absolute;
     top: -8px;
-    left: 44px;
-    right: -7px;
+    left: 39px;
+    right: -5px;
     bottom: 43px;
     border-radius: 14px;
     background: #3c0788ba;

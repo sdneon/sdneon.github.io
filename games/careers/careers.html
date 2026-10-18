@@ -5,9 +5,11 @@
 <link rel="stylesheet" href="css/careers.css">
 <link rel="stylesheet" href="../cluedo/css/dice.css">
 <link rel="stylesheet" href="../cluedo/css/tooltip.css">
+<link rel="stylesheet" href="../cluedo/css/turndial.css">
 <script src="../cluedo/js/jquery.min.js"></script>
 <script src="../cluedo/js/winbox.bundle.min.js"></script>
 <script src="../cluedo/js/dice.js"></script>
+<script src="../cluedo/js/turndial.js"></script>
 <script src="js/board.js"></script>
 <script src="js/art.js"></script>
 <script src="js/rules.js"></script>
@@ -20,7 +22,7 @@
     <div id="divDice">
         <div class="dice_row">
             <div class="dice-container" onclick="rollClicked();" title="Click to roll"></div>
-            <div id="divDial" onclick="findMe();"></div>
+            <div id="divDial"></div>
         </div>
         <div class="top_buttons">
             <button onclick="findMe();" title="Scroll to the token of the player whose turn it is">Find Me!</button>
@@ -63,7 +65,7 @@
 <input type="checkbox" id="option_casual" onclick="setOption('casual', this.checked);">
 <label for="option_casual"><span data-tooltip-position='top-right' data-tooltip='People may accidentally click the dice and re-rolls, or click short/past the glowing square 😋'>
 Casual mode</span></label><br>
-<b>Players</b> (up to 6; from the next New Game) <span id="spanPlayerCount"></span>. Tick AI for a computer player (at once):
+<b>Players</b> (up to 6; joining or leaving the game being played at once) <span id="spanPlayerCount"></span>. Tick AI for a computer player (at once):
 <div id="divPlayerChoice"></div>
 <button onclick="resetOptions();">Reset Options</button>
 </div>

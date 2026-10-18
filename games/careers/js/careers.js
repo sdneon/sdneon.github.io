@@ -7,7 +7,8 @@ players: { id (in PLAYERS), cash, salary, fame, hearts, degree: '' or a key of D
     opp: Opportunity cards held, exp: Experience cards held (squares to move),
     formula: { money (points: $1,000 each), fame, hearts }: the secret Success Formula,
     record: { path name: times completed }, history: { salary, fame, hearts: every value, latest last } (score sheet),
-    throws: how many turns the player has thrown in (the formula is fixed from the first) }
+    throws: how many turns the player has thrown in (the formula is fixed from the first),
+    lean: their recent gains and the pin it earns (tallyLean) }
 */
 let players = [],
     who = 0,
@@ -405,17 +406,21 @@ function refreshSheets()
 function sheetHtml(i)
 {
     const p = players[i], shown = scoresShown(i), f = p.formula, q = '<span class="hidden">?</span>',
-        editable = shown && !p.throws && (i === who),
+        editable = shown && !p.throws && !p.formulaSet && (i === who),
         //each part of the formula reached (as many or more): green, in the formula and in its column; black again if it falls short
         got = { money: shown && (moneyPoints(p) >= f.money), fame: shown && (p.fame >= f.fame), hearts: shown && (p.hearts >= f.hearts) },
         green = (key) => got[key]? ' class="reached"': '',
+        gap = options.success - formulaTotal(p),
+        nudge = (key, dir, sign, tip, ok) => `<button class="formula_nudge" onclick="nudgeFormula(${i}, '${key}', ${dir});" title="${tip}"${ok? '': ' disabled'}>${sign}</button>`,
         part = (key, value, unit) => editable?
-            `<input type="number" min="0" max="${options.success}" value="${value}" onchange="setFormula(${i}, '${key}', this.value);"${green(key)}>${unit}`:
+            `<span class="formula_part">${nudge(key, 1, '&#x25B2;', `Up by what is missing to make ${options.success} points`, gap > 0)}` +
+            `<input type="number" min="0" max="${options.success}" value="${value}" onchange="setFormula(${i}, '${key}', this.value);"${green(key)}>` +
+            `${nudge(key, -1, '&#x25BC;', `Down by what is over ${options.success} points`, gap < 0)}</span>${unit}`:
             (shown? `<span${green(key)}><b>${value}</b>${unit}</span>`: q),
         reached = (key) => got[key]? ' <span class="reached">&#x2714;</span>': '',
         crossed = (list, fmt, key, sep) => shown? list.map((v, k) => (k < list.length - 1)? `<s>${fmt(v)}</s>`: `<b${green(key)}>${fmt(v)}</b>`).join(sep || '<br>'): q;
     let s = `<div class="sheet_head">${tokenImg(p, 'icon')} ${playerName(p)}</div>
-<div class="sheet_formula"><b>SUCCESS FORMULA</b>${editable? ' (set it before your first throw; keep it secret!)': ''}<br>
+<div class="sheet_formula"><b>SUCCESS FORMULA</b>${editable? (preparing? ' (set it, then Lock it in, at the top; keep it secret!)': ' (set it before your first throw; keep it secret!)'): ''}<br>
 ${part('money', f.money, ' &times; $1,000')} + ${part('fame', f.fame, ' &#x2605;')} + ${part('hearts', f.hearts, ' &#x2665;')}
 = ${shown? `<b class="${(formulaTotal(p) === options.success)? '': 'bad'}">${formulaTotal(p)}</b>`: q} of ${options.success} points</div>`;
     if (shown) s += `<div class="sheet_now">Now: <span${green('money')}>money ${moneyPoints(p)}</span>${reached('money')},
@@ -437,10 +442,18 @@ Experience cards: ${shown? (p.exp.map((n) => `move ${n}`).join(', ') || 'none'):
     return s;
 }
 
+//▲ / ▼ by a part of the formula: up by what is missing to make the full points, or down by what is over
+function nudgeFormula(i, key, dir)
+{
+    const p = players[i], gap = options.success - formulaTotal(p);
+    if ((dir > 0) && (gap > 0)) setFormula(i, key, p.formula[key] + gap);
+    else if ((dir < 0) && (gap < 0)) setFormula(i, key, Math.max(0, p.formula[key] + gap));
+}
+
 function setFormula(i, key, value)
 {
     const p = players[i];
-    if ((i !== who) || p.throws) return;
+    if ((i !== who) || p.throws || p.formulaSet) return;
     p.formula[key] = Math.max(0, parseInt(value) || 0);
     refreshSheets();
 }
@@ -496,7 +509,7 @@ function resetOptions()
 }
 
 /*
-Characters to play: tick up to MAX_PLAYERS, at least 2 (from the next New Game); 'AI' and a level for a computer
+Characters to play: tick up to MAX_PLAYERS, at least 2 (at once, as Cluedo: playerJoins / playerLeaves); 'AI' and a level for a computer
 player (at once, in the game being played too). Laid out as Cluedo's Players table.
 */
 function drawPlayerChoice()
@@ -530,8 +543,15 @@ function aiTicked(id)
     else delete options.ai[id];
     saveOptions();
     const p = players.find((x) => x.id === id);
-    if (p && on && !p.throws && (formulaTotal(p) !== options.success)) p.formula = aiFormula(p);
+    if (p && on && !p.throws && !p.formulaSet) p.formula = aiFormula(p);
     aiGoing = false;
+    if (preparing && on && (p === players[who])) //was setting their formula: the computer has set it
+    {
+        preparing = false;
+        closeSheets();
+        if (turnCount === 0) return prepNext(who + 1);
+        STATUS_HTML(turnPrompt(p));
+    }
     drawPlayersInfo();
     drawDial();
     showButtons();
@@ -551,13 +571,77 @@ function toggleAiPause()
     $('#option_ai_pause')[0].checked = options.aiPause;
 }
 
+//a player ticked / unticked: for the next New Game, and (as Cluedo) at once in the game being played
 function playerTicked(id, on)
 {
+    if (!on && !gameOver && players.some((p) => p.id === id) && !playerLeaves(id))
+    {
+        $(`#player${id}`).prop('checked', true); //could not leave just now
+        return;
+    }
     options.players = options.players.filter((i) => i !== id);
     if (on) options.players.push(id);
     options.players.sort((a, b) => a - b);
     saveOptions();
     limitPlayerChoice();
+    if (on && players.length && !gameOver && !players.some((p) => p.id === id)) playerJoins(id);
+}
+
+//joins the game being played: at Pay Day with the starting cash and salary, in their place in the turn order
+function playerJoins(id)
+{
+    const p = newPlayer(id), k = players.filter((x) => x.id < id).length;
+    players.splice(k, 0, p);
+    if (k <= who) ++who; //the same player's turn still
+    tokenBubble(p, MOOD.joined);
+    STATUS_HTML(`${playerName(p)} joins the game at Pay Day with ${money(p.cash)}` +
+        (aiLevel(p)? '.': ', and sets their Success Formula at the start of their first turn.'));
+    drawTokens();
+    drawDial();
+    drawPlayersInfo();
+    showButtons();
+}
+
+//leaves the game being played (cards back to the decks); @return false if not now
+function playerLeaves(id)
+{
+    const i = players.findIndex((p) => p.id === id), p = players[i];
+    if (players.length <= 2)
+    {
+        STATUS_HTML('At least 2 must stay in the game (or start a New Game).');
+        return false;
+    }
+    if ((i === who) && (busy || queue.length || target))
+    {
+        STATUS_HTML(`${playerName(p)} is in the middle of a move: untick them after it.`);
+        return false;
+    }
+    if (i === who)
+    {
+        const wasPreparing = preparing && (turnCount === 0);
+        if (wasPreparing)
+        {
+            returnCards(p);
+            closeSheets();
+            players.splice(i, 1);
+            prepNext(i); //(the next player is at i now)
+            STATUS_HTML(`(${PLAYERS[id]} has left the game.)`);
+        }
+        else STATUS_HTML(leaveGame(p));
+        return true;
+    }
+    returnCards(p);
+    closeSheets();
+    players.splice(i, 1);
+    if (i < who) --who; //the same player's turn still
+    delete bubbles[id];
+    delete trails[id];
+    STATUS_HTML(`(${playerName(p)} has left the game.)`);
+    drawTokens();
+    drawDial();
+    drawPlayersInfo();
+    showButtons();
+    return true;
 }
 
 function limitPlayerChoice()
@@ -584,7 +668,7 @@ function buildOppDeck()
     oppDeck = [];
     const kinds = options.bumpCard? [...OPPORTUNITY_CARDS, BUMP_CARD]: OPPORTUNITY_CARDS;
     let uid = 0;
-    for (const card of kinds) for (let i = 0; i < card[0]; ++i) oppDeck.push([...card.slice(0, 4), ++uid]); //card[4]: its number
+    for (const card of kinds) for (let i = 0; i < card[0]; ++i) oppDeck.push([card[0], card[1], card[2], card[3] || '', ++uid]); //card[4]: its number
     shuffle(oppDeck);
 }
 
@@ -646,56 +730,159 @@ function newGame()
         STATUS_HTML('Choose at least 2 players (Options, below the board), then New Game.');
         return;
     }
-    const third = Math.floor(options.success / 3);
-    players = options.players.map((id) => ({ id, cash: options.cash, salary: options.salary, fame: 0, hearts: 0, degree: '',
-        at: PAYDAY, path: '', step: -1, stuck: '', skip: 0, doubleHearts: '', opp: [], exp: [],
-        formula: { money: options.success - 2 * third, fame: third, hearts: third },
-        record: {}, history: { salary: [options.salary], fame: [0], hearts: [0], cash: [options.cash] }, throws: 0 }));
-    for (const p of players) if (aiLevel(p)) p.formula = aiFormula(p);
+    players = options.players.map(newPlayer);
     who = 0;
     turnCount = 0;
     ++gameRun;
     gameOver = false;
     revealAll = false;
+    preparing = false;
     bubbles = {};
     trails = {};
     closeSheets();
     buildOppDeck();
     buildExpDeck();
-    startTurn();
+    if (FORMULA_PREP) statusNewTurn('Round 0: getting ready. Each in turn sets their Success Formula');
+    prepNext(0);
+}
+
+//a player at Pay Day with the starting cash and salary; a computer player's formula is set, a person's to be set
+function newPlayer(id)
+{
+    const third = Math.floor(options.success / 3),
+        p = { id, cash: options.cash, salary: options.salary, fame: 0, hearts: 0, degree: '',
+            at: PAYDAY, path: '', step: -1, stuck: '', skip: 0, doubleHearts: '', opp: [], exp: [],
+            formula: { money: options.success - 2 * third, fame: third, hearts: third }, formulaSet: false,
+            record: {}, history: { salary: [options.salary], fame: [0], hearts: [0], cash: [options.cash] }, throws: 0 };
+    if (aiLevel(p)) p.formula = aiFormula(p);
+    return p;
 }
 
 /*
-Turn dial in the top panel: the players' tokens round a ring in turn order, the current player at 12 o'clock (the
-arrow in the middle points at them), the next ones going clockwise. The ring turns to the next player each turn,
-always anticlockwise (dialAngle keeps on going); a player leaving the game redraws it.
+Getting ready (owner's KIV point): round 0, everyone in turn order before turn 1. Each person sets their Success
+Formula on their own score sheet (the others look away) and locks it in; a computer player's turn shows for a moment
+(its formula is set already). Then turn 1, from the 1st player. A person who joins later does it at the start of
+their first turn. Locked: no more changes. The page test turns it off (FORMULA_PREP).
 */
-let dialAngle = 0, dialIds = '';
+let FORMULA_PREP = true,
+    preparing = false; //round 0, or a person setting their formula: the turn waits
+
+function formulaLocked(p)
+{
+    return !!aiLevel(p) || !FORMULA_PREP || p.formulaSet || (p.throws > 0); //(saves from before r122 have no formulaSet)
+}
+
+//round 0, from player k on: the next one to set their formula, else turn 1 starts with the 1st player
+function prepNext(k)
+{
+    const run = gameRun;
+    for (; k < players.length; ++k)
+    {
+        const p = players[k];
+        if (!formulaLocked(p))
+        {
+            who = k;
+            askFormula(p);
+            return;
+        }
+        if (FORMULA_PREP && aiLevel(p)) //a computer player: its turn shows for a moment
+        {
+            who = k;
+            preparing = true;
+            closeSheets();
+            drawTokens();
+            drawDial();
+            STATUS_HTML(`${playerName(p)} (computer) sets its Success Formula.`);
+            showButtons();
+            setTimeout(() => { if (run === gameRun) prepNext(k + 1); }, AI_THINK_MS);
+            return;
+        }
+    }
+    preparing = false;
+    who = 0;
+    startTurn();
+}
+
+//the person whose turn it is sets and locks their formula
+function askFormula(p)
+{
+    preparing = true;
+    handShown = false;
+    closeSheets();
+    drawTokens();
+    drawDial();
+    STATUS_HTML(`${playerName(p)}: set your Success Formula on your score sheet (${options.success} points of money, &#x2605; and &#x2665;), then lock it in. ` +
+        'Everyone else, look away! It cannot be changed after.');
+    openSheet(who);
+    showButtons();
+}
+
+function lockFormula()
+{
+    const p = players[who];
+    if (!preparing || !p || aiLevel(p)) return;
+    if (formulaTotal(p) !== options.success)
+    {
+        STATUS_HTML(`It must add up to ${options.success} points (now ${formulaTotal(p)}).`);
+        return;
+    }
+    p.formulaSet = true;
+    preparing = false;
+    closeSheets();
+    handShown = false;
+    STATUS_HTML(`${playerName(p)} has locked in their Success Formula.`);
+    if (turnCount === 0) return prepNext(who + 1); //round 0: the next player
+    STATUS_HTML(turnPrompt(p));
+    drawPlayersInfo();
+    showButtons();
+}
+
+/*
+Lean (owner's open point 2): a player who gets 10 of one kind (fame, hearts, money points) within their last 10
+turns wears its pin on the turn dial until they get 10 of a kind again. p.lean: { last: the numbers at their last
+turn's start, recent: gains per turn [money, fame, hearts], latest last, pin: '' or a LEANS key, turn }
+*/
+const LEAN_TURNS = 10, LEAN_POINTS = 10;
+const LEANS = { //goal: what the pin says the player goes for; got: what they got 10 of
+    money: { icon: '$', cls: 'pin_lean_money', goal: 'fortune', got: 'money points ($1,000 each)' },
+    fame: { icon: '★', cls: 'pin_lean_fame', goal: 'fame', got: '★' },
+    hearts: { icon: '♥', cls: 'pin_lean_hearts', goal: 'happiness', got: '♥' }
+};
+
+//at the start of the player's turn: what they gained since their last; @return the kind of a pin just won, else ''
+function tallyLean(p)
+{
+    const lean = p.lean || (p.lean = { recent: [], pin: '' }), kinds = Object.keys(LEANS),
+        now = { money: moneyPoints(p), fame: p.fame, hearts: p.hearts };
+    if (lean.turn === turnCount) return ''; //a restored turn: tallied already
+    lean.turn = turnCount;
+    if (lean.last) lean.recent = lean.recent.concat([kinds.map((k) => Math.max(0, now[k] - lean.last[k]))]).slice(-LEAN_TURNS);
+    lean.last = now;
+    const sums = kinds.map((k, i) => lean.recent.reduce((n, gains) => n + gains[i], 0)),
+        best = Math.max(...sums);
+    if (best < LEAN_POINTS) return '';
+    lean.pin = kinds[sums.indexOf(best)];
+    lean.recent = []; //counted afresh for the next pin
+    return lean.pin;
+}
+
+function leanPin(p)
+{
+    const kind = p.lean && p.lean.pin;
+    if (!kind) return '';
+    const lean = LEANS[kind];
+    return TurnDial.pin(`pin_left pin_lean ${lean.cls}`, lean.icon, `Lately going for ${lean.goal}: got ${LEAN_POINTS} ${lean.got} within ${LEAN_TURNS} turns`);
+}
+
+//turn dial in the top panel (cluedo/js/turndial.js); computer players wear an 'AI' pin, and anyone their lean's pin
+let dial = null;
 function drawDial()
 {
     const div = $('#divDial'), n = players.length;
-    if (!n || !players[who]) return div.empty();
-    const ids = players.map((p) => p.id + (aiLevel(p) || '')).join(), step = 360 / n, want = -who * step;
-    if (ids !== dialIds)
-    {
-        dialIds = ids;
-        dialAngle = want;
-        const r = 46;
-        div.html(`<div class="dial_ring" style="transform: rotate(${dialAngle}deg);">` + players.map((p, j) =>
-        {
-            const a = j * step * Math.PI / 180;
-            return `<div class="dial_token" style="left: ${60 + r * Math.sin(a)}px; top: ${60 - r * Math.cos(a)}px; transform: translate(-50%, -50%) rotate(${-dialAngle}deg);">
-${tokenImg(p, 'dial_img')}${aiLevel(p)? `<span class="ai_pin ${AI_PINS[aiLevel(p)] || 'pin_silver'}" title="Computer player: ${AI_LEVELS[aiLevel(p)]}">AI</span>`: ''}</div>`;
-        }).join('') + '</div><div class="dial_arrow">&#x25B2;</div>');
-    }
-    else
-    {
-        dialAngle -= (((dialAngle - want) % 360) + 360) % 360; //anticlockwise, to the next player
-        div.find('.dial_ring').css('transform', `rotate(${dialAngle}deg)`);
-        div.find('.dial_token').css('transform', `translate(-50%, -50%) rotate(${-dialAngle}deg)`);
-    }
-    div.find('.dial_token').each((j, el) => $(el).toggleClass('current', j === who));
-    div.attr('title', 'Turn order: ' + players.map((p, j) => PLAYERS[players[(who + j) % n].id]).join(', then '));
+    dial = dial || new TurnDial(div[0], { onPick: (k) => findMe(k) });
+    dial.draw(players.map((p, k) => ({ key: k, title: `${PLAYERS[p.id]}: click to find`, html: tokenImg(p, 'dial_img') +
+        (aiLevel(p)? TurnDial.pin(AI_PINS[aiLevel(p)] || 'pin_silver', 'AI', 'Computer player: ' + AI_LEVELS[aiLevel(p)]): '') + leanPin(p) })), who);
+    if (n && players[who]) div.attr('title', 'Turn order: ' + players.map((p, j) => PLAYERS[players[(who + j) % n].id]).join(', then '));
 }
 
 /*
@@ -705,12 +892,13 @@ come up as buttons, one at a time. Then Next Player.
 */
 function startTurn()
 {
-    rolled = moved = again = cardPlayed = oppUsed = busy = aiGoing = false;
+    rolled = moved = again = cardPlayed = oppUsed = busy = aiGoing = preparing = false;
     aiWaiting = false;
     waitRoll = null;
     $('.dice-container').removeClass('dice_wait');
     drawnNow = [];
     ++turnCount;
+    const leanWon = tallyLean(players[who]); //(before the save, so a restored turn is not tallied twice)
     saveGame();
     target = null;
     targetNear = [];
@@ -722,6 +910,7 @@ function startTurn()
     delete bubbles[p.id]; //said its say
     delete trails[p.id]; //a new move
     statusNewTurn(`Turn ${turnCount}: ${tokenImg(p, 'icon')} ${playerName(p)}${aiLevel(p)? ` (${AI_LEVELS[aiLevel(p)]})`: ''}`);
+    if (leanWon) STATUS_HTML(`${playerName(p)} got ${LEAN_POINTS} ${LEANS[leanWon].got} within ${LEAN_TURNS} turns: lately going for ${LEANS[leanWon].goal} (a ${LEANS[leanWon].icon} pin on the turn dial).`);
     $('#dice2').toggle(!p.path);
     drawTokens();
     drawDial();
@@ -734,6 +923,7 @@ function startTurn()
         showButtons();
         return;
     }
+    if (!formulaLocked(p)) return askFormula(p); //joined during the game: their formula first
     const entry = entryAtStart(p);
     if (entry) STATUS_HTML(entry);
     if (!queue.length) STATUS_HTML(turnPrompt(p));
@@ -772,7 +962,7 @@ function nextPlayerButton(click)
 function readyToMove()
 {
     const p = players[who];
-    if (rolled || moved || busy || queue.length || gameOver || !players.length) return false;
+    if (preparing || rolled || moved || busy || queue.length || gameOver || !players.length) return false;
     if (formulaTotal(p) !== options.success)
     {
         STATUS_HTML(`${playerName(p)}: your Success Formula must add up to ${options.success} points before your first move.`);
@@ -789,6 +979,8 @@ function showButtons()
     if (gameOver) s = '<button onclick="newGame();" class="button_final">New Game</button>';
     else if (waitRoll) s = `<span class="throw_prompt">&#x1F3B2; Roll ${(waitRoll.n === 2)? '2 dice': '1 die'} for ${waitRoll.why}.</span>`;
     else if (busy || !p) s = '';
+    else if (preparing && aiLevel(p)) s = `<span class="ai_note">${PLAYERS[p.id]} (computer) sets its Success Formula</span>`;
+    else if (preparing) s = `<button onclick="lockFormula();" class="button_final">&#x1F512; Lock in my Success Formula</button> <button onclick="openSheet(who);">My score sheet</button>`;
     else if (aiLevel(p))
     {
         //a computer player's turn: it plays by itself; paused, it waits for Go!
@@ -900,10 +1092,10 @@ function expPlayable(p)
     return !gameOver && !busy && !queue.length && !target && !p.stuck && !onHawaii(p) && !rolled && !moved && !cardPlayed;
 }
 
-//'Use it now' on a card just drawn
+//'Use it now' on a card just drawn (only this turn's)
 function playOppNow(uid)
 {
-    playOpp(players[who].opp.findIndex((c) => c[4] === uid));
+    if (drawnNow.includes(uid)) playOpp(players[who].opp.findIndex((c) => c[4] === uid));
 }
 
 //a click (or the dice) for the player whose turn it is: from a person only if it is not a computer player's turn
@@ -1206,7 +1398,8 @@ const MOOD = {
     fame: '&#x2B50; &#x1F60E;', hearts: '&#x2764;&#xFE0F; &#x1F60D;', loseHearts: '&#x1F494; &#x1F62D;', loseFame: '&#x1F631;',
     halved: '&#x1F629;', skip: '&#x1F634;', again: '&#x1F3B2; &#x1F603;', hawaii: '&#x1F3DD;&#xFE0F; &#x1F60E;',
     looking: '&#x1F697; &#x1F612;', car: '&#x1F697; &#x1F60D;', paris: '&#x1F5FC; &#x1F60D;', charity: '&#x1F397;&#xFE0F; &#x1F607;',
-    horses: '&#x1F40E; &#x1F60E;', cards: '&#x1F0CF; &#x1F60F;', won: '&#x1F3C6; &#x1F973;', cannot: '&#x1F6AB; &#x1F61E;'
+    horses: '&#x1F40E; &#x1F60E;', cards: '&#x1F0CF; &#x1F60F;', won: '&#x1F3C6; &#x1F973;', cannot: '&#x1F6AB; &#x1F61E;',
+    joined: '&#x1F44B; &#x1F600;'
 };
 
 function tokenBubble(p, html, fumes)
@@ -1349,9 +1542,10 @@ function spend(p, amount, what, to)
 }
 
 //'Find Me!': scroll to the token of the player whose turn it is, and make it jump
-function findMe()
+//scroll to the token of the current player, or of the player given (index into players)
+function findMe(k)
 {
-    const p = players[who];
+    const p = players[k ?? who];
     if (!p) return;
     const sq = $('#' + cellId(p));
     if (!sq.length) return;
@@ -1546,7 +1740,7 @@ function startAfresh(p)
 {
     returnCards(p);
     const from = posOf(p);
-    Object.assign(p, { cash: options.cash, at: PAYDAY, path: '', step: -1, stuck: '', skip: 0, doubleHearts: '', degree: '', record: {} });
+    Object.assign(p, { cash: options.cash, at: PAYDAY, path: '', step: -1, stuck: '', skip: 0, doubleHearts: '', degree: '', record: {}, lean: null });
     cashTally(p);
     setScore(p, 'salary', options.salary);
     setScore(p, 'fame', 0);
@@ -1861,6 +2055,7 @@ function playOpp(k, byAI)
     if (!now && !readyToMove()) return;
     p.opp.splice(k, 1);
     oppDeck.push(card);
+    $('.use_now').remove(); //one card a turn: no second click
     cardPlayed = rolled = moved = oppUsed = true;
     again = false;
     if (!now) ++p.throws;
@@ -1969,6 +2164,14 @@ function validGame(game)
         Array.isArray(game.oppDeck) && Array.isArray(game.expDeck) && game.players.every((p) => PLAYERS[p.id] && OUTER[p.at]);
 }
 
+//saves before r118 kept a plain Opportunity card's number at [3]: move it to [4]
+function fixOldCards()
+{
+    const fix = (c) => (c.length === 4)? [c[0], c[1], c[2], '', c[3]]: c;
+    oppDeck = oppDeck.map(fix);
+    players.forEach((p) => p.opp = p.opp.map(fix));
+}
+
 //put a saved game on, at the start of the turn it was saved at
 function restoreGame(game)
 {
@@ -1980,6 +2183,7 @@ function restoreGame(game)
     turnCount = game.turnCount - 1;
     oppDeck = game.oppDeck;
     expDeck = game.expDeck;
+    fixOldCards();
     Object.assign(options, game.rules || {});
     if (game.ai) options.ai = game.ai;
     options.players = players.map((p) => p.id);
@@ -1989,6 +2193,7 @@ function restoreGame(game)
     ++gameRun;
     gameOver = false;
     revealAll = false;
+    preparing = false;
     bubbles = {};
     trails = {};
     startTurn();

@@ -38,6 +38,9 @@
     width: 42%; height: 42%;
 }
 
+/* turn dial (turndial.css), under the dice */
+#divTurnDial { margin: 24px auto 0 auto; }
+
 /* player's token at half size, heading a message about the player */
 .move_player_icon
 {

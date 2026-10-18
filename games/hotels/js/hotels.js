@@ -627,6 +627,20 @@ function drawWho()
     $('#divWho')[0].innerHTML = `${playerString(who)}'s turn ${icons[action]? `<span class='who_spot' title='What the space under the token has to offer'>on: ${icons[action]}</span>`: ''}`;
 }
 
+//Turn dial in the top panel (cluedo/js/turndial.js): the players in the game in turn order, the current one at
+//12 o'clock; computer players wear an 'AI' pin (AI_PINS); a click on a token finds that player
+let dial = null;
+function drawDial()
+{
+    const el = $('#divDial')[0];
+    if (!el) return;
+    dial = dial || new TurnDial(el, { scale: 1.3, onPick: (playerId) => whereAmI(playerId) });
+    const ids = PLAYERS.map((name, i) => i).filter((i) => playersData[i] && ((i === who) || isPlaying(i)));
+    dial.draw(ids.map((i) => ({ key: i, title: `${PLAYERS[i]}: click to find`, html: `<img src='images/token-${TOKEN_IMAGES[i]}.png' alt=''>` +
+        (aiLevel(i)? TurnDial.pin(AI_PINS[aiLevel(i)] || 'pin_silver', 'AI', `Computer player: ${AI_LEVELS[aiLevel(i)]}`): '') })), ids.indexOf(who));
+    el.title = ids.length? 'Turn order: ' + ids.map((x, k) => PLAYERS[ids[(ids.indexOf(who) + k) % ids.length]]).join(', then '): '';
+}
+
 //All that given player owns goes: hotels knocked down, entrances gone, title deeds back with the Bank
 function knockDownAll(playerId)
 {
@@ -2812,6 +2826,7 @@ function refresh()
     drawHotels();
     drawTokenMarks(); //after the hotels: it marks buildings and entrances that were just drawn
     drawAssets();
+    drawDial();
     printBalances();
     if (popupSheet && !popupSheet.min) //the balance sheet, if it is open, keeps up
     {

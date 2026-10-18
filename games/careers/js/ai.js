@@ -377,7 +377,7 @@ function aiSchedule()
 {
     clearTimeout(aiTimer);
     const p = players[who];
-    if (!aiLevel(p) || gameOver || aiWaiting) return;
+    if (!aiLevel(p) || gameOver || aiWaiting || preparing) return; //(round 0: its formula is set already)
     if (options.aiPause && !aiGoing) return;
     const run = gameRun;
     aiTimer = setTimeout(() =>

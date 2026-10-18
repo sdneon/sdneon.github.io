@@ -6,9 +6,11 @@
 <link rel="stylesheet" href="../cluedo/css/dice.css">
 <link rel="stylesheet" href="css/dice_hotels.css">
 <link rel="stylesheet" href="../cluedo/css/tooltip.css">
+<link rel="stylesheet" href="../cluedo/css/turndial.css">
 <script src="../cluedo/js/jquery.min.js"></script>
 <script src="../cluedo/js/winbox.bundle.min.js"></script>
 <script src="../cluedo/js/dice.js"></script>
+<script src="../cluedo/js/turndial.js"></script>
 <script src="js/dice_hotels.js"></script>
 <script src="js/board.js"></script>
 <script src="js/rules.js"></script>
@@ -39,8 +41,14 @@
         </div>
     </div>
     <div id='divMid'>
-        <div id='divWho'></div>
-        <div id='divPrompt'></div>
+        <div id='divMidTop'>
+            <!-- turn dial: players in turn order, the current one at 12 o'clock -->
+            <div id='divDial'></div>
+            <div id='divMidText'>
+                <div id='divWho'></div>
+                <div id='divPrompt'></div>
+            </div>
+        </div>
         <!-- what the player whose turn it is has done on it, an icon each: mouse over (or click) for details; a click shows it again on the map -->
         <div id='divFoot'>
             <div id='divTurnActions'></div>

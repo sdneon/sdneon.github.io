@@ -349,6 +349,10 @@ img.icon {
     line-height: 1.8;
 }
 .sheet .sheet_formula input { width: 52px; font-size: 15px; }
+/* ▲ above and ▼ below each part of the formula while it may be set (nudgeFormula) */
+.sheet .formula_part { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; gap: 2px; }
+.sheet .formula_nudge { font-size: 11px; line-height: 1; padding: 2px 14px; cursor: pointer; }
+.sheet .formula_nudge:disabled { opacity: 0.3; cursor: default; }
 .sheet .bad { color: #d32f2f; }
 .sheet .reached { color: #2e7d32; }
 .sheet .hidden { color: #aaa; }
@@ -651,25 +655,11 @@ button:hover, button:active {
 @keyframes step { 0% { transform: translateY(-16px) scale(1.12); } 100% { transform: none; } }
 @keyframes hop { 0% { transform: translateY(-60px) scale(1.6); opacity: 0.3; } 60% { transform: translateY(6px) scale(1); opacity: 1; } 80% { transform: translateY(-8px); } 100% { transform: none; } }
 
-/* turn dial: tokens round a ring in turn order, the current player at 12 o'clock under the arrow; the ring turns */
-#divDial { position: relative; width: 120px; height: 120px; flex-shrink: 0; cursor: pointer; }
-#divDial .dial_ring {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 3px dashed #c9a227;
-    box-sizing: border-box;
-    transition: transform 0.8s ease-in-out;
-}
-#divDial .dial_token { position: absolute; transition: transform 0.8s ease-in-out; }
-#divDial .dial_img { width: 30px; height: 30px; border-radius: 50%; display: block; transition: width 0.4s, height 0.4s; }
-#divDial .dial_token.current .dial_img { width: 44px; height: 44px; box-shadow: 0 0 0 3px #fff, 0 0 10px 4px #f0c; }
-#divDial .dial_arrow {
-    position: absolute; left: 50%; top: 50%;
-    transform: translate(-50%, -60%);
-    font-size: 30px;
-    color: #c9a227;
-    pointer-events: none;
-}
+/* turn dial: cluedo/css/turndial.css; the pin of a player's lean (tallyLean): white, its sign in colour */
+.turn_dial .td_pin.pin_lean { background: radial-gradient(circle at 35% 30%, #fff, #e8e8e8); font-size: 13px; text-shadow: none; }
+.turn_dial .td_pin.pin_lean_fame { color: #e0a800; }
+.turn_dial .td_pin.pin_lean_hearts { color: #e0245e; }
+.turn_dial .td_pin.pin_lean_money { color: #2e7d32; font-weight: bold; }
 .next_player img.icon { margin: -4px 2px 0 4px; }
 
 /* the board's own layers (tokens, arrows, floating amounts) stay under the top panel */
@@ -739,17 +729,6 @@ button:hover, button:active {
 .trails .trail_halo { fill: none; stroke: #fff; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0.1 20; opacity: 0.8; }
 .trails .trail_dot { opacity: 0.55; stroke: #fff; stroke-width: 2; }
 .trails image { opacity: 0.85; }
-/* turn dial: a computer player's token wears an 'AI' pin, in the colour of its level */
-#divDial .ai_pin {
-    position: absolute; right: -8px; bottom: -6px;
-    width: 18px; height: 18px; border-radius: 50%;
-    font-size: 9px; font-weight: bold; line-height: 18px; text-align: center;
-    border: 2px solid #fff; box-shadow: 0 1px 3px #0008;
-    color: #fff; text-shadow: 0 0 2px #0009;
-}
-#divDial .pin_green { background: radial-gradient(circle at 35% 30%, #a5d6a7, #2e7d32); }
-#divDial .pin_silver { background: radial-gradient(circle at 35% 30%, #fff, #9e9e9e); }
-#divDial .pin_gold { background: radial-gradient(circle at 35% 30%, #fff59d, #c99700); }
 /* score sheet: a part of the Success Formula reached shows green, in the formula, 'Now' and its column */
 .sheet input.reached { color: #2e7d32; border-color: #2e7d32; font-weight: bold; }
 .sheet b.reached { color: #2e7d32; }

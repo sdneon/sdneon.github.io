@@ -1552,6 +1552,7 @@ function moveAutoInterrupt()
 //Put the circling swirl on the token of the player whose turn it is
 function moveUpdateSwirl()
 {
+    moveDrawDial();
     $('.cell_container2 > .move_swirl').remove();
     if ($('#divMoveWalker').length > 0) //token is out walking; its stand-in has the swirl
     {
@@ -1563,6 +1564,23 @@ function moveUpdateSwirl()
         return;
     }
     $(`#cell${cellId}_container .cell_container2`).append(`<div class='move_swirl'></div>`);
+}
+
+//Turn dial (turndial.js): the players in the game in turn order, the current one at 12 o'clock; AI players wear a pin
+const MOVE_AI_PINS = { weak: 'pin_green', smart: 'pin_gold' };
+let moveDial = null;
+function moveDrawDial()
+{
+    const el = $('#divTurnDial')[0];
+    if (!el) return;
+    moveDial = moveDial || new TurnDial(el, { scale: 2, onPick: (playerId) => whereAmI(playerId) });
+    const ids = PLAYERS.map((name, playerId) => playerId).filter((playerId) => (playerId === who) || !ignoredPlayers[playerId]);
+    moveDial.draw(ids.map((playerId) => {
+        const level = moveAiLevel(playerId);
+        return { key: playerId, title: `${PLAYERS[playerId]}: click to find`, html: `<span class='cell_player_${playerId}'></span>` +
+            (level? TurnDial.pin(MOVE_AI_PINS[level] || 'pin_silver', 'AI', `Computer player: ${MOVE_AI_LEVELS[level]}`): '') };
+    }), ids.indexOf(who));
+    el.title = 'Turn order: ' + ids.map((x, k) => PLAYERS[ids[(ids.indexOf(who) + k) % ids.length]]).join(', then ');
 }
 
 //@retval true if AI player, with routes worked out for the dice as rolled, would rather roll again:
@@ -1920,6 +1938,7 @@ function moveSetAiPlayers(aiPlayers)
         }
     }
     moveRememberAiPlayers();
+    moveDrawDial();
 }
 
 //Keep who are the AI players across page reloads, whether or not a saved game is restored then
@@ -1960,6 +1979,7 @@ function updateAiSelection(playerId)
         delete moveAiPlayers[playerId];
     }
     moveRememberAiPlayers();
+    moveDrawDial();
     if (playerId === who)
     {
         clearMovePlan();
