@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kana Do!</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="jp">
+<header>
+  <nav class="pages"><a href="index.html">Do U Read Me?</a> · <b>Kana Do!</b></nav>
+  <h1>Kana Do!</h1>
+  <p class="sub">Paste Japanese text. Each word is shown in kana (hiragana, or katakana for loanwords), with romaji under every kana.</p>
+</header>
+
+<section class="controls">
+  <label class="check" title="English meaning under each word (from EDICT)"><input type="checkbox" id="meanings"> Word meanings</label>
+  <label class="check" title="English translation under each line (Chrome's built-in translator)"><input type="checkbox" id="translate"> Translation</label>
+  <label class="check" title="Show kanji words in katakana instead of hiragana"><input type="checkbox" id="katakana"> All katakana</label>
+  <label title="Speed of reading aloud">Speed
+    <input type="range" id="rate" min="0.3" max="1.2" step="0.05"> <span id="rateVal" class="rate-val"></span>
+  </label>  <span class="grow"></span>
+  <select id="example" title="Load an example">
+    <option value="">Examples…</option>
+    <option value="0">Greetings</option>
+    <option value="1">Daily life</option>
+    <option value="2">Katakana words</option>
+  </select>
+  <button id="clear" type="button">Clear</button>
+  <button id="chartBtn" type="button" class="primary">Kana chart</button>
+</section>
+
+<textarea id="input" spellcheck="false" placeholder="Paste or type Japanese here…"></textarea>
+
+<div class="key">
+  <span class="k-t">text</span><span class="k-k">kana</span><span class="k-r">romaji</span><span class="k-m">meaning</span><span class="k-tr">translation</span>
+  <span class="hint">Click a word or a kana to hear it. <span class="mo long sample">long</span> <span class="mo diff sample">said differently</span> <span class="mo gem sample">small っ</span>: hover for why.</span>
+  <span class="voice"></span>
+  <span id="status" class="status"></span>
+</div>
+<main id="output"></main>
+
+<dialog id="chart">
+  <div class="dlg-head">
+    <h2>Kana chart</h2>
+    <button type="button" id="chartClose" class="x" aria-label="Close">×</button>
+  </div>
+  <p class="dlg-note">46 basic sounds, written two ways: hiragana (Japanese words and grammar) and katakana (loanwords, names, emphasis). Click a kana to hear it.</p>
+  <div class="chips"><button type="button" data-script="h" class="on">Hiragana</button><button type="button" data-script="k">Katakana</button><button type="button" data-script="hk">Hira+Kata</button></div>
+  <p class="voice dlg-note"></p>
+  <div id="chartBody"></div>
+</dialog>
+
+<script src="js/speech.js"></script>
+<script src="js/translate.js"></script>
+<script src="js/legend-data.js"></script>
+<script src="js/ipa.js"></script>
+<script src="js/g2p.js"></script>
+<script src="js/kana.js"></script>
+<script src="js/japanese.js"></script>
+</body>
+</html>
