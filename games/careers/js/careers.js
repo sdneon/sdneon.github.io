@@ -34,7 +34,7 @@ const OPTIONS_KEY = 'careers.options',
     //aiReview: after a computer player's turn, wait for Next Player (when a person plays too)
     //casual ('cheat') mode: people may roll again before moving, and move 1 square short of or past the glowing one
     DEFAULT_OPTIONS = { cash: 1000, salary: 1000, bumpCard: true, anyDegree: true, success: 60, players: [0, 1, 2], //players: ids in PLAYERS
-        ai: { 1: 'smart' }, aiPause: false, aiReview: true, casual: true };
+        ai: { 1: 'smart' }, aiPause: false, aiReview: true, casual: true, theme: 'vivid' }; //theme: a key of BOARD_THEMES (themes.js)
 let options = { ...DEFAULT_OPTIONS };
 
 /*
@@ -139,7 +139,7 @@ function drawBoard()
     $('<div class="inner"></div>').appendTo(board).css({ left: CORNER_UNITS * UNIT, top: CORNER_UNITS * UNIT,
         width: INNER_UNITS * UNIT, height: INNER_UNITS * UNIT });
     $(`<div class="title">${TITLE_ART? artHtml(TITLE_ART, 'title_pic'): 'Careers<div class="motto">The Choice is Yours</div>'}</div>`).appendTo(board)
-        .css({ left: 7 * UNIT, top: 9 * UNIT, width: 6 * UNIT, height: 2 * UNIT });
+        .css({ left: 7 * UNIT, top: 7 * UNIT, width: 6 * UNIT, height: 6 * UNIT });
     OUTER.forEach((sq, i) =>
     {
         const [kind, name, print] = sq,
@@ -151,7 +151,8 @@ function drawBoard()
         label.append(`<div class="name${(name.length > 10)? ' long_name': ''}">${name}</div>`);
         //small print, less its 'May enter: <path>.' (already above); print may hold HTML such as <b>Pay</b>
         if (kind !== 'opp') label.append(`<div class="print">${print.replace(/^(?:<[^>]+>)*May (?:enter|go into):(?:<[^>]+>|[^.<])*\.(?:<\/[^>]+>)*\s*/, '')}</div>`);
-        if (path) div.css('border-color', path.colour);
+        if (path) div.css('border-color', pathBorder(name));
+        if (path && boardTheme().entryTint) div.css('background', theme_(name).tint); //an entrance in its path's colour
         place(div, ...outerRect(i));
         //tokens: corners in 2 empty corners (off the diagonal name); other squares along the board's outer rim
         if (side === 'corner') div.append('<div class="tokens corner_a"></div><div class="tokens corner_b"></div>');
@@ -167,7 +168,7 @@ function drawBoard()
             const [col, row, story, reward] = sq,
                 id = pathCellId(name, step),
                 div = $(`<div id="${id}" class="sq path" data-tip="${id}" onclick="squareClicked(this.id);"></div>`);
-            div.css({ 'border-color': path.colour, background: theme.tint });
+            div.css({ 'border-color': pathBorder(name), background: theme.tint });
             div.append(`<div class="story">${story}</div><div class="reward">${reward}</div><div class="tokens"></div>`);
             place(div, CORNER_UNITS + col, CORNER_UNITS + row, 1, 1);
             board.append(div);
@@ -263,7 +264,7 @@ function tipHtml(key)
         for (const [name, path] of Object.entries(PATHS)) path.squares.forEach((sq, step) =>
         {
             if (pathCellId(name, step) !== key) return;
-            s = `<div class="tip_title" style="color:${path.colour}">${tipIcon(name)}${name} <span class="tip_step">square ${step + 1} of ${path.squares.length}</span></div>
+            s = `<div class="tip_title" style="color:${pathBorder(name)}">${tipIcon(name)}${name} <span class="tip_step">square ${step + 1} of ${path.squares.length}</span></div>
 <div class="tip_art">${artHtml((SQUARE_ART[name] || [])[step], 'tip_art_pic')}</div>
 <div class="tip_story">${sq[INDEX_STORY]}</div><div class="tip_reward">${richPrint(sq[INDEX_REWARD])}</div>`;
         });
@@ -485,6 +486,7 @@ function loadOptions()
     $('#option_ai_pause')[0].checked = options.aiPause;
     $('#option_ai_review')[0].checked = options.aiReview;
     $('#option_casual')[0].checked = options.casual;
+    applyTheme();
 }
 
 function saveOptions()
@@ -2231,9 +2233,9 @@ function importGameFile(input)
 
 $(() =>
 {
-    drawBoard();
     createDice();
-    loadOptions();
+    loadOptions(); //(before the board: its colour theme)
+    drawBoard();
     drawPlayerChoice();
     const game = savedGame();
     if (!game) return newGame();

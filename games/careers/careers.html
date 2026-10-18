@@ -12,6 +12,7 @@
 <script src="../cluedo/js/turndial.js"></script>
 <script src="js/board.js"></script>
 <script src="js/art.js"></script>
+<script src="js/themes.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/careers.js"></script>
 <script src="js/ai.js"></script>
@@ -47,6 +48,8 @@
 <span class="note">(The game is saved at the start of every turn, and offered back when the page is opened again.)</span>
 <div id="divOptions">
 <b>Options</b> (from the next New Game):<br>
+<label for="option_theme">Board colours (at once)</label>
+<select id="option_theme" onchange="setTheme(this.value);"></select><br>
 <label for="option_cash">Starting cash $</label>
 <input type="number" id="option_cash" min="0" step="500" onchange="setOption('cash', this.value);">
 <label for="option_salary">Starting salary $</label>

@@ -49,12 +49,18 @@ h1 .motto {
 }
 #divBoard .inner {
     position: absolute;
-    background: #efeee8;
+    background: #efeee8 url('../img/inner.png') center / cover no-repeat; /* the picture (750 x 750 inside the border) hides the colour */
     border: 3px solid #222;
     box-sizing: border-box;
 }
 #divBoard .title {
     position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
+    box-sizing: border-box;
     text-align: center;
     font: bold 44px var(--font);
     color: #6a4c93;

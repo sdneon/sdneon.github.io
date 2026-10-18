@@ -1,8 +1,8 @@
 //Careers: pictures for the board. Emoji for now; any entry may be swapped for a picture file, e.g.
 //  'images/sports-penalty.webp' (a path ending in .png, .jpg, .gif, .webp or .svg, relative to careers.html).
 
-//Title in the middle of the board: '' for the text 'Careers', or a picture file (the owner's cut from box-front.jpg)
-const TITLE_ART = '';
+//Title in the middle of the board: '' for the text 'Careers', or a picture file (fitted into the 6 x 6 units clear of the paths)
+const TITLE_ART = 'img/logo.png';
 
 /*
 Look of each career path:
@@ -120,9 +120,10 @@ const SQUARE_ART = {
     ]
 };
 
+//a path's look, with the colours of the board theme picked (themes.js) over these
 function theme_(name)
 {
-    return PATH_THEMES[name] || { icon: '', tint: '#f3e7c4', disc: '#ccc' };
+    return { ...(PATH_THEMES[name] || { icon: '', tint: '#f3e7c4', disc: '#ccc' }), ...themedPath(name) };
 }
 
 //HTML for an art entry: a picture file, or the emoji themselves
