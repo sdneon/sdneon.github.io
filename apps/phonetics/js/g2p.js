@@ -1,4 +1,4 @@
-// Text -> IPA per language: dictionary lookups (dict/*.js) plus rule-based Spanish, Italian, Latin, Korean and kana.
+// Text -> IPA per language: dictionary lookups (dict/*.js) plus rule-based Spanish, Italian, Latin, Malay, Korean and kana.
 (function (g) {
 'use strict';
 
@@ -32,10 +32,10 @@ function loadDict(name) {
   }
   return pending[name].promise;
 }
-const DICT_SIZE = { en_UK: 0.9, en_US: 1.8, fr_FR: 2.4, de: 8.5, ja: 9.8, ja_en: 10, ko: 1.2, zh: 3.5, it: 1.3, la_cl: 1.2, la_ec: 1.2 };
+const DICT_SIZE = { en_UK: 0.9, en_US: 1.8, fr_FR: 2.4, de: 8.5, ja: 9.8, ja_en: 10, ko: 1.2, zh: 3.5, it: 1.3, la_cl: 1.2, la_ec: 1.2, ms_my: 0.1, ms_bk: 0.1 };
 function dictsFor(lang, opt) {
   return { en: ['en_' + opt.accent, 'en_' + (opt.accent === 'UK' ? 'US' : 'UK')], fr: ['fr_FR'], de: ['de'],
-    ja: opt.meanings ? ['ja', 'ja_en'] : ['ja'], ko: ['ko'], zh: ['zh'], it: ['it'], la: [opt.la === 'church' ? 'la_ec' : 'la_cl'] }[lang] || [];
+    ja: opt.meanings ? ['ja', 'ja_en'] : ['ja'], ko: ['ko'], zh: ['zh'], it: ['it'], la: [opt.la === 'church' ? 'la_ec' : 'la_cl'], ms: [opt.ms === 'formal' ? 'ms_bk' : 'ms_my'] }[lang] || [];
 }
 
 function profile(lang, opt) {
@@ -46,6 +46,7 @@ function profile(lang, opt) {
     case 'es': return { lang: 'es', trust: true };
     case 'it': return { lang: 'it', trust: true };
     case 'la': return { lang: 'la', trust: true };
+    case 'ms': return { lang: 'ms', trust: true };
     case 'ja': return { lang: 'ja', nostress: true };
     case 'ko': return { lang: 'ko', nostress: true };
     default: return { lang: 'en', trust: true };
@@ -376,6 +377,83 @@ function laWord(word, opt) {
     return { ipa: g.IPA.restress(base.replace(/([aeiouɛɪɔʊæyʏ]ː?[^aeiouɛɪɔʊæyʏː]*)$/, 'ˈ$1') + t, { lang: 'la' }), src: 'guess', note: m[1] + ' + -' + m[2] };
   }
   return { ipa: laRules(key, style), src: 'rule' };
+}
+
+// ---------- Malay (dictionary per style, else rules) ----------
+// style: 'everyday' (Malaysian: final -a = ə, final -ik/-ih/-ul… = -ek/-eh/-ol) or 'formal' (Baku: as spelled).
+function msRules(word, style) {
+  const w = word.toLowerCase().replace(/[’'-]/g, '');
+  const isV = c => !!c && 'aeéiou'.includes(c);
+  const ph = [];
+  const P = p => ph.push({ p });
+  for (let i = 0; i < w.length; i++) {
+    const c = w[i], n = w[i + 1] || '';
+    if (isV(c)) {
+      // final ai/au/oi are diphthongs (pantai, pulau); baik, naik stay two syllables
+      if ((c === 'a' && (n === 'i' || n === 'u') || c === 'o' && n === 'i') && i + 2 === w.length) {
+        ph.push({ p: c, v: true }); P(n === 'u' ? 'w' : 'j'); i++; continue;
+      }
+      ph.push({ p: c === 'e' ? 'ə' : c === 'é' ? 'e' : c, v: true });
+      continue;
+    }
+    if (c === n && c !== 'g') { continue; }   // rare double letters (Allah)
+    switch (c) {
+      case 'n':
+        if (n === 'g') { P('ŋ'); i++; if (w[i + 1] === 'g') { P('g'); i++; } }
+        else if (n === 'y') { P('ɲ'); i++; }
+        else P('n');
+        break;
+      case 's': if (n === 'y') { P('ʃ'); i++; } else P('s'); break;
+      case 'k':
+        if (n === 'h') { P('x'); i++; }
+        else P(!n || !isV(n) && n !== 'r' && n !== 'l' && n !== 'w' ? 'ʔ' : 'k');   // rakyat, cantik: a catch
+        break;
+      case 'g': if (n === 'h') { P('ɣ'); i++; } else P('g'); break;
+      case 'c': P('tʃ'); break;
+      case 'j': P('dʒ'); break;
+      case 'y': P('j'); break;
+      case 'q': P('k'); break;
+      case 'x': P('k'); P('s'); break;
+      default: if (/[a-z]/.test(c)) P(c);
+    }
+  }
+  const nuc = ph.map((t, k) => (t.v ? k : -1)).filter(k => k >= 0);
+  if (style !== 'formal' && nuc.length > 1) {
+    const last = ph[nuc[nuc.length - 1]], after = ph.slice(nuc[nuc.length - 1] + 1);
+    if (!after.length && last.p === 'a') last.p = 'ə';
+    else if (after.length && !after.some(t => t.p === 'j' || t.p === 'w')) {
+      if (last.p === 'i') last.p = 'e'; else if (last.p === 'u') last.p = 'o';
+    }
+  }
+  // stress: second-to-last syllable, or the last when the second-to-last has ə (selamat səˈlamat, beli bəˈli)
+  let mark = -1;
+  if (nuc.length > 1) mark = ph[nuc[nuc.length - 2]].p === 'ə' ? nuc[nuc.length - 1] : nuc[nuc.length - 2];
+  const ipa = ph.map((t, k) => (k === mark ? 'ˈ' : '') + t.p).join('');
+  return mark < 0 ? ipa : g.IPA.restress(ipa, { lang: 'ms' });
+}
+// Wiktionary IPA -> display form; entries without a stress mark get the usual one (as in msRules).
+function msNorm(ipa) {
+  const s = msClean(ipa);
+  if (/[ˈ\s]/.test(s)) return s;
+  const sy = g.IPA.parse(s, { lang: 'ms' })[0];
+  if (!sy || sy.length < 2 || !sy[sy.length - 2].nu) return s;
+  const k = sy[sy.length - 2].nu.base === 'ə' ? sy.length - 1 : sy.length - 2;
+  return sy.map((x, i) => (i === k ? 'ˈ' : '') + [...x.on, x.nu, ...x.co].filter(Boolean).map(t => t.base + t.mods).join('')).join('');
+}
+function msClean(ipa) {
+  return g.IPA.restress(ipa.replace(/[.*‿()]|[̠̪̬̚]/g, '').replace(/ɡ/g, 'g'), { lang: 'ms' });
+}
+function msWord(word, opt) {
+  const style = opt.ms === 'formal' ? 'formal' : 'everyday';
+  const d = DICTS[style === 'formal' ? 'ms_bk' : 'ms_my'];
+  const key = word.toLowerCase().replace(/’/g, "'");
+  if (d && d.has(key)) return { ipa: msNorm(d.get(key)), src: 'dict' };
+  // doubled word (rama-rama, kanak-kanak): each half
+  if (key.includes('-')) {
+    const parts = key.split('-').filter(Boolean).map(p => msWord(p, opt));
+    return { ipa: parts.map(p => p.ipa).join(' '), src: parts.every(p => p.src === 'dict') ? 'dict' : 'rule' };
+  }
+  return { ipa: msRules(key, style), src: 'rule' };
 }
 
 // ---------- Korean (dictionary, else Hangul rules) ----------
@@ -805,11 +883,12 @@ function convertLine(line, lang, opt) {
     else if (lang === 'es') r = esWord(w, opt);
     else if (lang === 'it') r = itWord(w);
     else if (lang === 'la') r = laWord(w, opt);
+    else if (lang === 'ms') r = msWord(w, opt);
     else r = { ipa: null, src: 'unknown' };
     toks.push(Object.assign({ text: w, kind: 'word' }, r));
   }
   return toks;
 }
 
-g.G2P = { loadDict, dictsFor, DICT_SIZE, profile, convertLine, kanaToIpa, koRules, esWord, itRules, laRules, hira, zhPinyin };
+g.G2P = { loadDict, dictsFor, DICT_SIZE, profile, convertLine, kanaToIpa, koRules, esWord, itRules, laRules, msRules, hira, zhPinyin };
 })(window);

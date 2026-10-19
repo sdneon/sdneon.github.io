@@ -3,7 +3,7 @@
 (The Japanese page, `japanese.html`, is **Kana Do!**)
 
 A static web page for learning to read IPA phonetics, for English speakers.
-Paste English, Spanish, French, German, Italian, Latin, Japanese or Korean text (or IPA itself).
+Paste English, Spanish, French, German, Italian, Latin, Malay, Japanese or Korean text (or IPA itself).
 Under each word you get its IPA, an English-style sound-alike (stressed syllable in CAPITALS) and, optionally, a Hanyu Pinyin approximation.
 Chinese (Simplified or Traditional) gets Hanyu Pinyin under each word.
 
@@ -42,7 +42,7 @@ Open `index.html` in a browser. No server needed.
 | `js/legend-data.js` | symbol table for the legend and hover hints |
 | `dict/*.js` | generated dictionaries |
 | `tools/build-dicts.js` | builds `dict/` from the raw downloads |
-| `tools/kaikki-to-ipadict.js` | Wiktionary (kaikki.org) dump → `word<TAB>/ipa/` list (used for Italian, Latin) |
+| `tools/kaikki-to-ipadict.js` | Wiktionary (kaikki.org) dump → `word<TAB>/ipa/` list (used for Italian, Latin, Malay) |
 | `tools/raw-dicts/` | the raw downloads (sources below) |
 
 ## Rebuilding the dictionaries
@@ -60,6 +60,9 @@ Run `node tools/build-dicts.js`. It reads `tools/raw-dicts/`, which holds:
 - `la_cl.txt`, `la_ec.txt`: Latin, from https://kaikki.org/dictionary/Latin/kaikki.org-dictionary-Latin.jsonl.gz (108 MB,
   not kept) with `node tools/kaikki-to-ipadict.js <download> tools/raw-dicts/la_cl.txt Classical-Latin` and
   `… tools/raw-dicts/la_ec.txt -` (ecclesiastical = the untagged pronunciation)
+- `ms_my.txt`, `ms_bk.txt`: Malay, from https://kaikki.org/dictionary/Malay/kaikki.org-dictionary-Malay.jsonl.gz (4.5 MB)
+  with `node tools/kaikki-to-ipadict.js <download> tools/raw-dicts/ms_my.txt "note:Southern Peninsular|Kuala Lumpur|Malaysia-Singapore|schwa-variety|Standard Malaysian"`
+  and `… tools/raw-dicts/ms_bk.txt "note:Literary|Baku|/a/-variety"`
 
 To update a source, download a newer copy over the old file and rebuild.
 
@@ -69,5 +72,5 @@ To update a source, download a newer copy over the old file and rebuild.
 - google-10000-english: personal/educational use (LDC licence + Norvig MIT)
 - CC-CEDICT: CC BY-SA 4.0 (https://www.mdbg.net/chinese/dictionary?page=cc-cedict)
 - jieba dictionary: MIT (https://github.com/fxsjy/jieba)
-- Wiktionary (Italian and Latin pronunciations, via kaikki.org / wiktextract): CC BY-SA 4.0 and GFDL
+- Wiktionary (Italian, Latin and Malay pronunciations, via kaikki.org / wiktextract): CC BY-SA 4.0 and GFDL
 - JMdict / EDICT2: CC BY-SA 4.0, © Electronic Dictionary Research and Development Group (https://www.edrdg.org/edrdg/licence.html)

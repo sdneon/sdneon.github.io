@@ -54,10 +54,10 @@ const OBS = new Set(['p', 'b', 't', 'd', 'k', 'g', 'f', 'v', 'θ', 'ʃ', 'ç', '
 const LIQ = new Set(['l', 'ɹ', 'r', 'ʁ', 'ɾ', 'ɫ', 'ʀ']);
 const GLIDES = new Set(['j', 'w', 'ɥ', 'ɰ']);
 
-function legalOnset(a) {
+function legalOnset(a, lang) {
   const b = a.map(t => t.base);
   if (!b.length) return true;
-  if (b.length === 1) return b[0] !== 'ŋ' && b[0] !== 'ɴ';
+  if (b.length === 1) return (b[0] !== 'ŋ' || lang === 'ms') && b[0] !== 'ɴ';   // Malay: ng starts syllables (ma-ngan)
   if (b.length === 2) {
     const [x, y] = b;
     if (OBS.has(x) && LIQ.has(y)) return !('tdθð'.includes(x) && (y === 'l' || y === 'ɫ'));
@@ -94,7 +94,7 @@ function syllabify(toks, prof) {
     if (split < 0 && segs[nuc[k + 1]].brk) split = cl.length;
     if (split < 0) {
       split = cl.length;
-      for (let j = 0; j <= cl.length; j++) if (legalOnset(cl.slice(j))) { split = j; break; }
+      for (let j = 0; j <= cl.length; j++) if (legalOnset(cl.slice(j), prof.lang)) { split = j; break; }
       const A = sy[k], B = sy[k + 1];
       if (prof.short && split === 0 && cl.length && prof.short.has(A.nu.base) && !A.nu.long &&
           !(B.stress === 1 && A.stress !== 1)) split = 1;
@@ -141,7 +141,8 @@ function consSpell(t, pos, prof) {
     if (pos === 'on' && !t.mods.includes('ʰ') && KO_LENIS[base]) return KO_LENIS[base];
   }
   if (base === 'ç' && pos === 'co') return 'kh';
-  if (prof.lang === 'it' || prof.lang === 'la') {
+  if (prof.lang === 'ms' && base === 'ʔ' && pos === 'co') return 'k';   // Malay final k: a cut-off k
+  if (prof.lang === 'it' || prof.lang === 'la' || prof.lang === 'ms') {
     if (base === 'r') return 'r';   // rr is written as two r
     if (pos === 'co' && (base === 'ʎ' || base === 'ɲ')) return base === 'ʎ' ? 'l' : 'n';   // famiglia: MEEL-lyah
   }
@@ -156,7 +157,7 @@ const V_EN = { i: 'ee', ɪ: ['i', 'ih'], e: ['e', 'eh'], ɛ: ['e', 'eh'], æ: 'a
   ʊ: 'uu', u: 'oo', ʌ: ['u', 'uh'], ə: 'uh', ɐ: 'uh', ɜ: 'ur', ɝ: 'ur', ɚ: 'er', ɞ: 'ur', y: 'ew', ø: 'ur', œ: 'ur',
   ɯ: 'oo', ɨ: 'i', ʏ: 'ew', ɘ: 'uh', ɤ: 'uh', ʉ: 'ew', ɵ: 'ur' };
 const V_X = Object.assign({}, V_EN, { e: 'ay', a: 'ah', ɔ: ['o', 'aw'] });
-const V_LANG = { es: { e: 'eh' }, it: { e: 'eh' }, la: { e: 'eh', ʊ: 'oo' }, ja: { e: 'eh' }, ko: { e: 'eh', ɛ: 'eh', ʌ: 'aw', ɯ: 'eu' } };
+const V_LANG = { es: { e: 'eh' }, it: { e: 'eh' }, la: { e: 'eh', ʊ: 'oo' }, ms: { e: ['e', 'eh'] }, ja: { e: 'eh' }, ko: { e: 'eh', ɛ: 'eh', ʌ: 'aw', ɯ: 'eu' } };
 const DIPH = { eɪ: 'ay', ɔɪ: 'oy', ɔʏ: 'oy', aʊ: 'ow', əʊ: 'oh', oʊ: 'oh', ɪə: 'eer', eə: 'air', ɛə: 'air', ʊə: 'oor' };
 const NAS = { ɑ: 'ahn', a: 'ahn', ɔ: 'awn', o: 'ohn', ɛ: 'an', e: 'an', œ: 'un', ə: 'un', ø: 'un' };
 // Classical Latin final -m (a nasal vowel): spelled with the m it is written with
@@ -263,7 +264,7 @@ function pySpell(ini, med, fin) {
 }
 
 function pyIni(t, prof) {
-  if (['es', 'it', 'la', 'fr', 'ko'].includes(prof.lang) && !t.mods.includes('ʰ') && PY_UNASP[t.base]) return PY_UNASP[t.base];
+  if (['es', 'it', 'la', 'ms', 'fr', 'ko'].includes(prof.lang) && !t.mods.includes('ʰ') && PY_UNASP[t.base]) return PY_UNASP[t.base];
   return PY_INI[t.base] !== undefined ? PY_INI[t.base] : t.base;
 }
 

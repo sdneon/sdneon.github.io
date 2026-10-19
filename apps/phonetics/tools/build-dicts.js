@@ -18,6 +18,8 @@ const SETS = {
   it:    { lower: true },   // from Wiktionary via tools/kaikki-to-ipadict.js
   la_cl: { lower: true },   // Latin, classical (same, tag Classical-Latin)
   la_ec: { lower: true },   // Latin, ecclesiastical (same, untagged)
+  ms_my: { lower: true },   // Malay, everyday Malaysian (same, note:Southern Peninsular|…)
+  ms_bk: { lower: true },   // Malay, formal / Baku (same, note:Literary|Baku|…)
 };
 
 function commonPrefix(a, b) {

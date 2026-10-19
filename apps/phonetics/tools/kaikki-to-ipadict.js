@@ -3,6 +3,8 @@
 // Without tag: first phonemic (/…/) pronunciation per word; one without regional tags wins over a tagged one.
 // With tag: first pronunciation (/…/ or […]) carrying that tag, or "-" for one with no tags
 // (Latin: Classical-Latin = classical, - = ecclesiastical).
+// With note:<regex>: the first phonemic (/…/) pronunciation whose note matches, else one with no note, else any
+// (a […] one only when there is no /…/). Malay: everyday = note:Southern Peninsular|Kuala Lumpur|…, formal = note:Literary|Baku.
 'use strict';
 const fs = require('fs'), zlib = require('zlib'), readline = require('readline');
 const [src, out, tag] = process.argv.slice(2);
@@ -17,6 +19,15 @@ rl.on('line', line => {
   try { e = JSON.parse(line); } catch (err) { return; }
   const w = e.word;
   if (!w || /[\s\d]/.test(w) || !Array.isArray(e.sounds) || (tag && best.has(w))) return;
+  if (tag && tag.startsWith('note:')) {
+    const want = new RegExp(tag.slice(5));
+    let list = e.sounds.filter(s => s.ipa && /^\/.+\/$/.test(s.ipa));
+    if (!list.length) list = e.sounds.filter(s => s.ipa && /^\[.+\]$/.test(s.ipa));
+    const rank = s => (s.note && want.test(s.note) ? 0 : !s.note ? 1 : 2);
+    const pick = list.reduce((b, s) => (!b || rank(s) < rank(b) ? s : b), null);
+    if (pick) best.set(w, { ipa: '/' + pick.ipa.slice(1, -1) + '/' });
+    return;
+  }
   for (const s of e.sounds) {
     if (!s.ipa) continue;
     const tags = s.tags || [];

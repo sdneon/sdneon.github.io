@@ -10,7 +10,7 @@
 <header>
   <nav class="pages"><b>Do U Read Me?</b> · <a href="japanese.html">Kana Do!</a></nav>
   <h1>Do U Read Me?</h1>
-  <p class="sub">Paste text in any of: English, Spanish, French, German, Italian, Latin, Japanese or Korean. Or paste IPA itself. You get the IPA and an English sound-alike under each word.
+  <p class="sub">Paste text in any of: English, Spanish, French, German, Italian, Latin, Malay, Japanese or Korean. Or paste IPA itself. You get the IPA and an English sound-alike under each word.
     Chinese (Simplified or Traditional) gets Hanyu Pinyin.</p>
 </header>
 
@@ -24,6 +24,7 @@
       <option value="de">German</option>
       <option value="it">Italian</option>
       <option value="la">Latin</option>
+      <option value="ms">Malay</option>
       <option value="ja">Japanese</option>
       <option value="ko">Korean</option>
       <option value="zh">Chinese (pinyin)</option>
@@ -49,6 +50,12 @@
       <option value="church">Church</option>
     </select>
   </label>
+  <label title="Everyday: how Malaysians usually speak (saya = sa-yuh, cantik = chan-tek). Formal: said as spelled (sa-yah, chan-tik)">Malay
+    <select id="ms">
+      <option value="everyday">Everyday</option>
+      <option value="formal">Formal</option>
+    </select>
+  </label>
   <label class="check" title="English text: common short words are shown as they are; only rare, tricky or long words get a sound-alike">
     <input type="checkbox" id="plainEn"> Keep simple English words</label>
   <label class="check"><input type="checkbox" id="pinyin"> Pinyin line</label>
@@ -67,6 +74,7 @@
     <option value="de">German</option>
     <option value="it">Italian</option>
     <option value="la">Latin</option>
+    <option value="ms">Malay</option>
     <option value="ja">Japanese</option>
     <option value="ko">Korean</option>
     <option value="zh">Chinese</option>
@@ -91,7 +99,7 @@
     <h2>IPA legend</h2>
     <button type="button" id="legendClose" class="x" aria-label="Close">×</button>
   </div>
-  <p class="dlg-note">The full IPA chart has about 107 letters plus around 50 marks. Below are the roughly 90 that these eight languages use. English uses only about 44 of them. Click 🔊 next to a symbol to hear its example words (the Speed slider applies).
+  <p class="dlg-note">The full IPA chart has about 107 letters plus around 50 marks. Below are the roughly 90 that these nine languages use. English uses only about 44 of them. Click 🔊 next to a symbol to hear its example words (the Speed slider applies).
     <b>Edit any “Sounds like” box</b> to use your own spelling. It's saved in this browser and used in the output.</p>
   <div class="chips-row"><div id="legendFilter" class="chips"></div><button type="button" id="resetAll" hidden>Reset all my edits</button></div>
   <p id="voiceSummary" class="dlg-note"></p>
