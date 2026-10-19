@@ -1,4 +1,4 @@
-// Text -> IPA per language: dictionary lookups (dict/*.js) plus rule-based Spanish, Korean and kana.
+// Text -> IPA per language: dictionary lookups (dict/*.js) plus rule-based Spanish, Italian, Korean and kana.
 (function (g) {
 'use strict';
 
@@ -32,10 +32,10 @@ function loadDict(name) {
   }
   return pending[name].promise;
 }
-const DICT_SIZE = { en_UK: 0.9, en_US: 1.8, fr_FR: 2.4, de: 8.5, ja: 9.8, ja_en: 10, ko: 1.2, zh: 3.5 };
+const DICT_SIZE = { en_UK: 0.9, en_US: 1.8, fr_FR: 2.4, de: 8.5, ja: 9.8, ja_en: 10, ko: 1.2, zh: 3.5, it: 1.3 };
 function dictsFor(lang, opt) {
   return { en: ['en_' + opt.accent, 'en_' + (opt.accent === 'UK' ? 'US' : 'UK')], fr: ['fr_FR'], de: ['de'],
-    ja: opt.meanings ? ['ja', 'ja_en'] : ['ja'], ko: ['ko'], zh: ['zh'] }[lang] || [];
+    ja: opt.meanings ? ['ja', 'ja_en'] : ['ja'], ko: ['ko'], zh: ['zh'], it: ['it'] }[lang] || [];
 }
 
 function profile(lang, opt) {
@@ -44,6 +44,7 @@ function profile(lang, opt) {
     case 'de': return { lang: 'de', short: new Set([...'ɪɛʊɔaʏœ']), trust: true };
     case 'fr': return { lang: 'fr', final: true };
     case 'es': return { lang: 'es', trust: true };
+    case 'it': return { lang: 'it', trust: true };
     case 'ja': return { lang: 'ja', nostress: true };
     case 'ko': return { lang: 'ko', nostress: true };
     default: return { lang: 'en', trust: true };
@@ -184,6 +185,91 @@ function esWord(word, opt) {
     mark = start;
   }
   return { ipa: ph.map((t, k) => (k === mark ? 'ˈ' : '') + t.p).join(''), src: 'rule' };
+}
+
+// ---------- Italian (dictionary, else rules) ----------
+const IT_V = { a: ['a'], e: ['e'], i: ['i'], o: ['o'], u: ['u'], à: ['a', 1], è: ['ɛ', 1], é: ['e', 1], ì: ['i', 1], í: ['i', 1],
+  ò: ['ɔ', 1], ó: ['o', 1], ù: ['u', 1], ú: ['u', 1] };
+const IT_AFF = { tʃ: 't', dʒ: 'd', ts: 't', dz: 'd' };
+// Spelling -> IPA. o.nostress: no stress mark (an elided prefix like dell').
+function itRules(word, o = {}) {
+  const w = word.toLowerCase().replace(/[’']/g, '');
+  const isV = c => !!c && IT_V[c] !== undefined;
+  const front = c => !!c && 'eièéìí'.includes(c);
+  const ph = [];
+  let gem = false;
+  // a consonant; doubled when written double, or for gn/gl/sc/z between vowels (always long there)
+  const C = (p, long) => {
+    if (gem || (long && ph.length && ph[ph.length - 1].v)) ph.push({ p: IT_AFF[p] || p });
+    ph.push({ p }); gem = false;
+  };
+  for (let i = 0; i < w.length; i++) {
+    const c = w[i], n = w[i + 1] || '';
+    if (isV(c)) { const [p, acc] = IT_V[c]; ph.push({ p, v: true, acc: !!acc, ch: c }); continue; }
+    if (c === n && c !== 'h' && isV(w[i - 1])) { gem = true; continue; }   // tt, cc, zz…
+    switch (c) {
+      case 'c':
+        if (n === 'h') { C('k'); i++; }
+        else if (n === 'q') C('k');
+        else if (front(n)) { C('tʃ'); if (n === 'i' && isV(w[i + 2])) i++; }
+        else C('k');
+        break;
+      case 'g':
+        if (n === 'h') { C('g'); i++; }
+        else if (n === 'n') { C('ɲ', true); i++; }
+        else if (n === 'l' && w[i + 2] === 'i') { C('ʎ', true); i += isV(w[i + 3]) ? 2 : 1; }
+        else if (front(n)) { C('dʒ'); if (n === 'i' && isV(w[i + 2])) i++; }
+        else C('g');
+        break;
+      case 's':
+        if (n === 'c' && front(w[i + 2])) { C('ʃ', true); i++; if (w[i + 1] === 'i' && isV(w[i + 2])) i++; }
+        else if (n && 'bdglmnrv'.includes(n) || (isV(w[i - 1]) && isV(n) && !gem)) C('z');
+        else C('s');
+        break;
+      case 'z': C(i === 0 && isV(n) ? 'dz' : 'ts', isV(n)); break;
+      case 'q': C('k'); if (n === 'u') { ph.push({ p: 'w' }); i++; } break;
+      case 'h': break;
+      case 'x': C('k'); C('s'); break;
+      case 'y': ph.push({ p: 'i', v: true, ch: 'i' }); break;
+      default: if (/[a-z]/.test(c)) C(c);
+    }
+  }
+  // unstressed i/u next to a vowel are glides (piano, buono, poi), unless that leaves one syllable (mio, via)
+  const nucN = () => ph.filter(t => t.v).length;
+  for (let k = 0; k < ph.length; k++) {
+    const t = ph[k];
+    if (!t.v || t.acc || (t.p !== 'i' && t.p !== 'u')) continue;
+    const prev = ph[k - 1], next = ph[k + 1];
+    const before = next && next.v && !(next.p === t.p), after = prev && prev.v && !(next && next.v);
+    if (!before && !after) continue;
+    if (nucN() <= 2 && before && k + 2 === ph.length) continue;
+    t.p = t.p === 'i' ? 'j' : 'w'; t.v = false;
+  }
+  const nuc = [];
+  ph.forEach((t, k) => { if (t.v) nuc.push(k); });
+  let mark = -1;
+  if (!o.nostress && nuc.length > 1) {
+    const a = nuc.filter(k => ph[k].acc);
+    // a final vowel + i glide is stressed (vorrei, andai)
+    mark = a.length ? a[a.length - 1] : ph[ph.length - 1].p === 'j' && nuc[nuc.length - 1] === ph.length - 2 ? nuc[nuc.length - 1] : nuc[nuc.length - 2];
+  }
+  const ipa = ph.map((t, k) => (k === mark ? 'ˈ' : '') + t.p).join('');
+  return mark < 0 ? ipa : g.IPA.restress(ipa, { lang: 'it' });
+}
+// Wiktionary IPA -> display form: no syllable dots, raddoppiamento marks or tie bars; stress at syllable start.
+function itNorm(ipa) {
+  return g.IPA.restress(ipa.replace(/[.*‿()]|⁽ˈ⁾/g, '').replace(/ɡ/g, 'g'), { lang: 'it' });
+}
+function itWord(word) {
+  const d = DICTS.it, key = word.toLowerCase().replace(/’/g, "'");
+  if (d && d.has(key)) return { ipa: itNorm(d.get(key)), src: 'dict' };
+  // l'amico, dell'acqua, c'è: the part after the apostrophe from the dictionary, the prefix by rules
+  const m = /^([a-z]+)'(.+)$/.exec(key);
+  if (m && d && d.has(m[2])) {
+    const pre = m[1] === 'c' && /^[eèéiì]/.test(m[2]) ? 'tʃ' : itRules(m[1], { nostress: true });
+    return { ipa: g.IPA.restress(pre + itNorm(d.get(m[2])), { lang: 'it' }), src: 'dict' };
+  }
+  return { ipa: itRules(key), src: 'rule' };
 }
 
 // ---------- Korean (dictionary, else Hangul rules) ----------
@@ -611,11 +697,12 @@ function convertLine(line, lang, opt) {
     else if (lang === 'fr') r = frWord(w);
     else if (lang === 'de') r = deWord(w);
     else if (lang === 'es') r = esWord(w, opt);
+    else if (lang === 'it') r = itWord(w);
     else r = { ipa: null, src: 'unknown' };
     toks.push(Object.assign({ text: w, kind: 'word' }, r));
   }
   return toks;
 }
 
-g.G2P = { loadDict, dictsFor, DICT_SIZE, profile, convertLine, kanaToIpa, koRules, esWord, hira, zhPinyin };
+g.G2P = { loadDict, dictsFor, DICT_SIZE, profile, convertLine, kanaToIpa, koRules, esWord, itRules, hira, zhPinyin };
 })(window);

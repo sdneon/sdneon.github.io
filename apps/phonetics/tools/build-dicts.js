@@ -15,6 +15,7 @@ const SETS = {
   fr_FR: { lower: true },
   de:    { lower: false, skip: /[\s\d]/ },
   ko:    { lower: false },
+  it:    { lower: true },   // from Wiktionary via tools/kaikki-to-ipadict.js
 };
 
 function commonPrefix(a, b) {

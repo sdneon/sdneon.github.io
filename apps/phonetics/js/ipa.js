@@ -31,7 +31,7 @@ function tokenize(ipa, lang) {
     const p = out[out.length - 1];
     if (t.base && p && p.base) {
       const pair = p.base + t.base;
-      if (!p.mods && (AFFRIC.has(pair) || (lang === 'ja' && (pair === 'ts' || pair === 'dz')))) {
+      if (!p.mods && (AFFRIC.has(pair) || ((lang === 'ja' || lang === 'it') && (pair === 'ts' || pair === 'dz')))) {
         p.base = pair; p.mods = t.mods; continue;
       }
       if (VOWELS.has(p.base[0]) && VOWELS.has(t.base[0]) && p.base.length === 1 &&
@@ -141,6 +141,10 @@ function consSpell(t, pos, prof) {
     if (pos === 'on' && !t.mods.includes('ʰ') && KO_LENIS[base]) return KO_LENIS[base];
   }
   if (base === 'ç' && pos === 'co') return 'kh';
+  if (prof.lang === 'it') {
+    if (base === 'r') return 'r';   // Italian rr is written as two r
+    if (pos === 'co' && (base === 'ʎ' || base === 'ɲ')) return base === 'ʎ' ? 'l' : 'n';   // famiglia: MEEL-lyah
+  }
   let r = C_MAP[base];
   if (r === undefined) r = [...base].map(c => (C_MAP[c] !== undefined ? C_MAP[c] : c)).join('');
   if (t.mods.includes('ʲ')) r += 'y';
@@ -151,7 +155,7 @@ const V_EN = { i: 'ee', ɪ: ['i', 'ih'], e: ['e', 'eh'], ɛ: ['e', 'eh'], æ: 'a
   ʊ: 'uu', u: 'oo', ʌ: ['u', 'uh'], ə: 'uh', ɐ: 'uh', ɜ: 'ur', ɝ: 'ur', ɚ: 'er', ɞ: 'ur', y: 'ew', ø: 'ur', œ: 'ur',
   ɯ: 'oo', ɨ: 'i', ʏ: 'ew', ɘ: 'uh', ɤ: 'uh', ʉ: 'ew', ɵ: 'ur' };
 const V_X = Object.assign({}, V_EN, { e: 'ay', a: 'ah', ɔ: ['o', 'aw'] });
-const V_LANG = { es: { e: 'eh' }, ja: { e: 'eh' }, ko: { e: 'eh', ɛ: 'eh', ʌ: 'aw', ɯ: 'eu' } };
+const V_LANG = { es: { e: 'eh' }, it: { e: 'eh' }, ja: { e: 'eh' }, ko: { e: 'eh', ɛ: 'eh', ʌ: 'aw', ɯ: 'eu' } };
 const DIPH = { eɪ: 'ay', ɔɪ: 'oy', ɔʏ: 'oy', aʊ: 'ow', əʊ: 'oh', oʊ: 'oh', ɪə: 'eer', eə: 'air', ɛə: 'air', ʊə: 'oor' };
 const NAS = { ɑ: 'ahn', a: 'ahn', ɔ: 'awn', o: 'ohn', ɛ: 'an', e: 'an', œ: 'un', ə: 'un', ø: 'un' };
 const R_COMBO = { ɑ: 'ar', a: 'ar', ɔ: 'or', o: 'or', ɛ: 'air', e: 'air', æ: 'air', ɪ: 'eer', i: 'eer', ʊ: 'oor', u: 'oor',
@@ -255,7 +259,7 @@ function pySpell(ini, med, fin) {
 }
 
 function pyIni(t, prof) {
-  if ((prof.lang === 'es' || prof.lang === 'fr' || prof.lang === 'ko') && !t.mods.includes('ʰ') && PY_UNASP[t.base]) return PY_UNASP[t.base];
+  if ((prof.lang === 'es' || prof.lang === 'it' || prof.lang === 'fr' || prof.lang === 'ko') && !t.mods.includes('ʰ') && PY_UNASP[t.base]) return PY_UNASP[t.base];
   return PY_INI[t.base] !== undefined ? PY_INI[t.base] : t.base;
 }
 

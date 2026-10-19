@@ -3,7 +3,7 @@
 (The Japanese page, `japanese.html`, is **Kana Do!**)
 
 A static web page for learning to read IPA phonetics, for English speakers.
-Paste English, Spanish, French, German, Japanese or Korean text (or IPA itself).
+Paste English, Spanish, French, German, Italian, Japanese or Korean text (or IPA itself).
 Under each word you get its IPA, an English-style sound-alike (stressed syllable in CAPITALS) and, optionally, a Hanyu Pinyin approximation.
 Chinese (Simplified or Traditional) gets Hanyu Pinyin under each word.
 
@@ -42,6 +42,7 @@ Open `index.html` in a browser. No server needed.
 | `js/legend-data.js` | symbol table for the legend and hover hints |
 | `dict/*.js` | generated dictionaries |
 | `tools/build-dicts.js` | builds `dict/` from the raw downloads |
+| `tools/kaikki-to-ipadict.js` | Wiktionary (kaikki.org) dump → `word<TAB>/ipa/` list (used for Italian) |
 | `tools/raw-dicts/` | the raw downloads (sources below) |
 
 ## Rebuilding the dictionaries
@@ -54,6 +55,8 @@ Run `node tools/build-dicts.js`. It reads `tools/raw-dicts/`, which holds:
 
 - `cedict.txt.gz` from https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz (CC-CEDICT)
 - `jieba-dict.txt` from https://github.com/fxsjy/jieba (`jieba/dict.txt`, word counts for splitting Chinese)
+- `it.txt`: Italian, made from https://kaikki.org/dictionary/Italian/kaikki.org-dictionary-Italian.jsonl.gz
+  (English Wiktionary extract, 76 MB, not kept) with `node tools/kaikki-to-ipadict.js <download> tools/raw-dicts/it.txt`
 
 To update a source, download a newer copy over the old file and rebuild.
 
@@ -63,4 +66,5 @@ To update a source, download a newer copy over the old file and rebuild.
 - google-10000-english: personal/educational use (LDC licence + Norvig MIT)
 - CC-CEDICT: CC BY-SA 4.0 (https://www.mdbg.net/chinese/dictionary?page=cc-cedict)
 - jieba dictionary: MIT (https://github.com/fxsjy/jieba)
+- Wiktionary (Italian pronunciations, via kaikki.org / wiktextract): CC BY-SA 4.0 and GFDL
 - JMdict / EDICT2: CC BY-SA 4.0, © Electronic Dictionary Research and Development Group (https://www.edrdg.org/edrdg/licence.html)

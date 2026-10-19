@@ -43,7 +43,7 @@ function speak(items, rate) {
 // timed estimate from each word's weight (morae / syllables), started when speech starts.
 let track = null;
 // Seconds per mora (ja) or syllable at speed 1, tuned by ear against Google voices; others (en, de) use 0.22.
-const UNIT = { ja: 0.14, ko: 0.21, fr: 0.19, es: 0.18 };
+const UNIT = { ja: 0.14, ko: 0.21, fr: 0.19, es: 0.18, it: 0.18 };
 function stopTrack() {
   if (!track) return;
   track.timers.forEach(clearTimeout);
