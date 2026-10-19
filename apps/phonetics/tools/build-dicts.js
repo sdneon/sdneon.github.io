@@ -16,6 +16,8 @@ const SETS = {
   de:    { lower: false, skip: /[\s\d]/ },
   ko:    { lower: false },
   it:    { lower: true },   // from Wiktionary via tools/kaikki-to-ipadict.js
+  la_cl: { lower: true },   // Latin, classical (same, tag Classical-Latin)
+  la_ec: { lower: true },   // Latin, ecclesiastical (same, untagged)
 };
 
 function commonPrefix(a, b) {

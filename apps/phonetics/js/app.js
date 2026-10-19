@@ -2,14 +2,16 @@
 (function () {
 'use strict';
 const $ = s => document.querySelector(s);
-const NAMES = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ipa: 'IPA' };
-const DICT_NAMES = { en_UK: 'British English', en_US: 'American English', fr_FR: 'French', de: 'German', it: 'Italian', ja: 'Japanese', ja_en: 'Japanese meanings', ko: 'Korean', zh: 'Chinese' };
+const NAMES = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', la: 'Latin', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ipa: 'IPA' };
+const DICT_NAMES = { en_UK: 'British English', en_US: 'American English', fr_FR: 'French', de: 'German', it: 'Italian',
+  la_cl: 'Latin (Classical)', la_ec: 'Latin (Church)', ja: 'Japanese', ja_en: 'Japanese meanings', ko: 'Korean', zh: 'Chinese' };
 const EXAMPLES = {
   en: 'The quick brown fox jumps over the lazy dog.\nI would like a cup of tea, please.',
   es: 'Buenos días, ¿cómo estás?\nMe llamo Carlos y vivo en Madrid.',
   fr: "Bonjour mon ami, comment allez-vous ?\nJe voudrais un café, s'il vous plaît.",
   de: 'Guten Morgen! Wie geht es dir?\nIch möchte ein Stück Kuchen, bitte.',
   it: 'Buongiorno, come stai?\nVorrei un caffè e una pizza, per favore.',
+  la: 'Gallia est omnis divisa in partes tres.\nVeni, vidi, vici. Cogito, ergo sum.',
   ja: 'こんにちは、私は学生です。\n東京は大きい都市です。',
   ko: '안녕하세요, 저는 학생입니다.\n한국어를 배우고 있어요.',
   zh: '你好，我是学生。我们一起去北京吧！\n你好，我是學生。我們一起去北京吧！',
@@ -20,7 +22,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('phon.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('phon.' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
 };
-const opt = Object.assign({ lang: 'auto', accent: 'UK', es: 'latam', pinyin: false, rate: 0.7, plainEn: true, translate: true, meanings: true }, store.get('settings', {}));
+const opt = Object.assign({ lang: 'auto', accent: 'UK', es: 'latam', la: 'classical', pinyin: false, rate: 0.7, plainEn: true, translate: true, meanings: true }, store.get('settings', {}));
 let overrides = store.get('overrides', {});
 IPA.setOverrides(overrides);
 const likeOf = e => (overrides[e.sym] !== undefined ? overrides[e.sym] : e.like);
@@ -35,7 +37,7 @@ function el(tag, cls, text) {
 
 // ---------- speech ----------
 const speechCode = lang => ({ en: opt.accent === 'US' ? 'en-US' : 'en-GB', es: opt.es === 'spain' ? 'es-ES' : 'es-MX',
-  fr: 'fr-FR', de: 'de-DE', it: 'it-IT', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN' }[lang]);
+  fr: 'fr-FR', de: 'de-DE', it: 'it-IT', la: 'it-IT', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN' }[lang]);
 
 function voiceSummary() {
   if (!Speech.has) return 'This browser cannot read aloud.';
@@ -59,7 +61,7 @@ const speak = (text, lang) => speakList([[text, lang]]);
 function legendExamples(html) {
   const out = [];
   for (const part of html.split('·')) {
-    const m = /^\s*(es|fr|de|it|ja|ko|Spain)\s+(?:<i>(.*?)<\/i>|([^\s<(]+))/.exec(part);
+    const m = /^\s*(es|fr|de|it|la|ja|ko|Spain)\s+(?:<i>(.*?)<\/i>|([^\s<(]+))/.exec(part);
     const text = (m ? m[2] || m[3] : part).replace(/<[^>]+>/g, '').split(/[(:,;]/)[0]
       .replace(/^\s*(in UK English|US|UK)\s*:?\s*/i, '').trim();
     const lang = m ? (m[1] === 'Spain' ? 'es' : m[1]) : 'en';
@@ -198,7 +200,7 @@ const schedule = () => { clearTimeout(timer); timer = setTimeout(run, 250); };
 
 // ---------- legend ----------
 let legendLang = 'all';
-const EDITABLE = r => !/^[◌./[]/.test(r[0]) && !['ˈ', 'ˌ', 'ː', 'ʰ', '‿'].includes(r[0]);
+const EDITABLE = r => !/^[◌./[]/.test(r[0]) && !['ˈ', 'ˌ', 'ː', 'ʰ', 'ʷ', '‿'].includes(r[0]);
 
 function saveOverrides() {
   store.set('overrides', overrides);
@@ -233,7 +235,7 @@ function buildLegend() {
   $('#resetAll').hidden = !mine;
   const chips = $('#legendFilter');
   chips.replaceChildren();
-  const filters = [['all', 'All'], ['en', 'English'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'], ['it', 'Italian'], ['ja', 'Japanese'], ['ko', 'Korean']];
+  const filters = [['all', 'All'], ['en', 'English'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'], ['it', 'Italian'], ['la', 'Latin'], ['ja', 'Japanese'], ['ko', 'Korean']];
   if (mine || legendLang === 'mine') filters.push(['mine', 'My edits (' + mine + ')']);   // only rows with the user's own sound-alike
   filters.forEach(([k, n]) => {
     const b = el('button', (k === legendLang ? 'on' : '') + (k === 'mine' ? ' mine' : ''), n);
@@ -278,7 +280,7 @@ function buildLegend() {
 
 // ---------- wiring ----------
 function applyOpt() {
-  $('#lang').value = opt.lang; $('#accent').value = opt.accent; $('#es').value = opt.es; $('#pinyin').checked = opt.pinyin;
+  $('#lang').value = opt.lang; $('#accent').value = opt.accent; $('#es').value = opt.es; $('#la').value = opt.la; $('#pinyin').checked = opt.pinyin;
   $('#plainEn').checked = opt.plainEn;
   $('#translate').checked = opt.translate; $('#meanings').checked = opt.meanings;
   document.body.classList.toggle('show-meanings', opt.meanings);
@@ -288,7 +290,7 @@ function applyOpt() {
 function bind(id, key, prop) {
   $(id).addEventListener('change', e => { opt[key] = e.target[prop]; store.set('settings', opt); applyOpt(); run(); });
 }
-bind('#lang', 'lang', 'value'); bind('#accent', 'accent', 'value'); bind('#es', 'es', 'value'); bind('#pinyin', 'pinyin', 'checked'); bind('#plainEn', 'plainEn', 'checked');
+bind('#lang', 'lang', 'value'); bind('#accent', 'accent', 'value'); bind('#es', 'es', 'value'); bind('#la', 'la', 'value'); bind('#pinyin', 'pinyin', 'checked'); bind('#plainEn', 'plainEn', 'checked');
 bind('#translate', 'translate', 'checked'); bind('#meanings', 'meanings', 'checked');
 input.addEventListener('input', schedule);
 $('#rate').addEventListener('input', e => {

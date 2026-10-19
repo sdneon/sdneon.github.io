@@ -1,4 +1,4 @@
-// Text -> IPA per language: dictionary lookups (dict/*.js) plus rule-based Spanish, Italian, Korean and kana.
+// Text -> IPA per language: dictionary lookups (dict/*.js) plus rule-based Spanish, Italian, Latin, Korean and kana.
 (function (g) {
 'use strict';
 
@@ -32,10 +32,10 @@ function loadDict(name) {
   }
   return pending[name].promise;
 }
-const DICT_SIZE = { en_UK: 0.9, en_US: 1.8, fr_FR: 2.4, de: 8.5, ja: 9.8, ja_en: 10, ko: 1.2, zh: 3.5, it: 1.3 };
+const DICT_SIZE = { en_UK: 0.9, en_US: 1.8, fr_FR: 2.4, de: 8.5, ja: 9.8, ja_en: 10, ko: 1.2, zh: 3.5, it: 1.3, la_cl: 1.2, la_ec: 1.2 };
 function dictsFor(lang, opt) {
   return { en: ['en_' + opt.accent, 'en_' + (opt.accent === 'UK' ? 'US' : 'UK')], fr: ['fr_FR'], de: ['de'],
-    ja: opt.meanings ? ['ja', 'ja_en'] : ['ja'], ko: ['ko'], zh: ['zh'], it: ['it'] }[lang] || [];
+    ja: opt.meanings ? ['ja', 'ja_en'] : ['ja'], ko: ['ko'], zh: ['zh'], it: ['it'], la: [opt.la === 'church' ? 'la_ec' : 'la_cl'] }[lang] || [];
 }
 
 function profile(lang, opt) {
@@ -45,6 +45,7 @@ function profile(lang, opt) {
     case 'fr': return { lang: 'fr', final: true };
     case 'es': return { lang: 'es', trust: true };
     case 'it': return { lang: 'it', trust: true };
+    case 'la': return { lang: 'la', trust: true };
     case 'ja': return { lang: 'ja', nostress: true };
     case 'ko': return { lang: 'ko', nostress: true };
     default: return { lang: 'en', trust: true };
@@ -270,6 +271,111 @@ function itWord(word) {
     return { ipa: g.IPA.restress(pre + itNorm(d.get(m[2])), { lang: 'it' }), src: 'dict' };
   }
   return { ipa: itRules(key), src: 'rule' };
+}
+
+// ---------- Latin (dictionary per style, else rules) ----------
+// style: 'classical' (restored: c = k, v = w, ae = ai) or 'church' (Italian-like: c = ch before e/i, v = v, ae = e).
+const LA_MAC = { ā: 'a', ē: 'e', ī: 'i', ō: 'o', ū: 'u', ȳ: 'y' };
+const LA_SHORT = { a: 'a', e: 'ɛ', i: 'ɪ', o: 'ɔ', u: 'ʊ', y: 'ʏ' };
+const LA_LONG = { a: 'aː', e: 'eː', i: 'iː', o: 'oː', u: 'uː', y: 'yː' };
+// Endings whose vowel before them is long (amāre, Rōmānus, -ōrum), so the second-to-last syllable takes the stress.
+const LA_LONG_END = /(?:[aeo]rum|a(?:re|ris|rent|tus|tum|ta|tae|ti|tis|nus|num|na|nae|ni|nt)|i(?:re|ris|tus|tum|ta)|o(?:sus|sa|sum|nis|nem|nes)|u(?:ra|rae|tus|tum))$/;
+function laRules(word, style) {
+  const church = style === 'church';
+  const raw = word.toLowerCase().normalize('NFC');
+  const w = [...raw].map(c => LA_MAC[c] || c).join('').replace(/[̄]/g, '');
+  const macron = [...raw].map(c => !!LA_MAC[c]);
+  const isV = c => !!c && 'aeiouy'.includes(c);
+  const front = (i) => 'eiy'.includes(w[i] || '') || ((w[i] === 'a' || w[i] === 'o') && w[i + 1] === 'e');
+  const ph = [];
+  let gem = false;
+  const C = p => { if (gem) ph.push({ p: { tʃ: 't', dʒ: 'd', ts: 't' }[p] || p }); ph.push({ p }); gem = false; };
+  const V = (i, long, extra = {}) => ph.push(Object.assign({ v: true, i, long, p: church ? w[i].replace('y', 'i') : (long ? LA_LONG : LA_SHORT)[w[i]] }, extra));
+  for (let i = 0; i < w.length; i++) {
+    const c = w[i], n = w[i + 1] || '';
+    if (isV(c)) {
+      const pair = c + n;
+      // u after q / ngu before a vowel is a w; i or u starting a word before a vowel is a consonant (iam, uelut)
+      if (c === 'u' && (w[i - 1] === 'q' || (w[i - 1] === 'g' && w[i - 2] === 'n')) && isV(n)) continue;
+      if ((c === 'i' || (c === 'u' && !church)) && isV(n) && (i === 0 || isV(w[i - 1]))) { C(c === 'i' ? 'j' : 'w'); continue; }
+      if (['ae', 'oe', 'au'].includes(pair) && !macron[i]) {
+        if (church && pair !== 'au') ph.push({ v: true, i, p: 'e', long: true, diph: true });
+        else ph.push({ v: true, i, long: true, diph: true, p: pair[0] + (pair[1] === 'e' ? 'j' : 'w') });
+        i++; continue;
+      }
+      V(i, macron[i]);
+      continue;
+    }
+    if (c === n && c !== 'h' && isV(w[i - 1])) { gem = true; continue; }
+    switch (c) {
+      case 'c':
+        if (n === 'h') { C(church ? 'k' : 'kʰ'); i++; }
+        else if (church && front(i + 1)) C(w[i - 1] === 's' ? 'ʃ' : 'tʃ');
+        else C('k');
+        break;
+      case 's':
+        if (church && n === 'c' && front(i + 2)) break;   // sc + e/i: one sh sound, made by the c
+        C(church && isV(w[i - 1]) && isV(n) && !gem ? 'z' : 's');
+        break;
+      case 'g':
+        if (church && n === 'n') { C('ɲ'); if (isV(w[i - 1])) ph.splice(ph.length - 1, 0, { p: 'ɲ' }); i++; }
+        else if (church && front(i + 1)) C('dʒ');
+        else if (n === 'u' && w[i - 1] === 'n' && isV(w[i + 2])) { C('g'); ph.push({ p: 'w' }); }
+        else C('g');
+        break;
+      case 'q': C('k'); if (n === 'u') { ph.push({ p: 'w' }); i++; } break;
+      case 'p': if (n === 'h') { C(church ? 'f' : 'pʰ'); i++; } else C('p'); break;
+      case 't':
+        if (n === 'h') { C(church ? 't' : 'tʰ'); i++; }
+        else if (church && n === 'i' && isV(w[i + 2]) && !'stx'.includes(w[i - 1] || '')) C('ts');
+        else C('t');
+        break;
+      case 'h': if (!church) C('h'); else if (/^(mihi|nihil)/.test(w.slice(i - 2))) C('k'); break;
+      case 'v': C(church ? 'v' : 'w'); break;
+      case 'j': C('j'); break;
+      case 'x':
+        C('k');
+        if (church && n === 'c' && front(i + 2)) { C('ʃ'); i++; } else C('s');   // excelsis: ek-SHEL-sis
+        break;
+      case 'z': C('dz'); break;
+      case 'k': C('k'); break;
+      default: if (/[a-z]/.test(c)) C(c);
+    }
+  }
+  const nuc = ph.map((t, k) => (t.v ? k : -1)).filter(k => k >= 0);
+  let mark = -1;
+  if (nuc.length === 2) mark = nuc[0];
+  else if (nuc.length > 2) {
+    const pk = nuc[nuc.length - 2], pen = ph[pk];
+    const between = ph.slice(pk + 1, nuc[nuc.length - 1]).filter(t => !t.v).map(t => t.p);
+    const mcl = between.length === 2 && 'pbtdkg'.includes(between[0][0]) && 'lr'.includes(between[1]);
+    const heavy = pen.long || pen.diph || (between.length >= 2 && !mcl) || /^(ks|dz)$/.test(between.join('')) ||
+      (!macron.some(Boolean) && LA_LONG_END.test(w));
+    mark = heavy ? pk : nuc[nuc.length - 3];
+  }
+  const ipa = ph.map((t, k) => (k === mark ? 'ˈ' : '') + t.p).join('');
+  return mark < 0 ? ipa : g.IPA.restress(ipa, { lang: 'la' });
+}
+// Wiktionary narrow IPA -> display form: no dots, tie bars or fine detail marks (n̠ʲ, s̬).
+function laNorm(ipa) {
+  return g.IPA.restress(ipa.replace(/[.*‿()]|[̠̬̪̟̞̝ʲ]/g, '').replace(/ɡ/g, 'g')
+    .replace(/([aeoɛɔ])([eiuɪʊ])̯/g, (m, a, b) => a + ('eiɪ'.includes(b) ? 'j' : 'w')), { lang: 'la' });   // ae̯ -> aj
+}
+function laWord(word, opt) {
+  const style = opt.la === 'church' ? 'church' : 'classical';
+  const d = DICTS[style === 'church' ? 'la_ec' : 'la_cl'];
+  const key = word.toLowerCase().normalize('NFC');
+  const plain = [...key].map(c => LA_MAC[c] || c).join('');
+  if (d && d.has(plain)) return { ipa: laNorm(d.get(plain)), src: 'dict' };
+  // enclitic -que / -ne / -ve: populusque = populus + que, stress moves onto the syllable before it
+  const m = /^(.{3,}?)(que|ne|ve)$/.exec(plain);
+  if (m && d && d.has(m[1]) && !/^(atque|neque|quoque|itaque|usque|denique|utique|undique|plerumque)$/.test(plain)) {
+    const base = laNorm(d.get(m[1])).replace(/[ˈˌ]/g, '');
+    const tail = m[2] === 'que' ? 'kwɛ' : m[2] === 've' ? (style === 'church' ? 've' : 'wɛ') : 'nɛ';
+    const t = style === 'church' ? tail.replace('ɛ', 'e') : tail;
+    return { ipa: g.IPA.restress(base.replace(/([aeiouɛɪɔʊæyʏ]ː?[^aeiouɛɪɔʊæyʏː]*)$/, 'ˈ$1') + t, { lang: 'la' }), src: 'guess', note: m[1] + ' + -' + m[2] };
+  }
+  return { ipa: laRules(key, style), src: 'rule' };
 }
 
 // ---------- Korean (dictionary, else Hangul rules) ----------
@@ -698,11 +804,12 @@ function convertLine(line, lang, opt) {
     else if (lang === 'de') r = deWord(w);
     else if (lang === 'es') r = esWord(w, opt);
     else if (lang === 'it') r = itWord(w);
+    else if (lang === 'la') r = laWord(w, opt);
     else r = { ipa: null, src: 'unknown' };
     toks.push(Object.assign({ text: w, kind: 'word' }, r));
   }
   return toks;
 }
 
-g.G2P = { loadDict, dictsFor, DICT_SIZE, profile, convertLine, kanaToIpa, koRules, esWord, itRules, hira, zhPinyin };
+g.G2P = { loadDict, dictsFor, DICT_SIZE, profile, convertLine, kanaToIpa, koRules, esWord, itRules, laRules, hira, zhPinyin };
 })(window);
